@@ -78,7 +78,6 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const { from, to } = monthRangeIso(cursor.y, cursor.m);
-  const assignHref = canMutate ? "/admin/assign-deliverables" : "/team/assign-deliverables";
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["production-calendar-entries", from, to],
@@ -213,19 +212,16 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
         <p className="text-sm text-muted-foreground">
           {canMutate ? (
             <>
-              Create and edit shoot-day rows (client, times, on-site photo/video crew, add-ons). Enable deliverable timelines so editors can be assigned under{" "}
-              <Link className="underline" to={assignHref}>
-                Assign deliverables
-              </Link>
-              . Emmanuel sees this calendar read-only on his team login.
+              Add shoot-day details (client, times, on-site photo/video crew, add-ons). Enable deliverable timelines when post-production tasks should be created.
+              Emmanuel is the only team member who sees this calendar; he assigns editors under Assign deliverables on his dashboard — admins only maintain events here.
             </>
           ) : (
             <>
-              Admin maintains shoot rows. Use{" "}
-              <Link className="underline" to={assignHref}>
+              Review what admin logged. Open{" "}
+              <Link className="underline" to="/team/assign-deliverables">
                 Assign deliverables
               </Link>{" "}
-              to assign editors and track deadlines — only you see this calendar among team members.
+              to match tasks to editors on each crew. Only you see this calendar among team members.
             </>
           )}
         </p>

@@ -16,3 +16,9 @@ export function requireCoordinatorOrAdmin(req: Request, _res: Response, next: Ne
   return next(new HttpError(403, "Forbidden", "FORBIDDEN"));
 }
 
+/** Assign tasks / roster API — production coordinator only (not admin). */
+export function requireCoordinatorOnly(req: Request, _res: Response, next: NextFunction) {
+  if (!req.auth) return next(new HttpError(401, "Not authenticated", "UNAUTHENTICATED"));
+  if (isProductionCoordinator(req.auth)) return next();
+  return next(new HttpError(403, "Only the production coordinator can do this", "FORBIDDEN"));
+}

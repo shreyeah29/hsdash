@@ -10,6 +10,7 @@ import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
 import { TeamDashboardPage } from "@/pages/team/TeamDashboardPage";
 import { ShootCalendarPage } from "@/pages/shared/ShootCalendarPage";
 import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
+import { AdminDeliverablesStatusPage } from "@/pages/admin/AdminDeliverablesStatusPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { RequireProductionCoordinator } from "@/routes/RequireProductionCoordinator";
@@ -34,8 +35,9 @@ function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
           <Route path="production-calendar" element={<ShootCalendarPage canMutate />} />
-          <Route path="assign-deliverables" element={<CoordinatorTasksPage />} />
-          <Route path="tasks" element={<TasksPage />} />
+          <Route path="deliverables-status" element={<AdminDeliverablesStatusPage />} />
+          <Route path="assign-deliverables" element={<Navigate to="/admin/deliverables-status" replace />} />
+          <Route path="tasks" element={<Navigate to="/admin/deliverables-status" replace />} />
           <Route path="team" element={<TeamManagementPage />} />
         </Route>
 

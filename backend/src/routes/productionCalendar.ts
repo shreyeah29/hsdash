@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { Role } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
-import { requireCoordinatorOrAdmin } from "../middleware/coordinator";
+import { requireCoordinatorOnly, requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
 import { buildEventTasks } from "../services/eventTasks";
@@ -200,7 +200,7 @@ productionCalendarRouter.delete("/entries/:id", requireRole(Role.ADMIN), async (
   }
 });
 
-productionCalendarRouter.get("/team-members", requireCoordinatorOrAdmin, async (_req, res, next) => {
+productionCalendarRouter.get("/team-members", requireCoordinatorOnly, async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       where: { role: Role.TEAM_MEMBER, isActive: true },

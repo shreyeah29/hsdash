@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
@@ -8,21 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PriorityBadge } from "@/components/PriorityBadge";
-import { Button } from "@/components/ui/button";
 
-async function fetchTasks() {
+async function fetchAllTasks() {
   const { data } = await api.get<{ tasks: Task[] }>("/tasks");
   return data.tasks;
 }
 
-export function TasksPage() {
-  const qc = useQueryClient();
+/** Read-only view for admins — monitoring progress; assignments are handled by the production coordinator. */
+export function AdminDeliverablesStatusPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("ALL");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: fetchTasks,
+    queryKey: ["tasks", "admin-monitor"],
+    queryFn: fetchAllTasks,
   });
 
   const filtered = useMemo(() => {
@@ -31,31 +30,25 @@ export function TasksPage() {
       const matchesQ =
         !q ||
         t.taskType.toLowerCase().includes(q.toLowerCase()) ||
-        t.event?.clientName?.toLowerCase().includes(q.toLowerCase());
+        t.event?.clientName?.toLowerCase().includes(q.toLowerCase()) ||
+        t.assignedTo?.name?.toLowerCase().includes(q.toLowerCase());
       const matchesStatus = status === "ALL" ? true : t.status === status;
       return matchesQ && matchesStatus;
     });
   }, [data, q, status]);
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, next }: { id: string; next: TaskStatus }) => {
-      const { data } = await api.put(`/tasks/${id}/status`, { status: next });
-      return data;
-    },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["tasks"] });
-      await qc.invalidateQueries({ queryKey: ["tasks", "admin-monitor"] });
-      await qc.invalidateQueries({ queryKey: ["my-tasks"] });
-      await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
-    },
-  });
-
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-semibold">Tasks</h1>
+      <div>
+        <h1 className="text-xl font-semibold">Deliverables status</h1>
+        <p className="text-sm text-muted-foreground">
+          Monitor deadlines, assignees, and status across teams. Task assignment is done by the production coordinator (Emmanuel) from the team portal.
+        </p>
+      </div>
+
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">
-          <Input placeholder="Search by client or task…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input placeholder="Search client, task, or assignee…" value={q} onChange={(e) => setQ(e.target.value)} />
           <Select value={status} onValueChange={setStatus}>
             <SelectItem value="ALL">All</SelectItem>
             <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
@@ -81,7 +74,6 @@ export function TasksPage() {
               <TableHead>Deadline</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,38 +90,11 @@ export function TasksPage() {
                 <TableCell>
                   <StatusBadge status={t.status} />
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={updateStatus.isPending}
-                      onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.PENDING })}
-                    >
-                      Pending
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={updateStatus.isPending}
-                      onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.IN_PROGRESS })}
-                    >
-                      In Progress
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={updateStatus.isPending}
-                      onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.COMPLETED })}
-                    >
-                      Complete
-                    </Button>
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
             {!isLoading && filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                   No tasks found.
                 </TableCell>
               </TableRow>
@@ -140,4 +105,3 @@ export function TasksPage() {
     </div>
   );
 }
-

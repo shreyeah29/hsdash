@@ -52,6 +52,8 @@ export function CoordinatorTasksPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["tasks", "admin-monitor"] });
+      await qc.invalidateQueries({ queryKey: ["my-notifications"] });
       await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
     },
   });
@@ -63,6 +65,7 @@ export function CoordinatorTasksPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["tasks", "admin-monitor"] });
       await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
     },
   });

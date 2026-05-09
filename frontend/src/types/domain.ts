@@ -67,6 +67,17 @@ export type Task = {
   event?: Event;
 };
 
+export type UserNotification = {
+  id: string;
+  userId: string;
+  taskId: string | null;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: string;
+  task?: Task | null;
+};
+
 export type AdminCalendarNote = {
   id: string;
   day: string;
