@@ -91,6 +91,10 @@ Set env vars:
 
 When **frontend (Vercel)** and **API (Render)** are on different domains, the API sets the session cookie with **`SameSite=None; Secure`** automatically so `/auth/me` works after login.
 
+**Sessions:** After login, the API returns **`accessToken`** (JWT). The frontend stores it and sends **`Authorization: Bearer …`** so auth works reliably across Vercel + Render (cookies alone are brittle).
+
+**Optional password-free demo (temporary):** set **`DEMO_LOGIN=true`** on the Render API, redeploy, then use **“Open … dashboard (demo)”** on the `/login` page. Set back to **`false`** when you only want real passwords.
+
 - `PORT` is provided by Render automatically (you can omit it)
 
 #### Frontend (Render Static Site)

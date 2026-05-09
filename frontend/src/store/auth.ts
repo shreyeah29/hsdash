@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { User } from "@/types/domain";
-import { api } from "@/services/api";
+import { api, setAccessToken } from "@/services/api";
 
 type AuthState = {
   user: User | null;
@@ -24,8 +24,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   logout: async () => {
-    await api.post("/auth/logout");
-    set({ user: null });
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      setAccessToken(null);
+      set({ user: null });
+    }
   },
 }));
 

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { api } from "@/services/api";
+import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Role } from "@/types/domain";
@@ -38,7 +38,8 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
-      await api.post("/auth/login", values);
+      const { data } = await api.post<{ user?: unknown; accessToken?: string }>("/auth/login", values);
+      if (data.accessToken) setAccessToken(data.accessToken);
       await refreshMe();
       const user = useAuthStore.getState().user;
 
