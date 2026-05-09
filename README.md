@@ -16,13 +16,15 @@ cp backend/.env.example backend/.env
 ```
 
 2. Set `DATABASE_URL` to your Postgres connection string.
-3. Run migrations + seed:
+3. Apply migrations (creates tables). Optional: seed demo data:
 
 ```bash
 cd backend
 npm run prisma:migrate:dev
 npm run seed
 ```
+
+On **Render**, `prisma migrate deploy` runs on startup and applies `prisma/migrations/` — ensure this repo includes those files (initial migration ships with the project).
 
 4. Start API:
 
