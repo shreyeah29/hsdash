@@ -8,7 +8,7 @@ import { TasksPage } from "@/pages/shared/TasksPage";
 import { TeamManagementPage } from "@/pages/admin/TeamManagementPage";
 import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
 import { TeamDashboardPage } from "@/pages/team/TeamDashboardPage";
-import { ProductionCalendarPage } from "@/pages/team/ProductionCalendarPage";
+import { ShootCalendarPage } from "@/pages/shared/ShootCalendarPage";
 import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
@@ -33,6 +33,8 @@ function App() {
         >
           <Route index element={<AdminDashboardPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="production-calendar" element={<ShootCalendarPage canMutate />} />
+          <Route path="assign-deliverables" element={<CoordinatorTasksPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="team" element={<TeamManagementPage />} />
         </Route>
@@ -41,7 +43,7 @@ function App() {
           <Route index element={<TeamDashboardPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route element={<RequireProductionCoordinator />}>
-            <Route path="production-calendar" element={<ProductionCalendarPage />} />
+            <Route path="production-calendar" element={<ShootCalendarPage canMutate={false} />} />
             <Route path="assign-deliverables" element={<CoordinatorTasksPage />} />
           </Route>
         </Route>

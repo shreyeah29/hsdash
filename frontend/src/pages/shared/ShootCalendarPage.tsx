@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { api } from "@/services/api";
 import type { ShootCalendarEntry, Task } from "@/types/domain";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -72,11 +72,13 @@ const emptyForm = (day: string): FormState => ({
   createDeliverableTimeline: true,
 });
 
-export function ProductionCalendarPage() {
+/** Admin `canMutate`; production coordinator (Emmanuel) read-only + assignment elsewhere. */
+export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
   const qc = useQueryClient();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const { from, to } = monthRangeIso(cursor.y, cursor.m);
+  const assignHref = canMutate ? "/admin/assign-deliverables" : "/team/assign-deliverables";
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["production-calendar-entries", from, to],
@@ -153,7 +155,6 @@ export function ProductionCalendarPage() {
       setDialogOpen(false);
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
-      await qc.invalidateQueries({ queryKey: ["team-shoot-schedule"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
@@ -165,7 +166,6 @@ export function ProductionCalendarPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
-      await qc.invalidateQueries({ queryKey: ["team-shoot-schedule"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
@@ -182,13 +182,14 @@ export function ProductionCalendarPage() {
     editingId && editingId !== "new" ? entries.some((x) => x.id === editingId && !!x.eventId) : false;
 
   function openNew() {
-    if (!selectedKey) return;
+    if (!canMutate || !selectedKey) return;
     setEditingId("new");
     setForm(emptyForm(selectedKey));
     setDialogOpen(true);
   }
 
   function openEdit(entry: ShootCalendarEntry) {
+    if (!canMutate) return;
     setEditingId(entry.id);
     setForm({
       day: calendarDayKeyFromIso(entry.day),
@@ -208,13 +209,25 @@ export function ProductionCalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Production calendar</h1>
+        <h1 className="text-xl font-semibold">{canMutate ? "Production calendar" : "Production calendar (read-only)"}</h1>
         <p className="text-sm text-muted-foreground">
-          Log shoot-day details (client, times, on-site photo/video crew, add-ons). Optionally create the standard deliverable timeline so you can assign editors under{" "}
-          <Link className="underline" to="/team/assign-deliverables">
-            Assign deliverables
-          </Link>
-          .
+          {canMutate ? (
+            <>
+              Create and edit shoot-day rows (client, times, on-site photo/video crew, add-ons). Enable deliverable timelines so editors can be assigned under{" "}
+              <Link className="underline" to={assignHref}>
+                Assign deliverables
+              </Link>
+              . Emmanuel sees this calendar read-only on his team login.
+            </>
+          ) : (
+            <>
+              Admin maintains shoot rows. Use{" "}
+              <Link className="underline" to={assignHref}>
+                Assign deliverables
+              </Link>{" "}
+              to assign editors and track deadlines — only you see this calendar among team members.
+            </>
+          )}
         </p>
       </div>
 
@@ -223,7 +236,9 @@ export function ProductionCalendarPage() {
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 pb-4">
             <div>
               <CardTitle>{label}</CardTitle>
-              <CardDescription>{isLoading ? "Loading…" : "Click a day to view or add shoots."}</CardDescription>
+              <CardDescription>
+                {isLoading ? "Loading…" : canMutate ? "Click a day to add or edit shoots." : "Click a day to review shoots."}
+              </CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" type="button" onClick={() => shiftMonth(-1)}>
@@ -301,9 +316,11 @@ export function ProductionCalendarPage() {
               <p className="text-sm text-muted-foreground">Select a date on the calendar.</p>
             ) : (
               <>
-                <Button type="button" className="w-full" onClick={openNew}>
-                  Add shoot / event details
-                </Button>
+                {canMutate ? (
+                  <Button type="button" className="w-full" onClick={openNew}>
+                    Add shoot / event details
+                  </Button>
+                ) : null}
 
                 <div>
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Logged shoots</div>
@@ -322,7 +339,7 @@ export function ProductionCalendarPage() {
                           {e.photoTeam ? <div className="whitespace-pre-wrap">Photo on-site: {e.photoTeam}</div> : null}
                           {e.videoTeam ? <div className="whitespace-pre-wrap">Video on-site: {e.videoTeam}</div> : null}
                           {e.addons ? <div className="whitespace-pre-wrap">Add-ons: {e.addons}</div> : null}
-                          <div className="text-[11px]">Updated by {e.createdBy.name}</div>
+                          <div className="text-[11px]">Recorded by {e.createdBy.name}</div>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {e.eventId ? (
@@ -330,23 +347,27 @@ export function ProductionCalendarPage() {
                           ) : (
                             <span className="rounded-md border border-dashed px-2 py-0.5 text-xs">No deliverable timeline</span>
                           )}
-                          <Button variant="outline" size="sm" type="button" onClick={() => openEdit(e)}>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            type="button"
-                            disabled={deleteEntry.isPending}
-                            onClick={() => deleteEntry.mutate(e.id)}
-                          >
-                            Delete
-                          </Button>
+                          {canMutate ? (
+                            <>
+                              <Button variant="outline" size="sm" type="button" onClick={() => openEdit(e)}>
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                disabled={deleteEntry.isPending}
+                                onClick={() => deleteEntry.mutate(e.id)}
+                              >
+                                Delete
+                              </Button>
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     ))}
                     {selectedEntries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Nothing logged for this day yet.</p>
+                      <p className="text-sm text-muted-foreground">{canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}</p>
                     ) : null}
                   </div>
                 </div>
@@ -372,99 +393,105 @@ export function ProductionCalendarPage() {
         </Card>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingId === "new" ? "Add shoot details" : "Edit shoot details"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1 sm:col-span-2">
-              <div className="text-xs text-muted-foreground">Day</div>
-              <Input type="date" value={form.day} onChange={(ev) => setForm((f) => ({ ...f, day: ev.target.value }))} />
+      {canMutate ? (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingId === "new" ? "Add shoot details" : "Edit shoot details"}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Day</div>
+                <Input type="date" value={form.day} onChange={(ev) => setForm((f) => ({ ...f, day: ev.target.value }))} />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Client name</div>
+                <Input
+                  value={form.clientName}
+                  onChange={(ev) => setForm((f) => ({ ...f, clientName: ev.target.value }))}
+                  placeholder="e.g. Rahul & Priya"
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">Type of client</div>
+                <Input value={form.clientType} onChange={(ev) => setForm((f) => ({ ...f, clientType: ev.target.value }))} placeholder="Wedding, corporate…" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">Event name</div>
+                <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">Start time</div>
+                <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">End time</div>
+                <Input value={form.endTime} onChange={(ev) => setForm((f) => ({ ...f, endTime: ev.target.value }))} placeholder="6:00 PM" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Photo team (on-site)</div>
+                <textarea
+                  className={cn(
+                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  value={form.photoTeam}
+                  onChange={(ev) => setForm((f) => ({ ...f, photoTeam: ev.target.value }))}
+                  placeholder="Names / crew going"
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Video team (on-site)</div>
+                <textarea
+                  className={cn(
+                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  value={form.videoTeam}
+                  onChange={(ev) => setForm((f) => ({ ...f, videoTeam: ev.target.value }))}
+                  placeholder="Names / crew going"
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Add-ons</div>
+                <textarea
+                  className={cn(
+                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  value={form.addons}
+                  onChange={(ev) => setForm((f) => ({ ...f, addons: ev.target.value }))}
+                  placeholder="Anything extra to remember"
+                />
+              </div>
+              <label className="flex cursor-pointer items-start gap-2 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={timelineAlreadyLinked ? false : form.createDeliverableTimeline}
+                  disabled={timelineAlreadyLinked}
+                  onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
+                />
+                <span className="text-sm leading-snug">
+                  Create standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d) for this client on this date.
+                  {timelineAlreadyLinked ? (
+                    <span className="block text-xs text-muted-foreground">This row already has a linked timeline.</span>
+                  ) : null}
+                </span>
+              </label>
             </div>
-            <div className="space-y-1 sm:col-span-2">
-              <div className="text-xs text-muted-foreground">Client name</div>
-              <Input value={form.clientName} onChange={(ev) => setForm((f) => ({ ...f, clientName: ev.target.value }))} placeholder="e.g. Rahul & Priya" />
+            {saveEntry.isError ? <p className="mt-2 text-sm text-destructive">{errMsg(saveEntry.error)}</p> : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" disabled={saveEntry.isPending || !form.clientName.trim()} onClick={() => saveEntry.mutate()}>
+                {saveEntry.isPending ? "Saving…" : "Save"}
+              </Button>
             </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Type of client</div>
-              <Input value={form.clientType} onChange={(ev) => setForm((f) => ({ ...f, clientType: ev.target.value }))} placeholder="Wedding, corporate…" />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Event name</div>
-              <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Start time</div>
-              <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">End time</div>
-              <Input value={form.endTime} onChange={(ev) => setForm((f) => ({ ...f, endTime: ev.target.value }))} placeholder="6:00 PM" />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <div className="text-xs text-muted-foreground">Photo team (on-site)</div>
-              <textarea
-                className={cn(
-                  "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                value={form.photoTeam}
-                onChange={(ev) => setForm((f) => ({ ...f, photoTeam: ev.target.value }))}
-                placeholder="Names / crew going"
-              />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <div className="text-xs text-muted-foreground">Video team (on-site)</div>
-              <textarea
-                className={cn(
-                  "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                value={form.videoTeam}
-                onChange={(ev) => setForm((f) => ({ ...f, videoTeam: ev.target.value }))}
-                placeholder="Names / crew going"
-              />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <div className="text-xs text-muted-foreground">Add-ons</div>
-              <textarea
-                className={cn(
-                  "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                value={form.addons}
-                onChange={(ev) => setForm((f) => ({ ...f, addons: ev.target.value }))}
-                placeholder="Anything extra to remember"
-              />
-            </div>
-            <label className="flex cursor-pointer items-start gap-2 sm:col-span-2">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={timelineAlreadyLinked ? false : form.createDeliverableTimeline}
-                disabled={timelineAlreadyLinked}
-                onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
-              />
-              <span className="text-sm leading-snug">
-                Create standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d) for this client on this date.
-                {timelineAlreadyLinked ? (
-                  <span className="block text-xs text-muted-foreground">This row already has a linked timeline.</span>
-                ) : null}
-              </span>
-            </label>
-          </div>
-          {saveEntry.isError ? <p className="mt-2 text-sm text-destructive">{errMsg(saveEntry.error)}</p> : null}
-          <div className="mt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" disabled={saveEntry.isPending || !form.clientName.trim()} onClick={() => saveEntry.mutate()}>
-              {saveEntry.isPending ? "Saving…" : "Save"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

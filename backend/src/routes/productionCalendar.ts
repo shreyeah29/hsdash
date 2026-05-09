@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { Role } from "@prisma/client";
 import { prisma } from "../prisma/client";
-import { requireAuth } from "../middleware/auth";
-import { requireCoordinatorOnly, requireCoordinatorOrAdmin } from "../middleware/coordinator";
+import { requireAuth, requireRole } from "../middleware/auth";
+import { requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
 import { buildEventTasks } from "../services/eventTasks";
@@ -29,7 +29,7 @@ const entryInclude = {
 
 productionCalendarRouter.use(requireAuth);
 
-productionCalendarRouter.get("/entries", async (req, res, next) => {
+productionCalendarRouter.get("/entries", requireCoordinatorOrAdmin, async (req, res, next) => {
   try {
     const q = z
       .object({
@@ -69,7 +69,7 @@ const baseFields = z.object({
   createDeliverableTimeline: z.boolean().optional().default(false),
 });
 
-productionCalendarRouter.post("/entries", requireCoordinatorOnly, async (req, res, next) => {
+productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, res, next) => {
   try {
     const body = baseFields.parse(req.body);
     const auth = req.auth!;
@@ -119,7 +119,7 @@ const patchSchema = baseFields.partial().extend({
   createDeliverableTimeline: z.boolean().optional(),
 });
 
-productionCalendarRouter.put("/entries/:id", requireCoordinatorOnly, async (req, res, next) => {
+productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req, res, next) => {
   try {
     const id = z.string().min(1).parse(req.params.id);
     const body = patchSchema.parse(req.body);
@@ -181,7 +181,7 @@ productionCalendarRouter.put("/entries/:id", requireCoordinatorOnly, async (req,
   }
 });
 
-productionCalendarRouter.delete("/entries/:id", requireCoordinatorOnly, async (req, res, next) => {
+productionCalendarRouter.delete("/entries/:id", requireRole(Role.ADMIN), async (req, res, next) => {
   try {
     const id = z.string().min(1).parse(req.params.id);
     const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
