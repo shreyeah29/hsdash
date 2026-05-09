@@ -1,23 +1,57 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
-import { Role } from "@prisma/client";
+import { Role, Team } from "@prisma/client";
 import { buildEventTasks } from "../services/eventTasks";
+import { HttpError } from "../utils/httpError";
 
 export const eventsRouter = Router();
 
 eventsRouter.use(requireAuth, requireRole(Role.ADMIN));
 
+const taskInclude = {
+  assignedTo: { select: { id: true, name: true, email: true, team: true } },
+} satisfies Prisma.TaskInclude;
+
+const assignmentsSchema = z
+  .object({
+    PREVIEW_PHOTOS: z.string().nullable().optional(),
+    FULL_PHOTOS: z.string().nullable().optional(),
+    CINEMATIC_VIDEO: z.string().nullable().optional(),
+    TRADITIONAL_VIDEO: z.string().nullable().optional(),
+    ALBUM_DESIGN: z.string().nullable().optional(),
+    DATA_MANAGEMENT: z.string().nullable().optional(),
+  })
+  .optional();
+
 const createEventSchema = z.object({
   clientName: z.string().min(1),
   eventDate: z.coerce.date(),
+  assignments: assignmentsSchema,
 });
+
+async function resolveAssignee(
+  tx: Prisma.TransactionClient,
+  assigneeId: string | null | undefined,
+  team: Team,
+): Promise<string | null> {
+  if (!assigneeId) return null;
+  const u = await tx.user.findFirst({
+    where: { id: assigneeId, isActive: true, role: Role.TEAM_MEMBER, team },
+    select: { id: true },
+  });
+  if (!u) {
+    throw new HttpError(400, `Assignee must be an active member of ${team}`, "BAD_ASSIGNMENT");
+  }
+  return u.id;
+}
 
 eventsRouter.get("/", async (_req, res) => {
   const events = await prisma.event.findMany({
     orderBy: { createdAt: "desc" },
-    include: { tasks: true },
+    include: { tasks: { include: taskInclude } },
   });
   res.json({ events });
 });
@@ -34,16 +68,24 @@ eventsRouter.post("/", async (req, res, next) => {
         },
       });
 
-      await tx.task.createMany({
-        data: buildEventTasks(created.id, created.eventDate),
-      });
+      const rows = buildEventTasks(created.id, created.eventDate);
+      for (const row of rows) {
+        const raw = body.assignments?.[row.taskType];
+        const assignedToId = await resolveAssignee(tx, raw ?? null, row.assignedTeam);
+        await tx.task.create({
+          data: {
+            ...row,
+            assignedToId,
+          },
+        });
+      }
 
       return created;
     });
 
     const full = await prisma.event.findUnique({
       where: { id: event.id },
-      include: { tasks: true },
+      include: { tasks: { include: taskInclude } },
     });
 
     res.status(201).json({ event: full });
@@ -52,7 +94,10 @@ eventsRouter.post("/", async (req, res, next) => {
   }
 });
 
-const updateEventSchema = createEventSchema.partial();
+const updateEventSchema = z.object({
+  clientName: z.string().min(1).optional(),
+  eventDate: z.coerce.date().optional(),
+});
 
 eventsRouter.put("/:id", async (req, res, next) => {
   try {
@@ -61,7 +106,7 @@ eventsRouter.put("/:id", async (req, res, next) => {
     const event = await prisma.event.update({
       where: { id },
       data: body,
-      include: { tasks: true },
+      include: { tasks: { include: taskInclude } },
     });
     res.json({ event });
   } catch (e) {

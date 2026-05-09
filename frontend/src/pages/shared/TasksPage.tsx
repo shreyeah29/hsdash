@@ -44,6 +44,7 @@ export function TasksPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
     },
   });
 
@@ -74,6 +75,7 @@ export function TasksPage() {
               <TableHead>Client</TableHead>
               <TableHead>Task</TableHead>
               <TableHead>Team</TableHead>
+              <TableHead>Assignee</TableHead>
               <TableHead>Deadline</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
@@ -86,6 +88,7 @@ export function TasksPage() {
                 <TableCell className="font-medium">{t.event?.clientName ?? "-"}</TableCell>
                 <TableCell>{t.taskType.replaceAll("_", " ")}</TableCell>
                 <TableCell>{t.assignedTeam.replaceAll("_", " ")}</TableCell>
+                <TableCell>{t.assignedTo?.name ?? "—"}</TableCell>
                 <TableCell>{new Date(t.deadline).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <PriorityBadge priority={t.priority} />
@@ -124,7 +127,7 @@ export function TasksPage() {
             ))}
             {!isLoading && filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
                   No tasks found.
                 </TableCell>
               </TableRow>

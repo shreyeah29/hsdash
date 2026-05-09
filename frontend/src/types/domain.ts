@@ -46,6 +46,13 @@ export type Event = {
   createdAt: string;
 };
 
+export type TaskAssigneeSummary = {
+  id: string;
+  name: string;
+  email: string;
+  team: Team | null;
+};
+
 export type Task = {
   id: string;
   eventId: string;
@@ -55,6 +62,16 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   createdAt: string;
+  assignedToId?: string | null;
+  assignedTo?: TaskAssigneeSummary | null;
   event?: Event;
+};
+
+export type AdminCalendarNote = {
+  id: string;
+  day: string;
+  title?: string | null;
+  body: string;
+  createdAt: string;
 };
 

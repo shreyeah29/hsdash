@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth";
 import { eventsRouter } from "./routes/events";
 import { tasksRouter } from "./routes/tasks";
 import { usersRouter } from "./routes/users";
+import { adminRouter } from "./routes/admin";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
 
@@ -28,6 +29,7 @@ app.use("/auth", authRouter);
 app.use("/events", eventsRouter);
 app.use("/tasks", tasksRouter);
 app.use("/users", usersRouter);
+app.use("/admin", adminRouter);
 
 app.use(errorHandler);
 

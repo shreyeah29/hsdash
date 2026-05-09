@@ -7,6 +7,8 @@ import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { EventsPage } from "@/pages/admin/EventsPage";
 import { TasksPage } from "@/pages/shared/TasksPage";
 import { TeamManagementPage } from "@/pages/admin/TeamManagementPage";
+import { AdminCalendarPage } from "@/pages/admin/AdminCalendarPage";
+import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
 import { TeamDashboardPage } from "@/pages/team/TeamDashboardPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
@@ -29,6 +31,8 @@ function App() {
           }
         >
           <Route index element={<AdminDashboardPage />} />
+          <Route path="calendar" element={<AdminCalendarPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="team" element={<TeamManagementPage />} />

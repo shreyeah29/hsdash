@@ -5,32 +5,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Event, Task } from "@/types/domain";
+import type { Event, Task, User } from "@/types/domain";
+import { Role, Team } from "@/types/domain";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectItem } from "@/components/ui/select";
 
 type EventWithTasks = Event & { tasks: Task[] };
+
+const DELIVERABLE_ROWS = [
+  { taskKey: "PREVIEW_PHOTOS" as const, label: "Preview photos", offsetDays: 7, team: Team.PHOTO_TEAM },
+  { taskKey: "FULL_PHOTOS" as const, label: "Full edited photos", offsetDays: 20, team: Team.PHOTO_TEAM },
+  { taskKey: "CINEMATIC_VIDEO" as const, label: "Cinematic video", offsetDays: 30, team: Team.CINEMATIC_TEAM },
+  { taskKey: "TRADITIONAL_VIDEO" as const, label: "Traditional video", offsetDays: 45, team: Team.TRADITIONAL_TEAM },
+  { taskKey: "ALBUM_DESIGN" as const, label: "Album design", offsetDays: 45, team: Team.ALBUM_TEAM },
+];
+
+type AssignDraft = Record<(typeof DELIVERABLE_ROWS)[number]["taskKey"], string>;
+
+const emptyAssign: AssignDraft = {
+  PREVIEW_PHOTOS: "",
+  FULL_PHOTOS: "",
+  CINEMATIC_VIDEO: "",
+  TRADITIONAL_VIDEO: "",
+  ALBUM_DESIGN: "",
+};
 
 async function fetchEvents() {
   const { data } = await api.get<{ events: EventWithTasks[] }>("/events");
   return data.events;
 }
 
+async function fetchUsersForAssign() {
+  const { data } = await api.get<{ users: User[] }>("/users");
+  return data.users;
+}
+
 export function EventsPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
+  const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: fetchUsersForAssign });
 
   const [clientName, setClientName] = useState("");
   const [eventDate, setEventDate] = useState<string>("");
+  const [assign, setAssign] = useState<AssignDraft>(emptyAssign);
   const [selected, setSelected] = useState<EventWithTasks | null>(null);
 
   const createEvent = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post("/events", { clientName, eventDate });
+      const assignments = Object.fromEntries(
+        (Object.entries(assign) as [keyof AssignDraft, string][]).filter(([, id]) => id.length > 0),
+      );
+      const { data } = await api.post("/events", {
+        clientName,
+        eventDate,
+        ...(Object.keys(assignments).length ? { assignments } : {}),
+      });
       return data;
     },
     onSuccess: async () => {
       setClientName("");
       setEventDate("");
+      setAssign(emptyAssign);
       await qc.invalidateQueries({ queryKey: ["events"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
@@ -62,16 +97,60 @@ export function EventsPage() {
           <CardTitle>Create Event</CardTitle>
           <CardDescription>Example: Rahul &amp; Priya — May 10, 2026</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Input placeholder="Client name (e.g. Rahul & Priya)" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-            <Input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+        <CardContent className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Client</div>
+              <Input placeholder="e.g. Rahul & Priya" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Event date</div>
+              <Input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+            </div>
             <Button
               disabled={!clientName || !eventDate || createEvent.isPending}
               onClick={() => createEvent.mutate()}
             >
               Create Event
             </Button>
+          </div>
+
+          <div className="rounded-lg border border-dashed p-4">
+            <div className="mb-3 text-sm font-medium">Assign team members (optional)</div>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Deadlines follow your fixed timeline (event date + days). Pick who owns each deliverable — leave blank to leave the task unassigned on that team&apos;s board.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {DELIVERABLE_ROWS.map((row) => {
+                const members = users.filter(
+                  (u) => u.role === Role.TEAM_MEMBER && u.isActive && u.team === row.team,
+                );
+                const val = assign[row.taskKey];
+                return (
+                  <div key={row.taskKey} className="space-y-1">
+                    <div className="text-xs text-muted-foreground">
+                      {row.label}{" "}
+                      <span className="text-muted-foreground/80">
+                        (+{row.offsetDays} d · {row.team.replaceAll("_", " ")})
+                      </span>
+                    </div>
+                    <Select
+                      value={val || "__none__"}
+                      onValueChange={(v) =>
+                        setAssign((prev) => ({ ...prev, [row.taskKey]: v === "__none__" ? "" : v }))
+                      }
+                    >
+                      <SelectItem value="__none__">Unassigned</SelectItem>
+                      {members.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -140,9 +219,12 @@ export function EventsPage() {
               <div className="text-xs text-muted-foreground mb-2">Auto-created tasks</div>
               <ul className="space-y-1">
                 {(selected?.tasks ?? []).map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3">
+                  <li key={t.id} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <span className="truncate">{t.taskType.replaceAll("_", " ")}</span>
-                    <span className="text-muted-foreground">{new Date(t.deadline).toLocaleDateString()}</span>
+                    <span className="text-muted-foreground shrink-0">
+                      Due {new Date(t.deadline).toLocaleDateString()}
+                      {t.assignedTo ? ` · ${t.assignedTo.name}` : ""}
+                    </span>
                   </li>
                 ))}
               </ul>

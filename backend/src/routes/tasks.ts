@@ -4,6 +4,7 @@ import { prisma } from "../prisma/client";
 import { requireAuth } from "../middleware/auth";
 import { Role, TaskPriority, TaskStatus, Team } from "@prisma/client";
 import { computeDelayedStatus, computePriority } from "../services/taskPriority";
+import { recordTaskStatusChange } from "../services/taskActivity";
 import { HttpError } from "../utils/httpError";
 
 export const tasksRouter = Router();
@@ -32,12 +33,16 @@ tasksRouter.get("/", async (req, res, next) => {
     } else {
       if (!auth.team) throw new HttpError(403, "Team not assigned", "FORBIDDEN");
       where.assignedTeam = auth.team;
+      where.OR = [{ assignedToId: null }, { assignedToId: auth.userId }];
     }
 
     const tasks = await prisma.task.findMany({
       where,
       orderBy: [{ deadline: "asc" }, { createdAt: "desc" }],
-      include: { event: true },
+      include: {
+        event: true,
+        assignedTo: { select: { id: true, name: true, email: true, team: true } },
+      },
     });
 
     res.json({ tasks });
@@ -67,6 +72,7 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
     const nextStatus = TaskStatus[body.status as keyof typeof TaskStatus];
     const status = computeDelayedStatus(nextStatus, task.deadline, now);
     const priority = computePriority(task.deadline, now);
+    const previousStatus = task.status;
 
     const updated = await prisma.task.update({
       where: { id },
@@ -74,8 +80,12 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
         status,
         priority,
       },
-      include: { event: true },
+      include: { event: true, assignedTo: { select: { id: true, name: true, email: true, team: true } } },
     });
+
+    if (updated.status !== previousStatus) {
+      await recordTaskStatusChange(id, auth.userId, previousStatus, updated.status);
+    }
 
     res.json({ task: updated });
   } catch (e) {
