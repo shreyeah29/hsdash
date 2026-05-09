@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEAM_MEMBER
+}
+
+enum Team {
+  PHOTO_TEAM
+  CINEMATIC_TEAM
+  TRADITIONAL_TEAM
+  ALBUM_TEAM
+  DATA_MANAGEMENT
+}
+
+enum TaskType {
+  PREVIEW_PHOTOS
+  FULL_PHOTOS
+  CINEMATIC_VIDEO
+  TRADITIONAL_VIDEO
+  ALBUM_DESIGN
+  DATA_MANAGEMENT
+}
+
+enum TaskPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(TEAM_MEMBER)
+  team        Team?
+  designation String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([role])
+  @@index([team])
+  @@index([isActive])
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  clientName String
+  eventDate  DateTime
+  createdAt  DateTime @default(now())
+
+  tasks Task[]
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  eventId       String
+  taskType      TaskType
+  assignedTeam  Team
+  deadline      DateTime
+  status        TaskStatus   @default(PENDING)
+  priority      TaskPriority @default(LOW)
+  createdAt     DateTime     @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([assignedTeam])
+  @@index([status])
+  @@index([priority])
+  @@index([deadline])
+}
