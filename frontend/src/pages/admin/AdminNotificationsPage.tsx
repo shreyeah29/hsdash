@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { api } from "@/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { Event, TaskAssigneeSummary, TaskStatus } from "@/types/domain";
 import { StatusBadge } from "@/components/StatusBadge";
 
@@ -23,6 +25,23 @@ async function fetchActivity() {
   return data.activities;
 }
 
+function activityLoadErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    if (status === 404) {
+      return "The API returned 404 for /admin/task-activity. Your Render backend is probably still on an older deploy — open your Render Web Service, confirm it builds from the latest main branch, then Manual Deploy → Clear build cache & deploy. Calendar notes use the same /admin routes.";
+    }
+    if (status === 401 || status === 403) {
+      return "You are not authorized. Sign out and sign back in as admin.";
+    }
+    if (!error.response) {
+      return "Network error — check VITE_API_URL and that the Render service is up.";
+    }
+    return `Request failed (${status ?? "?"}).`;
+  }
+  return "Could not load activity.";
+}
+
 function fmtWhen(iso: string) {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -35,10 +54,12 @@ function fmtWhen(iso: string) {
 }
 
 export function AdminNotificationsPage() {
-  const { data = [], isLoading, error } = useQuery({
+  const { data = [], isLoading, error, refetch, isRefetching, isFetching } = useQuery({
     queryKey: ["admin-task-activity"],
     queryFn: fetchActivity,
   });
+
+  const showEmpty = !isLoading && !error && data.length === 0;
 
   return (
     <div className="space-y-6">
@@ -55,10 +76,23 @@ export function AdminNotificationsPage() {
           <CardDescription>Newest first</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-          {error ? <p className="text-sm text-destructive">Could not load activity.</p> : null}
-          {!isLoading && data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No updates yet. Status changes appear here when team members update tasks.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {isFetching ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+            {!isLoading ? (
+              <Button type="button" variant="outline" size="sm" disabled={isRefetching} onClick={() => refetch()}>
+                Refresh
+              </Button>
+            ) : null}
+          </div>
+          {error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {activityLoadErrorMessage(error)}
+            </div>
+          ) : null}
+          {showEmpty ? (
+            <p className="text-sm text-muted-foreground">
+              No updates yet. Status changes appear here when team members update tasks.
+            </p>
           ) : null}
           <ul className="space-y-3">
             {data.map((a) => (
