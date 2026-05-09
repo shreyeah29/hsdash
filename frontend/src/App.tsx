@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { LoginChoicePage } from "@/pages/LoginChoicePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { TeamLayout } from "@/layouts/TeamLayout";
@@ -14,7 +15,9 @@ import { Role } from "@/types/domain";
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LoginChoicePage />} />
+      <Route path="/login/admin" element={<LoginPage loginKind="admin" />} />
+      <Route path="/login/team" element={<LoginPage loginKind="team" />} />
 
       <Route element={<RequireAuth />}>
         <Route
