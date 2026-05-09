@@ -5,7 +5,7 @@ import { prisma } from "../prisma/client";
 import { HttpError } from "../utils/httpError";
 import { getTokenCookieName, signAuthToken } from "../services/jwt";
 import { requireAuth } from "../middleware/auth";
-import { env } from "../config/env";
+import { clearSessionCookie, sessionCookieOptions } from "../services/sessionCookie";
 
 export const authRouter = Router();
 
@@ -29,14 +29,7 @@ authRouter.post("/login", async (req, res, next) => {
       team: user.team ?? null,
     });
 
-    const secure = env.COOKIE_SECURE ?? env.NODE_ENV === "production";
-
-    res.cookie(getTokenCookieName(), token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure,
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    res.cookie(getTokenCookieName(), token, sessionCookieOptions());
 
     return res.json({
       user: {
@@ -55,7 +48,7 @@ authRouter.post("/login", async (req, res, next) => {
 });
 
 authRouter.post("/logout", (_req, res) => {
-  res.clearCookie(getTokenCookieName());
+  clearSessionCookie(res);
   return res.json({ ok: true });
 });
 

@@ -87,7 +87,10 @@ Set env vars:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN` (optional)
 - `FRONTEND_URL` (your frontend URL)
-- `COOKIE_SECURE=true`
+- `COOKIE_SECURE=true` (recommended when frontend is on another domain, e.g. Vercel)
+
+When **frontend (Vercel)** and **API (Render)** are on different domains, the API sets the session cookie with **`SameSite=None; Secure`** automatically so `/auth/me` works after login.
+
 - `PORT` is provided by Render automatically (you can omit it)
 
 #### Frontend (Render Static Site)
