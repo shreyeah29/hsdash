@@ -3,8 +3,9 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
-import { Role, Team } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { buildEventTasks } from "../services/eventTasks";
+import { resolveTaskAssigneeTx } from "../services/taskAssignee";
 import { HttpError } from "../utils/httpError";
 
 export const eventsRouter = Router();
@@ -32,22 +33,6 @@ const createEventSchema = z.object({
   assignments: assignmentsSchema,
 });
 
-async function resolveAssignee(
-  tx: Prisma.TransactionClient,
-  assigneeId: string | null | undefined,
-  team: Team,
-): Promise<string | null> {
-  if (!assigneeId) return null;
-  const u = await tx.user.findFirst({
-    where: { id: assigneeId, isActive: true, role: Role.TEAM_MEMBER, team },
-    select: { id: true },
-  });
-  if (!u) {
-    throw new HttpError(400, `Assignee must be an active member of ${team}`, "BAD_ASSIGNMENT");
-  }
-  return u.id;
-}
-
 eventsRouter.get("/", async (_req, res) => {
   const events = await prisma.event.findMany({
     orderBy: { createdAt: "desc" },
@@ -71,7 +56,7 @@ eventsRouter.post("/", async (req, res, next) => {
       const rows = buildEventTasks(created.id, created.eventDate);
       for (const row of rows) {
         const raw = body.assignments?.[row.taskType];
-        const assignedToId = await resolveAssignee(tx, raw ?? null, row.assignedTeam);
+        const assignedToId = await resolveTaskAssigneeTx(tx, raw ?? null, row.assignedTeam);
         await tx.task.create({
           data: {
             ...row,

@@ -4,16 +4,13 @@ import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
 import { HttpError } from "../utils/httpError";
+import { parseDayUtc } from "../utils/calendarDay";
 
 export const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireRole(Role.ADMIN));
 
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-
-function parseDayUtc(day: string) {
-  return new Date(`${day}T12:00:00.000Z`);
-}
 
 adminRouter.get("/task-activity", async (req, res, next) => {
   try {

@@ -61,6 +61,7 @@ model User {
 
   assignedTasks Task[]         @relation("TaskAssignee")
   taskActivities TaskActivity[] @relation("ActivityActor")
+  shootCalendarEntries ShootCalendarEntry[]
 
   @@index([role])
   @@index([team])
@@ -74,6 +75,32 @@ model Event {
   createdAt  DateTime @default(now())
 
   tasks Task[]
+  shootCalendarEntry ShootCalendarEntry?
+}
+
+model ShootCalendarEntry {
+  id           String   @id @default(cuid())
+  day          DateTime
+
+  clientName   String
+  clientType   String   @default("")
+  eventName    String   @default("")
+  startTime    String   @default("")
+  endTime      String   @default("")
+  photoTeam    String   @default("")
+  videoTeam    String   @default("")
+  addons       String   @default("")
+
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  eventId String? @unique
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([day])
 }
 
 model Task {

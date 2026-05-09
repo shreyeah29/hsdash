@@ -6,9 +6,7 @@ export function AdminLayout() {
       title="Admin"
       links={[
         { to: "/admin", label: "Overview" },
-        { to: "/admin/calendar", label: "Calendar" },
         { to: "/admin/notifications", label: "Team updates" },
-        { to: "/admin/events", label: "Wedding Events" },
         { to: "/admin/tasks", label: "Tasks" },
         { to: "/admin/team", label: "Team Management" },
       ]}

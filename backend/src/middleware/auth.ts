@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { Role, Team } from "@prisma/client";
+import { prisma } from "../prisma/client";
 import { getTokenCookieName, verifyAuthToken } from "../services/jwt";
 import { HttpError } from "../utils/httpError";
 
@@ -10,6 +11,7 @@ declare global {
         userId: string;
         role: Role;
         team: Team | null;
+        email: string;
       };
     }
   }
@@ -26,12 +28,28 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const token = readBearer(req) ?? req.cookies?.[getTokenCookieName()];
   if (!token) return next(new HttpError(401, "Not authenticated", "UNAUTHENTICATED"));
 
-  try {
-    req.auth = verifyAuthToken(token);
-    return next();
-  } catch {
-    return next(new HttpError(401, "Invalid session", "UNAUTHENTICATED"));
-  }
+  void (async () => {
+    try {
+      const decoded = verifyAuthToken(token);
+      let email = decoded.email ?? "";
+      if (!email) {
+        const u = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          select: { email: true },
+        });
+        email = u?.email ?? "";
+      }
+      req.auth = {
+        userId: decoded.userId,
+        role: decoded.role,
+        team: decoded.team ?? null,
+        email,
+      };
+      next();
+    } catch {
+      next(new HttpError(401, "Invalid session", "UNAUTHENTICATED"));
+    }
+  })();
 }
 
 export function requireRole(role: Role) {

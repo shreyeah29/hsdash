@@ -4,14 +4,15 @@ import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { TeamLayout } from "@/layouts/TeamLayout";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
-import { EventsPage } from "@/pages/admin/EventsPage";
 import { TasksPage } from "@/pages/shared/TasksPage";
 import { TeamManagementPage } from "@/pages/admin/TeamManagementPage";
-import { AdminCalendarPage } from "@/pages/admin/AdminCalendarPage";
 import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
 import { TeamDashboardPage } from "@/pages/team/TeamDashboardPage";
+import { ProductionCalendarPage } from "@/pages/team/ProductionCalendarPage";
+import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
+import { RequireProductionCoordinator } from "@/routes/RequireProductionCoordinator";
 import { Role } from "@/types/domain";
 
 function App() {
@@ -31,9 +32,7 @@ function App() {
           }
         >
           <Route index element={<AdminDashboardPage />} />
-          <Route path="calendar" element={<AdminCalendarPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
-          <Route path="events" element={<EventsPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="team" element={<TeamManagementPage />} />
         </Route>
@@ -41,6 +40,10 @@ function App() {
         <Route path="/team" element={<TeamLayout />}>
           <Route index element={<TeamDashboardPage />} />
           <Route path="tasks" element={<TasksPage />} />
+          <Route element={<RequireProductionCoordinator />}>
+            <Route path="production-calendar" element={<ProductionCalendarPage />} />
+            <Route path="assign-deliverables" element={<CoordinatorTasksPage />} />
+          </Route>
         </Route>
       </Route>
 

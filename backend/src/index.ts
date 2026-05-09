@@ -8,6 +8,7 @@ import { eventsRouter } from "./routes/events";
 import { tasksRouter } from "./routes/tasks";
 import { usersRouter } from "./routes/users";
 import { adminRouter } from "./routes/admin";
+import { productionCalendarRouter } from "./routes/productionCalendar";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
 
@@ -30,6 +31,7 @@ app.use("/events", eventsRouter);
 app.use("/tasks", tasksRouter);
 app.use("/users", usersRouter);
 app.use("/admin", adminRouter);
+app.use("/production-calendar", productionCalendarRouter);
 
 app.use(errorHandler);
 

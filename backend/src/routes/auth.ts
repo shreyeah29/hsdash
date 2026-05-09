@@ -52,6 +52,7 @@ authRouter.post("/login", async (req, res, next) => {
       userId: user.id,
       role: user.role,
       team: user.team ?? null,
+      email: user.email,
     });
 
     res.cookie(getTokenCookieName(), token, sessionCookieOptions());
@@ -82,6 +83,7 @@ authRouter.post("/demo", async (req, res, next) => {
       userId: user.id,
       role: user.role,
       team: user.team ?? null,
+      email: user.email,
     });
     res.cookie(getTokenCookieName(), token, sessionCookieOptions());
     return res.json({

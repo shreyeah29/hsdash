@@ -75,3 +75,25 @@ export type AdminCalendarNote = {
   createdAt: string;
 };
 
+/** Shoot-day logistics row (Emmanuel); optional linked Event powers deliverable tasks. */
+export type ShootCalendarEntry = {
+  id: string;
+  day: string;
+  clientName: string;
+  clientType: string;
+  eventName: string;
+  startTime: string;
+  endTime: string;
+  photoTeam: string;
+  videoTeam: string;
+  addons: string;
+  createdById: string;
+  createdBy: { id: string; name: string; email: string };
+  eventId: string | null;
+  event:
+    | null
+    | (Event & {
+        tasks: Task[];
+      });
+};
+
