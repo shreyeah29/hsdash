@@ -8,6 +8,7 @@ import { eventsRouter } from "./routes/events";
 import { tasksRouter } from "./routes/tasks";
 import { usersRouter } from "./routes/users";
 import { startCronJobs } from "./services/cron";
+import { runInitialSeed } from "./services/initialSeed";
 
 const app = express();
 
@@ -29,10 +30,18 @@ app.use("/users", usersRouter);
 
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`API listening on :${env.PORT}`);
-});
+async function start() {
+  await runInitialSeed({ wipeExisting: false });
+  app.listen(env.PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`API listening on :${env.PORT}`);
+  });
+  startCronJobs();
+}
 
-startCronJobs();
+start().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error(err);
+  process.exit(1);
+});
 

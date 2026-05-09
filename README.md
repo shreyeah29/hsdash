@@ -47,9 +47,20 @@ cd frontend
 npm run dev
 ```
 
-### Default seeded users
+### Default seeded users & passwords
 
-All seeded users share the same password: `SEED_DEFAULT_PASSWORD` (from `backend/.env`).
+On **Render**, you do **not** need to run `npm run seed` manually if the database starts empty: on first startup the API creates admin + team users + a sample event/tasks.
+
+- **Login password for every seeded account** (unless you set `SEED_DEFAULT_PASSWORD` in Render): **`ChangeMe123!`**
+- To choose your own password before the first boot, set **`SEED_DEFAULT_PASSWORD`** in the backend environment (same value is used for all seeded users).
+
+Manual re-seed (wipes users/events/tasks — use with care):
+
+```bash
+cd backend && npm run seed
+```
+
+Accounts:
 
 - Admin: `admin@wedding.local`
 - Team members:
