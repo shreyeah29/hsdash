@@ -64,66 +64,69 @@ export function ShellLayout({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="glass-panel shine-border flex w-[248px] shrink-0 flex-col md:w-[268px]"
         >
-          <div className="border-b border-zinc-200/80 p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">HS Dash</p>
-            <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              {subtitle ??
-                (variant === "coordinator"
-                  ? "Operations pipeline"
-                  : variant === "editor"
-                    ? "Creative focus"
-                    : "Production control")}
-            </p>
-          </div>
+          {/* Above shine-border ::before so labels/icons aren’t covered (Safari / compositing). */}
+          <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
+            <div className="border-b border-zinc-200/80 p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">HS Dash</p>
+              <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                {subtitle ??
+                  (variant === "coordinator"
+                    ? "Operations pipeline"
+                    : variant === "editor"
+                      ? "Creative focus"
+                      : "Production control")}
+              </p>
+            </div>
 
-          <nav className="flex flex-1 flex-col gap-0.5 p-3">
-            {links.map((l, i) => (
-              <motion.div
-                key={l.to}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.06 * i + 0.1, duration: 0.35 }}
-              >
-                <NavLink
-                  to={l.to}
-                  end={l.to === "/admin" || l.to === "/coordinator" || l.to === "/team"}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
-                      isActive ? navSkin.active : navSkin.idle,
-                    )
-                  }
+            <nav className="flex flex-1 flex-col gap-0.5 p-3">
+              {links.map((l, i) => (
+                <motion.div
+                  key={l.to}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.06 * i + 0.1, duration: 0.35 }}
                 >
-                  {({ isActive }) => (
-                    <>
-                      {l.icon ? (
-                        <span
-                          className={cn(
-                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700",
-                            isActive && "border-zinc-300 bg-white shadow-sm",
-                          )}
-                        >
-                          <l.icon className="h-[18px] w-[18px] opacity-90" strokeWidth={1.75} />
-                        </span>
-                      ) : null}
-                      <span className="truncate">{l.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              </motion.div>
-            ))}
-          </nav>
+                  <NavLink
+                    to={l.to}
+                    end={l.to === "/admin" || l.to === "/coordinator" || l.to === "/team"}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+                        isActive ? navSkin.active : navSkin.idle,
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {l.icon ? (
+                          <span
+                            className={cn(
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700",
+                              isActive && "border-zinc-300 bg-white shadow-sm",
+                            )}
+                          >
+                            <l.icon className="h-[18px] w-[18px] opacity-90" strokeWidth={1.75} />
+                          </span>
+                        ) : null}
+                        <span className="min-w-0 flex-1 truncate text-left leading-snug text-inherit">{l.label}</span>
+                      </>
+                    )}
+                  </NavLink>
+                </motion.div>
+              ))}
+            </nav>
 
-          <div className="border-t border-zinc-200/80 p-3">
-            <Button
-              variant="outline"
-              className="w-full justify-center gap-2 border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-              onClick={() => void logout()}
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </Button>
+            <div className="border-t border-zinc-200/80 p-3">
+              <Button
+                variant="outline"
+                className="w-full justify-center gap-2 border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                onClick={() => void logout()}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </div>
           </div>
         </motion.aside>
 
