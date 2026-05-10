@@ -98,43 +98,45 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
           <Spotlight className="rounded-2xl" glowColor={spotlightTint}>
             <BorderBeam>
               <GlassPanel shine className="p-8 transition-transform duration-300 group-hover:-translate-y-0.5 md:p-10">
-                <Link
-                  to="/login"
-                  className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500 transition-colors hover:text-zinc-900"
-                >
-                  <ArrowLeft className="h-4 w-4" aria-hidden />
-                  Back
-                </Link>
+                <div className="relative z-[1]">
+                  <Link
+                    to="/login"
+                    className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-600 transition-colors hover:text-zinc-950"
+                  >
+                    <ArrowLeft className="h-4 w-4" aria-hidden />
+                    Back
+                  </Link>
 
-                <div className="space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                    {loginKind === "admin" ? "Admin lane" : "Staff lane"}
-                  </p>
-                  <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{title}</h1>
-                  <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                      {loginKind === "admin" ? "Admin lane" : "Staff lane"}
+                    </p>
+                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">{title}</h1>
+                    <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
+                  </div>
+
+                  <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-800">Email</label>
+                      <Input {...form.register("email")} autoComplete="email" placeholder="you@studio.com" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-800">Password</label>
+                      <Input
+                        type="password"
+                        {...form.register("password")}
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                      />
+                    </div>
+
+                    {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+
+                    <Button type="submit" variant="premium" className="mt-2 w-full rounded-xl py-6 text-[15px] font-semibold">
+                      Enter dashboard
+                    </Button>
+                  </form>
                 </div>
-
-                <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-700">Email</label>
-                    <Input {...form.register("email")} autoComplete="email" placeholder="you@studio.com" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-700">Password</label>
-                    <Input
-                      type="password"
-                      {...form.register("password")}
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                    />
-                  </div>
-
-                  {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-
-                  <Button type="submit" variant="premium" className="mt-2 w-full rounded-xl py-6 text-[15px] font-semibold">
-                    Enter dashboard
-                  </Button>
-                </form>
               </GlassPanel>
             </BorderBeam>
           </Spotlight>

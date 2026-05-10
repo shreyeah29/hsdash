@@ -79,7 +79,7 @@ body {
   }
 
   .glass-panel {
-    @apply rounded-2xl border border-zinc-200/90 bg-white shadow-[0_4px_24px_-4px_rgba(15,23,42,0.08),0_1px_3px_rgba(15,23,42,0.06)];
+    @apply rounded-2xl border border-zinc-200/90 bg-white text-zinc-950 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.08),0_1px_3px_rgba(15,23,42,0.06)];
   }
 
   .glass-inner {
@@ -87,7 +87,7 @@ body {
   }
 
   .shine-border {
-    @apply relative before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:p-px before:content-[''] before:bg-gradient-to-br before:from-white before:via-zinc-100 before:to-zinc-200/80 before:[mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] before:[mask-composite:xor] before:[-webkit-mask-composite:xor];
+    @apply relative before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:p-px before:content-[''] before:bg-gradient-to-br before:from-white before:via-zinc-100 before:to-zinc-200/80 before:[mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] before:[mask-composite:xor] before:[-webkit-mask-composite:xor];
   }
 
   .cal-cell-premium {

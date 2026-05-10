@@ -14,7 +14,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         premium:
-          "rounded-xl bg-gradient-to-r from-violet-600 via-violet-500 to-cyan-500 text-white shadow-lg shadow-violet-500/25 hover:brightness-110",
+          "rounded-xl bg-violet-700 text-white shadow-md shadow-violet-900/15 hover:bg-violet-800 focus-visible:ring-violet-600",
         glass:
           "rounded-xl border border-zinc-200 bg-white text-zinc-800 shadow-sm backdrop-blur-sm hover:bg-zinc-50",
       },
