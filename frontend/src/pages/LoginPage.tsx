@@ -29,11 +29,11 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
     defaultValues: { email: "", password: "" },
   });
 
-  const title = loginKind === "admin" ? "Admin sign in" : "Team member sign in";
+  const title = loginKind === "admin" ? "Admin sign in" : "Staff sign in";
   const description =
     loginKind === "admin"
-      ? "Administrator access — events, tasks, and team management."
-      : "Team access — your assignments and deadlines only.";
+      ? "Owner / manager — shoot calendar, analytics, and monitoring."
+      : "Editors & Emmanuel — coordinators see calendar + assignments; editors see only their tasks.";
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -51,19 +51,31 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
       if (loginKind === "admin") {
         if (user.role !== Role.ADMIN) {
           await logout();
-          setError("This account is not an administrator. Use Team member login.");
+          setError("This account is not an administrator. Use Staff login.");
           return;
         }
         navigate("/admin", { replace: true });
         return;
       }
 
-      if (user.role !== Role.TEAM_MEMBER) {
+      if (user.role === Role.ADMIN) {
         await logout();
-        setError("This account is an administrator. Use Admin login.");
+        setError("Administrators sign in through Admin login.");
         return;
       }
-      navigate("/team", { replace: true });
+
+      if (user.role === Role.COORDINATOR) {
+        navigate("/coordinator", { replace: true });
+        return;
+      }
+
+      if (user.role === Role.EDITOR) {
+        navigate("/team", { replace: true });
+        return;
+      }
+
+      await logout();
+      setError("This account cannot access the staff portal.");
     } catch {
       setError("Invalid email or password.");
     }

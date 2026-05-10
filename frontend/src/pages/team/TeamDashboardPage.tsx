@@ -8,13 +8,17 @@ import { TaskStatus } from "@/types/domain";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { Button } from "@/components/ui/button";
-import { isProductionCoordinatorUser } from "@/lib/productionCoordinator";
 import { cn } from "@/lib/utils";
+
+function greeting(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export function TeamDashboardPage() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const isCoordinator = isProductionCoordinatorUser(user?.email);
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["my-notifications"],
@@ -44,22 +48,6 @@ export function TeamDashboardPage() {
     },
   });
 
-  const { data: coordinatorTasks } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: async () => {
-      const { data } = await api.get<{ tasks: Task[] }>("/tasks");
-      return data.tasks;
-    },
-    enabled: isCoordinator,
-  });
-
-  const coordinationSummary = useMemo(() => {
-    const tasks = coordinatorTasks ?? [];
-    const open = tasks.filter((t) => t.status !== TaskStatus.COMPLETED);
-    const unassigned = open.filter((t) => !(t.assignedToId ?? t.assignedTo?.id)).length;
-    return { open: open.length, unassigned };
-  }, [coordinatorTasks]);
-
   const { data } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: async () => {
@@ -69,19 +57,26 @@ export function TeamDashboardPage() {
   });
 
   const now = new Date();
+  const hour = now.getHours();
+
   const stats = useMemo(() => {
     const tasks = data ?? [];
     const open = tasks.filter((t) => t.status !== TaskStatus.COMPLETED);
     const overdue = open.filter((t) => new Date(t.deadline).getTime() < now.getTime()).length;
-    const dueToday = open.filter((t) => new Date(t.deadline).toDateString() === now.toDateString()).length;
+    const dueThisWeek = open.filter((t) => {
+      const d = new Date(t.deadline);
+      const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 7;
+    }).length;
     const urgent = open.filter((t) => {
       const d = new Date(t.deadline);
       const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       return diffDays <= 1;
     }).length;
+    const cinematic = open.filter((t) => t.taskType.includes("CINEMATIC")).length;
     const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
     const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
-    return { overdue, dueToday, urgent, progress, total: tasks.length };
+    return { overdue, dueThisWeek, urgent, cinematic, progress, total: tasks.length, open: open.length };
   }, [data, now]);
 
   const nextUp = useMemo(() => {
@@ -89,12 +84,35 @@ export function TeamDashboardPage() {
     return [...tasks].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)).slice(0, 6);
   }, [data]);
 
+  const firstName = user?.name?.split(/\s+/)[0] ?? "there";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Welcome{user?.name ? `, ${user.name}` : ""}</h1>
-        <p className="text-sm text-muted-foreground">
-          {user?.team ? `${user.team.replaceAll("_", " ")}` : "Team"} dashboard
+    <div className="space-y-8">
+      <div className="rounded-2xl border bg-card/80 p-6 shadow-sm backdrop-blur-sm">
+        <p className="text-sm font-medium text-muted-foreground">
+          {greeting(hour)}, {firstName}{" "}
+          <span aria-hidden className="inline-block animate-pulse">
+            👋
+          </span>
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Stay in flow — your desk is clear of noise.</h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          You have{" "}
+          <span className="font-semibold text-foreground">{stats.open}</span> active edits
+          {stats.cinematic > 0 ? (
+            <>
+              , including <span className="font-semibold text-foreground">{stats.cinematic}</span> cinematic cuts still cooking
+            </>
+          ) : null}
+          .{" "}
+          {stats.urgent > 0 ? (
+            <>
+              <span className="font-semibold text-amber-700 dark:text-amber-400">{stats.urgent}</span> need attention in the next day.
+            </>
+          ) : (
+            <>Nothing screaming urgent — keep pacing toward your deadlines.</>
+          )}{" "}
+          <span className="font-semibold text-foreground">{stats.dueThisWeek}</span> due within seven days.
         </p>
       </div>
 
@@ -102,12 +120,12 @@ export function TeamDashboardPage() {
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
           <div>
             <CardTitle className="flex items-center gap-2">
-              Notifications
+              Live assignments
               {unreadCount > 0 ? (
                 <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-normal text-primary-foreground">{unreadCount}</span>
               ) : null}
             </CardTitle>
-            <CardDescription>When you&apos;re assigned work, it appears here with the deadline — details are on My Tasks.</CardDescription>
+            <CardDescription>Fresh briefs from Emmanuel land here — deadlines stay synced with My Tasks.</CardDescription>
           </div>
           {unreadCount > 0 ? (
             <Button type="button" variant="outline" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
@@ -130,86 +148,80 @@ export function TeamDashboardPage() {
                   </Button>
                 ) : null}
                 <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" asChild>
-                  <Link to="/team/tasks">My Tasks</Link>
+                  <Link to="/team/tasks">Open My Tasks</Link>
                 </Button>
               </div>
             </div>
           ))}
-          {notifications.length === 0 ? <p className="text-sm text-muted-foreground">No assignment notifications yet.</p> : null}
+          {notifications.length === 0 ? <p className="text-sm text-muted-foreground">No assignment pings yet — check back after the next drop.</p> : null}
         </CardContent>
       </Card>
-
-      {isCoordinator ? (
-        <Card className="border-primary/35 bg-primary/5">
-          <CardHeader>
-            <CardTitle>Assign deliverables to team editors</CardTitle>
-            <CardDescription>
-              Choose who on each crew (Photo, Cinematic, Traditional, Album) owns each task. They&apos;ll see assignments under My Tasks with deadlines.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{coordinationSummary.open}</span> open deliverables ·{" "}
-              <span className="font-medium text-foreground">{coordinationSummary.unassigned}</span> still unassigned
-            </div>
-            <Button asChild>
-              <Link to="/team/assign-deliverables">Open assignment board</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardDescription>Urgent (≤1 day)</CardDescription>
+            <CardDescription>Urgent window</CardDescription>
             <CardTitle>{stats.urgent}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardDescription>Due Today</CardDescription>
-            <CardTitle>{stats.dueToday}</CardTitle>
+            <CardDescription>Due this week</CardDescription>
+            <CardTitle>{stats.dueThisWeek}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <CardDescription>Overdue</CardDescription>
-            <CardTitle>{stats.overdue}</CardTitle>
+            <CardTitle className={stats.overdue > 0 ? "text-destructive" : undefined}>{stats.overdue}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardDescription>Completion Progress</CardDescription>
+            <CardDescription>Completion</CardDescription>
             <CardTitle>{stats.progress}%</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Next Up</CardTitle>
-          <CardDescription>Closest deadlines for your team</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Next countdowns</CardTitle>
+            <CardDescription>Closest deadlines on your plate</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/team/tasks">Manage statuses</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {nextUp.map((t) => (
-              <div key={t.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{t.event?.clientName ?? "-"}</div>
-                  <div className="truncate text-xs text-muted-foreground">{t.taskType.replaceAll("_", " ")}</div>
+            {nextUp.map((t) => {
+              const due = new Date(t.deadline);
+              const ms = due.getTime() - now.getTime();
+              const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+              const countdown =
+                days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : days === 1 ? "1 day left" : `${days} days`;
+              return (
+                <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 p-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{t.event?.clientName ?? "-"}</div>
+                    <div className="truncate text-xs text-muted-foreground">{t.taskType.replaceAll("_", " ")}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <PriorityBadge priority={t.priority} />
+                    <div className="text-right text-xs">
+                      <div className="font-medium tabular-nums">{countdown}</div>
+                      <div className="text-muted-foreground">{due.toLocaleDateString()}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <PriorityBadge priority={t.priority} />
-                  <div className="text-xs text-muted-foreground">{new Date(t.deadline).toLocaleDateString()}</div>
-                </div>
-              </div>
-            ))}
-            {stats.total === 0 ? <div className="text-sm text-muted-foreground">No tasks yet.</div> : null}
+              );
+            })}
+            {stats.total === 0 ? <div className="text-sm text-muted-foreground">No tasks yet — your queue is ready when Emmanuel assigns work.</div> : null}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-

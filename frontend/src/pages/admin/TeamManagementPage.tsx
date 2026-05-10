@@ -40,7 +40,7 @@ export function TeamManagementPage() {
     name: "",
     email: "",
     password: "",
-    role: Role.TEAM_MEMBER,
+    role: Role.EDITOR,
     team: Team.PHOTO_TEAM,
     designation: "",
     isActive: true,
@@ -107,7 +107,7 @@ export function TeamManagementPage() {
       name: "",
       email: "",
       password: "",
-      role: Role.TEAM_MEMBER,
+      role: Role.EDITOR,
       team: Team.PHOTO_TEAM,
       designation: "",
       isActive: true,
@@ -130,11 +130,12 @@ export function TeamManagementPage() {
     setOpen(true);
   }
 
+  const needsTeam = form.role === Role.EDITOR || form.role === Role.COORDINATOR;
   const canSubmit =
     !!form.name &&
     !!form.email &&
     (mode === "edit" || (form.password && form.password.length >= 8)) &&
-    (form.role === Role.ADMIN || !!form.team);
+    (form.role === Role.ADMIN || (needsTeam && !!form.team));
 
   return (
     <div className="space-y-6">
@@ -225,7 +226,8 @@ export function TeamManagementPage() {
                 <div className="text-xs text-muted-foreground">Role</div>
                 <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
                   <SelectItem value={Role.ADMIN}>ADMIN</SelectItem>
-                  <SelectItem value={Role.TEAM_MEMBER}>TEAM_MEMBER</SelectItem>
+                  <SelectItem value={Role.COORDINATOR}>COORDINATOR</SelectItem>
+                  <SelectItem value={Role.EDITOR}>EDITOR</SelectItem>
                 </Select>
               </div>
               <div className="space-y-1">
@@ -235,7 +237,7 @@ export function TeamManagementPage() {
                   <SelectItem value={Team.CINEMATIC_TEAM}>CINEMATIC_TEAM</SelectItem>
                   <SelectItem value={Team.TRADITIONAL_TEAM}>TRADITIONAL_TEAM</SelectItem>
                   <SelectItem value={Team.ALBUM_TEAM}>ALBUM_TEAM</SelectItem>
-                  <SelectItem value={Team.DATA_MANAGEMENT}>DATA_MANAGEMENT</SelectItem>
+                  <SelectItem value={Team.COORDINATOR_TEAM}>COORDINATOR_TEAM</SelectItem>
                 </Select>
               </div>
             </div>

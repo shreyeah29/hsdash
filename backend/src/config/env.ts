@@ -9,8 +9,6 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("7d"),
   FRONTEND_URL: z.string().url(),
   COOKIE_SECURE: z.coerce.boolean().optional(),
-  /** Login email allowed to edit the production shoot calendar (default: Emmanuel). */
-  CALENDAR_COORDINATOR_EMAIL: z.string().email().default("emmanuel@wedding.local"),
 });
 
 export const env = envSchema.parse(process.env);

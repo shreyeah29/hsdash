@@ -38,7 +38,7 @@ const createUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.nativeEnum(Role).default(Role.TEAM_MEMBER),
+  role: z.nativeEnum(Role).default(Role.EDITOR),
   team: z.nativeEnum(Team).optional().nullable(),
   designation: z.string().optional().nullable(),
   isActive: z.boolean().optional(),

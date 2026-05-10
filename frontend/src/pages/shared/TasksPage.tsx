@@ -52,7 +52,10 @@ export function TasksPage() {
 
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-semibold">Tasks</h1>
+      <div>
+        <h1 className="text-xl font-semibold">My tasks</h1>
+        <p className="text-sm text-muted-foreground">Only assignments routed to you — update status as you progress.</p>
+      </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">
           <Input placeholder="Search by client or task…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -75,9 +78,7 @@ export function TasksPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Client</TableHead>
-              <TableHead>Task</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Assignee</TableHead>
+              <TableHead>Deliverable</TableHead>
               <TableHead>Deadline</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
@@ -89,8 +90,6 @@ export function TasksPage() {
               <TableRow key={t.id}>
                 <TableCell className="font-medium">{t.event?.clientName ?? "-"}</TableCell>
                 <TableCell>{t.taskType.replaceAll("_", " ")}</TableCell>
-                <TableCell>{t.assignedTeam.replaceAll("_", " ")}</TableCell>
-                <TableCell>{t.assignedTo?.name ?? "—"}</TableCell>
                 <TableCell>{new Date(t.deadline).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <PriorityBadge priority={t.priority} />
@@ -129,7 +128,7 @@ export function TasksPage() {
             ))}
             {!isLoading && filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                   No tasks found.
                 </TableCell>
               </TableRow>

@@ -75,11 +75,11 @@ export function CoordinatorTasksPage() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 text-white [&_input]:border-white/25 [&_input]:bg-black/30 [&_input]:text-white [&_.text-muted-foreground]:text-white/60">
       <div>
-        <h1 className="text-xl font-semibold">Assign deliverables</h1>
-        <p className="text-sm text-muted-foreground">
-          Everyone&apos;s tasks appear here. Assign each row to a specific editor on the owning team; they will see it on My Tasks with deadlines.
+        <h1 className="text-xl font-semibold text-white">Assignment board</h1>
+        <p className="text-sm text-white/70">
+          Every post-production task lands here after you start jobs from the shoot calendar. Match each row to the right editor — they only see what&apos;s assigned to them with deadlines and priorities.
         </p>
       </div>
 
@@ -94,12 +94,12 @@ export function CoordinatorTasksPage() {
             <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
           </Select>
         </div>
-        <div className="text-sm text-muted-foreground">{filtered.length} tasks</div>
+        <div className="text-sm text-white/65">{filtered.length} tasks</div>
       </div>
 
-      {isLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : null}
+      {isLoading ? <div className="text-sm text-white/65">Loading…</div> : null}
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border border-white/15 bg-black/35 backdrop-blur-sm">
         <Table>
           <TableHeader>
             <TableRow>
@@ -165,7 +165,7 @@ export function CoordinatorTasksPage() {
             {!isLoading && filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                  No tasks yet — create deliverables from the production calendar.
+                  No tasks yet — open completed shoots on the calendar and tap “Start post-production”.
                 </TableCell>
               </TableRow>
             ) : null}

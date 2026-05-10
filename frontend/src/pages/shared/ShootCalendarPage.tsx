@@ -51,6 +51,7 @@ type FormState = {
   clientName: string;
   clientType: string;
   eventName: string;
+  venue: string;
   startTime: string;
   endTime: string;
   photoTeam: string;
@@ -64,16 +65,21 @@ const emptyForm = (day: string): FormState => ({
   clientName: "",
   clientType: "",
   eventName: "",
+  venue: "",
   startTime: "",
   endTime: "",
   photoTeam: "",
   videoTeam: "",
   addons: "",
-  createDeliverableTimeline: true,
+  createDeliverableTimeline: false,
 });
 
-/** Admin `canMutate`; production coordinator (Emmanuel) read-only + assignment elsewhere. */
-export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
+export type ShootCalendarMode = "admin" | "coordinator";
+
+/** Shoot operations calendar — admin edits logistics; coordinator reviews and unlocks post-production. */
+export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
+  const canMutate = mode === "admin";
+  const coordinatorMode = mode === "coordinator";
   const qc = useQueryClient();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -130,23 +136,26 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
 
   const saveEntry = useMutation({
     mutationFn: async () => {
+      const payload = {
+        day: form.day,
+        clientName: form.clientName,
+        clientType: form.clientType,
+        eventName: form.eventName,
+        venue: form.venue,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        photoTeam: form.photoTeam,
+        videoTeam: form.videoTeam,
+        addons: form.addons,
+        ...(form.createDeliverableTimeline ? { createDeliverableTimeline: true } : {}),
+      };
       if (editingId && editingId !== "new") {
-        const { data } = await api.put(`/production-calendar/entries/${editingId}`, {
-          day: form.day,
-          clientName: form.clientName,
-          clientType: form.clientType,
-          eventName: form.eventName,
-          startTime: form.startTime,
-          endTime: form.endTime,
-          photoTeam: form.photoTeam,
-          videoTeam: form.videoTeam,
-          addons: form.addons,
-          ...(form.createDeliverableTimeline ? { createDeliverableTimeline: true } : {}),
-        });
+        const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
         return data;
       }
       const { data } = await api.post("/production-calendar/entries", {
-        ...form,
+        ...payload,
+        createDeliverableTimeline: form.createDeliverableTimeline,
       });
       return data;
     },
@@ -167,6 +176,19 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+  });
+
+  const startPostProduction = useMutation({
+    mutationFn: async (entryId: string) => {
+      const { data } = await api.post<{ entry: ShootCalendarEntry }>(
+        `/production-calendar/entries/${entryId}/start-post-production`,
+      );
+      return data.entry;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
@@ -195,6 +217,7 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
       clientName: entry.clientName,
       clientType: entry.clientType,
       eventName: entry.eventName,
+      venue: entry.venue ?? "",
       startTime: entry.startTime,
       endTime: entry.endTime,
       photoTeam: entry.photoTeam,
@@ -205,34 +228,37 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
     setDialogOpen(true);
   }
 
+  const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/team/tasks";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">{canMutate ? "Production calendar" : "Production calendar (read-only)"}</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className={cn("text-xl font-semibold", coordinatorMode && "text-white")}>Shoot operations calendar</h1>
+        <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/70")}>
           {canMutate ? (
             <>
-              Add shoot-day details (client, times, on-site photo/video crew, add-ons). Enable deliverable timelines when post-production tasks should be created.
-              Emmanuel is the only team member who sees this calendar; he assigns editors under Assign deliverables on his dashboard — admins only maintain events here.
+              Log shoot-day logistics only — client intel, timings, venue, attending crews, notes. After the wedding wraps, Emmanuel starts
+              post-production tasks from his dashboard (not here). Optional shortcut: tick below to seed standard deadlines immediately (most teams wait for Emmanuel).
             </>
           ) : (
             <>
-              Review what admin logged. Open{" "}
-              <Link className="underline" to="/team/assign-deliverables">
-                Assign deliverables
-              </Link>{" "}
-              to match tasks to editors on each crew. Only you see this calendar among team members.
+              Read-only logistics mirror what Admin captured. After the shoot, use{" "}
+              <span className="font-medium text-amber-200">Start post-production</span> on each completed row to spawn editing tasks, then assign editors in{" "}
+              <Link className="underline text-amber-200" to={assignmentsLink}>
+                Assignments
+              </Link>
+              .
             </>
           )}
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_minmax(300px,380px)]">
-        <Card>
+        <Card className={cn(coordinatorMode && "border-white/15 bg-black/30 text-white backdrop-blur-sm")}>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 pb-4">
             <div>
-              <CardTitle>{label}</CardTitle>
-              <CardDescription>
+              <CardTitle className={cn(coordinatorMode && "text-white")}>{label}</CardTitle>
+              <CardDescription className={cn(coordinatorMode && "text-white/65")}>
                 {isLoading ? "Loading…" : canMutate ? "Click a day to add or edit shoots." : "Click a day to review shoots."}
               </CardDescription>
             </div>
@@ -270,6 +296,7 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                       "flex min-h-[88px] flex-col rounded-md border p-1.5 text-left text-[11px] transition-colors hover:bg-accent/50 sm:min-h-[96px] sm:text-xs",
                       isToday && "border-primary ring-1 ring-primary/30",
                       isSel && "bg-accent ring-2 ring-primary/40",
+                      coordinatorMode && "border-white/15 bg-black/20 hover:bg-white/10",
                     )}
                   >
                     <div className="flex items-center justify-between gap-1 font-semibold">
@@ -302,14 +329,14 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
           </CardContent>
         </Card>
 
-        <Card className="xl:sticky xl:top-4 xl:self-start">
+        <Card className={cn("xl:sticky xl:top-4 xl:self-start", coordinatorMode && "border-white/15 bg-black/30 text-white backdrop-blur-sm")}>
           <CardHeader>
-            <CardTitle>{selectedKey ?? "Pick a day"}</CardTitle>
-            <CardDescription>Shoot logistics and linked post-production tasks.</CardDescription>
+            <CardTitle className={cn(coordinatorMode && "text-white")}>{selectedKey ?? "Pick a day"}</CardTitle>
+            <CardDescription className={cn(coordinatorMode && "text-white/65")}>Shoot logistics and linked post-production tasks.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {!selectedKey ? (
-              <p className="text-sm text-muted-foreground">Select a date on the calendar.</p>
+              <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>Select a date on the calendar.</p>
             ) : (
               <>
                 {canMutate ? (
@@ -322,11 +349,18 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Logged shoots</div>
                   <div className="space-y-3">
                     {selectedEntries.map((e) => (
-                      <div key={e.id} className="rounded-lg border bg-muted/30 p-3 text-sm">
+                      <div
+                        key={e.id}
+                        className={cn(
+                          "rounded-lg border bg-muted/30 p-3 text-sm",
+                          coordinatorMode && "border-white/15 bg-black/40 text-white",
+                        )}
+                      >
                         <div className="font-medium">{e.clientName}</div>
                         {e.eventName ? <div className="text-muted-foreground">{e.eventName}</div> : null}
                         <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                           {e.clientType ? <div>Type: {e.clientType}</div> : null}
+                          {e.venue ? <div>Venue: {e.venue}</div> : null}
                           {(e.startTime || e.endTime) && (
                             <div>
                               Time: {e.startTime || "—"} – {e.endTime || "—"}
@@ -334,15 +368,26 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                           )}
                           {e.photoTeam ? <div className="whitespace-pre-wrap">Photo on-site: {e.photoTeam}</div> : null}
                           {e.videoTeam ? <div className="whitespace-pre-wrap">Video on-site: {e.videoTeam}</div> : null}
-                          {e.addons ? <div className="whitespace-pre-wrap">Add-ons: {e.addons}</div> : null}
+                          {e.addons ? <div className="whitespace-pre-wrap">Notes: {e.addons}</div> : null}
                           <div className="text-[11px]">Recorded by {e.createdBy.name}</div>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {e.eventId ? (
-                            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs">Deliverables linked</span>
+                            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs">Post-production active</span>
                           ) : (
-                            <span className="rounded-md border border-dashed px-2 py-0.5 text-xs">No deliverable timeline</span>
+                            <span className="rounded-md border border-dashed px-2 py-0.5 text-xs">Awaiting coordinator kickoff</span>
                           )}
+                          {coordinatorMode && !e.eventId ? (
+                            <Button
+                              size="sm"
+                              type="button"
+                              className="bg-amber-500 text-black hover:bg-amber-400"
+                              disabled={startPostProduction.isPending}
+                              onClick={() => startPostProduction.mutate(e.id)}
+                            >
+                              Start post-production
+                            </Button>
+                          ) : null}
                           {canMutate ? (
                             <>
                               <Button variant="outline" size="sm" type="button" onClick={() => openEdit(e)}>
@@ -360,10 +405,15 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                             </>
                           ) : null}
                         </div>
+                        {startPostProduction.isError ? (
+                          <p className="mt-2 text-xs text-rose-300">{errMsg(startPostProduction.error)}</p>
+                        ) : null}
                       </div>
                     ))}
                     {selectedEntries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">{canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}</p>
+                      <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>
+                        {canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -371,7 +421,7 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                 <div>
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables due this day</div>
                   {selectedDues.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No linked deadlines on this date.</p>
+                    <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>No linked deadlines on this date.</p>
                   ) : (
                     <ul className="space-y-2 text-sm">
                       {selectedDues.map(({ task: t, clientName }) => (
@@ -416,6 +466,10 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                 <div className="text-xs text-muted-foreground">Event name</div>
                 <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
               </div>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Venue</div>
+                <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
+              </div>
               <div className="space-y-1">
                 <div className="text-xs text-muted-foreground">Start time</div>
                 <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
@@ -449,7 +503,7 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Add-ons</div>
+                <div className="text-xs text-muted-foreground">Notes / add-ons</div>
                 <textarea
                   className={cn(
                     "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
@@ -469,7 +523,7 @@ export function ShootCalendarPage({ canMutate }: { canMutate: boolean }) {
                   onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
                 />
                 <span className="text-sm leading-snug">
-                  Create standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d) for this client on this date.
+                  Immediately seed standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d). Leave off if Emmanuel should create tasks after the shoot.
                   {timelineAlreadyLinked ? (
                     <span className="block text-xs text-muted-foreground">This row already has a linked timeline.</span>
                   ) : null}

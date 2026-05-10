@@ -76,7 +76,7 @@ authRouter.post("/demo", async (req, res, next) => {
     const user =
       portal === "admin"
         ? await prisma.user.findFirst({ where: { role: Role.ADMIN, isActive: true } })
-        : await prisma.user.findFirst({ where: { role: Role.TEAM_MEMBER, isActive: true } });
+        : await prisma.user.findFirst({ where: { role: Role.EDITOR, isActive: true }, orderBy: { name: "asc" } });
     if (!user) throw new HttpError(404, "No user found for demo", "NOT_FOUND");
 
     const token = signAuthToken({

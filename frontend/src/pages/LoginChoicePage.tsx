@@ -62,12 +62,12 @@ export function LoginChoicePage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
               <Users className="h-5 w-5" aria-hidden />
             </div>
-            <CardTitle>Team member login</CardTitle>
-            <CardDescription>Your assigned tasks and deadlines.</CardDescription>
+            <CardTitle>Staff login</CardTitle>
+            <CardDescription>Editors focus on deliverables; Emmanuel coordinates shoots + assignments.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="w-full" variant="outline" asChild>
-              <Link to="/login/team">Continue as Team Member</Link>
+              <Link to="/login/team">Continue as Staff</Link>
             </Button>
           </CardContent>
         </Card>

@@ -2,12 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma/client";
 import { requireAuth } from "../middleware/auth";
-import { isProductionCoordinator, requireCoordinatorOnly } from "../middleware/coordinator";
+import { requireCoordinator } from "../middleware/coordinator";
 import { Role, TaskPriority, TaskStatus, Team } from "@prisma/client";
 import { resolveTaskAssigneeTx } from "../services/taskAssignee";
 import { computeDelayedStatus, computePriority } from "../services/taskPriority";
 import { recordTaskStatusChange } from "../services/taskActivity";
 import { HttpError } from "../utils/httpError";
+import { emitNotificationRefresh, emitTaskRefreshToOps, emitToUser } from "../realtime/socket";
 
 export const tasksRouter = Router();
 
@@ -24,19 +25,19 @@ tasksRouter.get("/", async (req, res, next) => {
   try {
     const q = listQuerySchema.parse(req.query);
     const auth = req.auth!;
-    const coordinatorView = auth.role === Role.ADMIN || isProductionCoordinator(auth);
+    const opsView = auth.role === Role.ADMIN || auth.role === Role.COORDINATOR;
 
     const where: Record<string, unknown> = {};
     if (q.eventId) where.eventId = q.eventId;
 
-    if (coordinatorView) {
+    if (opsView) {
       if (q.team) where.assignedTeam = q.team;
       if (q.status) where.status = q.status;
       if (q.priority) where.priority = q.priority;
+    } else if (auth.role === Role.EDITOR) {
+      where.assignedToId = auth.userId;
     } else {
-      if (!auth.team) throw new HttpError(403, "Team not assigned", "FORBIDDEN");
-      where.assignedTeam = auth.team;
-      where.OR = [{ assignedToId: null }, { assignedToId: auth.userId }];
+      throw new HttpError(403, "Forbidden", "FORBIDDEN");
     }
 
     const tasks = await prisma.task.findMany({
@@ -45,6 +46,7 @@ tasksRouter.get("/", async (req, res, next) => {
       include: {
         event: true,
         assignedTo: { select: { id: true, name: true, email: true, team: true } },
+        assignedBy: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -68,12 +70,14 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
     if (!task) throw new HttpError(404, "Task not found", "NOT_FOUND");
 
     if (auth.role === Role.ADMIN) {
-      throw new HttpError(403, "Admins monitor deliverables on the Deliverables status page", "FORBIDDEN");
+      throw new HttpError(403, "Admins monitor deliverables; editors and the coordinator update status", "FORBIDDEN");
     }
 
-    const canCoordinatorAct = isProductionCoordinator(auth);
-    if (!canCoordinatorAct) {
-      if (!auth.team || task.assignedTeam !== auth.team) throw new HttpError(403, "Forbidden", "FORBIDDEN");
+    const coordinatorActing = auth.role === Role.COORDINATOR;
+    if (!coordinatorActing) {
+      if (auth.role !== Role.EDITOR || task.assignedToId !== auth.userId) {
+        throw new HttpError(403, "Forbidden", "FORBIDDEN");
+      }
     }
 
     const now = new Date();
@@ -88,12 +92,19 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
         status,
         priority,
       },
-      include: { event: true, assignedTo: { select: { id: true, name: true, email: true, team: true } } },
+      include: {
+        event: true,
+        assignedTo: { select: { id: true, name: true, email: true, team: true } },
+        assignedBy: { select: { id: true, name: true, email: true } },
+      },
     });
 
     if (updated.status !== previousStatus) {
       await recordTaskStatusChange(id, auth.userId, previousStatus, updated.status);
     }
+
+    emitTaskRefreshToOps();
+    if (updated.assignedToId) emitToUser(updated.assignedToId, "task:updated");
 
     res.json({ task: updated });
   } catch (e) {
@@ -105,10 +116,11 @@ const assigneeBodySchema = z.object({
   assignedToId: z.union([z.string().min(1), z.null()]),
 });
 
-tasksRouter.put("/:id/assignee", requireCoordinatorOnly, async (req, res, next) => {
+tasksRouter.put("/:id/assignee", requireCoordinator, async (req, res, next) => {
   try {
     const id = z.string().min(1).parse(req.params.id);
     const body = assigneeBodySchema.parse(req.body);
+    const auth = req.auth!;
 
     const task = await prisma.task.findUnique({
       where: { id },
@@ -122,10 +134,11 @@ tasksRouter.put("/:id/assignee", requireCoordinatorOnly, async (req, res, next) 
       const assignedToId = await resolveTaskAssigneeTx(tx, body.assignedToId, task.assignedTeam);
       return tx.task.update({
         where: { id },
-        data: { assignedToId },
+        data: { assignedToId, assignedById: assignedToId ? auth.userId : null },
         include: {
           event: true,
           assignedTo: { select: { id: true, name: true, email: true, team: true } },
+          assignedBy: { select: { id: true, name: true, email: true } },
         },
       });
     });
@@ -142,11 +155,14 @@ tasksRouter.put("/:id/assignee", requireCoordinatorOnly, async (req, res, next) 
           body: `${taskLabel} — ${clientName}. Deadline: ${due}.`,
         },
       });
+      emitNotificationRefresh(updated.assignedToId);
+      emitToUser(updated.assignedToId, "task:updated");
     }
+
+    emitTaskRefreshToOps();
 
     res.json({ task: updated });
   } catch (e) {
     next(e);
   }
 });
-

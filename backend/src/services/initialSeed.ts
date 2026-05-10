@@ -3,7 +3,7 @@ import { prisma } from "../prisma/client";
 import { Role, Team, TaskPriority, TaskStatus, TaskType } from "@prisma/client";
 
 /**
- * Seeds admin + team users (and optional demo event) when the DB is empty,
+ * Seeds admin + coordinator + editors (and optional demo event) when the DB is empty,
  * or wipes and re-seeds when wipeExisting is true (CLI seed).
  */
 export async function runInitialSeed(options: { wipeExisting: boolean }) {
@@ -12,7 +12,10 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
   const hashed = await bcrypt.hash(defaultPassword, 12);
 
   if (options.wipeExisting) {
+    await prisma.userNotification.deleteMany();
+    await prisma.taskActivity.deleteMany();
     await prisma.task.deleteMany();
+    await prisma.shootCalendarEntry.deleteMany();
     await prisma.event.deleteMany();
     await prisma.user.deleteMany();
   } else {
@@ -33,7 +36,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Laxman",
         email: "laxman@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.PHOTO_TEAM,
         designation: "Photo Editor",
         isActive: true,
@@ -42,7 +45,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Shashi",
         email: "shashi@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.CINEMATIC_TEAM,
         designation: "Cinematic Video Editor",
         isActive: true,
@@ -51,7 +54,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Asha",
         email: "asha@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.CINEMATIC_TEAM,
         designation: "Cinematic Video Editor",
         isActive: true,
@@ -60,7 +63,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Anil",
         email: "anil@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.TRADITIONAL_TEAM,
         designation: "Traditional Video Editor",
         isActive: true,
@@ -69,16 +72,16 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Emmanuel",
         email: "emmanuel@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
-        team: Team.DATA_MANAGEMENT,
-        designation: "Data Copy and Management",
+        role: Role.COORDINATOR,
+        team: Team.COORDINATOR_TEAM,
+        designation: "Data Copy & Management Coordinator",
         isActive: true,
       },
       {
         name: "Venkatesh",
         email: "venkatesh@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.PHOTO_TEAM,
         designation: "Photo Editor",
         isActive: true,
@@ -87,7 +90,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
         name: "Ravindra",
         email: "ravindra@wedding.local",
         password: hashed,
-        role: Role.TEAM_MEMBER,
+        role: Role.EDITOR,
         team: Team.ALBUM_TEAM,
         designation: "Album Designer",
         isActive: true,
@@ -102,6 +105,10 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
     data: {
       clientName: "Rahul & Priya",
       eventDate,
+      venue: "",
+      shootTime: "",
+      notes: "Sample seeded job",
+      postProductionStarted: true,
     },
   });
 

@@ -1,3 +1,4 @@
+import http from "http";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -10,6 +11,7 @@ import { usersRouter } from "./routes/users";
 import { adminRouter } from "./routes/admin";
 import { productionCalendarRouter } from "./routes/productionCalendar";
 import { notificationsRouter } from "./routes/notifications";
+import { attachSocket } from "./realtime/socket";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
 
@@ -37,9 +39,12 @@ app.use("/notifications", notificationsRouter);
 
 app.use(errorHandler);
 
+const server = http.createServer(app);
+attachSocket(server);
+
 async function start() {
   await runInitialSeed({ wipeExisting: false });
-  app.listen(env.PORT, () => {
+  server.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`API listening on :${env.PORT}`);
   });
@@ -51,4 +56,3 @@ start().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

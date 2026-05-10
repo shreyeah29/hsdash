@@ -1,6 +1,7 @@
 export const Role = {
   ADMIN: "ADMIN",
-  TEAM_MEMBER: "TEAM_MEMBER",
+  COORDINATOR: "COORDINATOR",
+  EDITOR: "EDITOR",
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
@@ -9,7 +10,7 @@ export const Team = {
   CINEMATIC_TEAM: "CINEMATIC_TEAM",
   TRADITIONAL_TEAM: "TRADITIONAL_TEAM",
   ALBUM_TEAM: "ALBUM_TEAM",
-  DATA_MANAGEMENT: "DATA_MANAGEMENT",
+  COORDINATOR_TEAM: "COORDINATOR_TEAM",
 } as const;
 export type Team = (typeof Team)[keyof typeof Team];
 
@@ -43,6 +44,10 @@ export type Event = {
   id: string;
   clientName: string;
   eventDate: string;
+  venue?: string;
+  shootTime?: string;
+  notes?: string;
+  postProductionStarted?: boolean;
   createdAt: string;
 };
 
@@ -64,6 +69,7 @@ export type Task = {
   createdAt: string;
   assignedToId?: string | null;
   assignedTo?: TaskAssigneeSummary | null;
+  assignedBy?: TaskAssigneeSummary | null;
   event?: Event;
 };
 
@@ -86,13 +92,14 @@ export type AdminCalendarNote = {
   createdAt: string;
 };
 
-/** Shoot-day logistics row (Emmanuel); optional linked Event powers deliverable tasks. */
+/** Shoot-day logistics row; optional linked Event powers deliverable tasks. */
 export type ShootCalendarEntry = {
   id: string;
   day: string;
   clientName: string;
   clientType: string;
   eventName: string;
+  venue: string;
   startTime: string;
   endTime: string;
   photoTeam: string;
@@ -107,4 +114,3 @@ export type ShootCalendarEntry = {
         tasks: Task[];
       });
 };
-

@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,7 +12,8 @@ datasource db {
 
 enum Role {
   ADMIN
-  TEAM_MEMBER
+  COORDINATOR
+  EDITOR
 }
 
 enum Team {
@@ -22,7 +21,7 @@ enum Team {
   CINEMATIC_TEAM
   TRADITIONAL_TEAM
   ALBUM_TEAM
-  DATA_MANAGEMENT
+  COORDINATOR_TEAM
 }
 
 enum TaskType {
@@ -31,7 +30,6 @@ enum TaskType {
   CINEMATIC_VIDEO
   TRADITIONAL_VIDEO
   ALBUM_DESIGN
-  DATA_MANAGEMENT
 }
 
 enum TaskPriority {
@@ -49,20 +47,22 @@ enum TaskStatus {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  password    String
-  role        Role     @default(TEAM_MEMBER)
-  team        Team?
-  designation String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String
+  role         Role     @default(EDITOR)
+  team         Team?
+  designation  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
-  assignedTasks Task[]         @relation("TaskAssignee")
-  taskActivities TaskActivity[] @relation("ActivityActor")
+  assignedTasks        Task[]             @relation("TaskAssignee")
+  tasksAssignedBy      Task[]             @relation("TaskAssignedBy")
+  taskActivities       TaskActivity[]     @relation("ActivityActor")
   shootCalendarEntries ShootCalendarEntry[]
-  notifications UserNotification[]
+  notifications        UserNotification[]
+  eventsCreated        Event[]            @relation("EventCreatedBy")
 
   @@index([role])
   @@index([team])
@@ -70,13 +70,22 @@ model User {
 }
 
 model Event {
-  id         String   @id @default(cuid())
-  clientName String
-  eventDate  DateTime
-  createdAt  DateTime @default(now())
+  id                      String   @id @default(cuid())
+  clientName              String
+  eventDate               DateTime
+  venue                   String   @default("")
+  shootTime               String   @default("")
+  notes                   String   @default("")
+  postProductionStarted   Boolean  @default(false)
+  createdById             String?
+  createdBy               User?    @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt               DateTime @default(now())
 
-  tasks Task[]
+  tasks              Task[]
   shootCalendarEntry ShootCalendarEntry?
+
+  @@index([createdById])
+  @@index([eventDate])
 }
 
 model ShootCalendarEntry {
@@ -86,6 +95,7 @@ model ShootCalendarEntry {
   clientName   String
   clientType   String   @default("")
   eventName    String   @default("")
+  venue        String   @default("")
   startTime    String   @default("")
   endTime      String   @default("")
   photoTeam    String   @default("")
@@ -106,24 +116,28 @@ model ShootCalendarEntry {
 
 model Task {
   id           String       @id @default(cuid())
-  eventId       String
-  taskType      TaskType
-  assignedTeam  Team
-  deadline      DateTime
-  status        TaskStatus   @default(PENDING)
-  priority      TaskPriority @default(LOW)
-  createdAt     DateTime     @default(now())
+  eventId      String
+  taskType     TaskType
+  assignedTeam Team
+  deadline     DateTime
+  status       TaskStatus   @default(PENDING)
+  priority     TaskPriority @default(LOW)
+  createdAt    DateTime     @default(now())
 
   assignedToId String?
   assignedTo   User? @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  activities TaskActivity[]
+  assignedById String?
+  assignedBy   User? @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  event        Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  activities   TaskActivity[]
   notifications UserNotification[]
 
   @@index([eventId])
   @@index([assignedTeam])
   @@index([assignedToId])
+  @@index([assignedById])
   @@index([status])
   @@index([priority])
   @@index([deadline])

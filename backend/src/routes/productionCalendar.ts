@@ -4,10 +4,11 @@ import type { Prisma } from "@prisma/client";
 import { Role } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
-import { requireCoordinatorOnly, requireCoordinatorOrAdmin } from "../middleware/coordinator";
+import { requireCoordinator, requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
 import { buildEventTasks } from "../services/eventTasks";
+import { emitTaskRefreshToOps } from "../realtime/socket";
 
 export const productionCalendarRouter = Router();
 
@@ -61,6 +62,7 @@ const baseFields = z.object({
   clientName: z.string().min(1),
   clientType: z.string().max(200).optional().default(""),
   eventName: z.string().max(300).optional().default(""),
+  venue: z.string().max(500).optional().default(""),
   startTime: z.string().max(50).optional().default(""),
   endTime: z.string().max(50).optional().default(""),
   photoTeam: z.string().max(4000).optional().default(""),
@@ -82,6 +84,11 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
           data: {
             clientName: body.clientName,
             eventDate,
+            venue: body.venue ?? "",
+            shootTime: `${body.startTime ?? ""}–${body.endTime ?? ""}`,
+            notes: body.addons ?? "",
+            postProductionStarted: true,
+            createdById: auth.userId,
           },
         });
         eventId = ev.id;
@@ -97,6 +104,7 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
           clientName: body.clientName,
           clientType: body.clientType ?? "",
           eventName: body.eventName ?? "",
+          venue: body.venue ?? "",
           startTime: body.startTime ?? "",
           endTime: body.endTime ?? "",
           photoTeam: body.photoTeam ?? "",
@@ -108,6 +116,8 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
         include: entryInclude,
       });
     });
+
+    if (body.createDeliverableTimeline) emitTaskRefreshToOps();
 
     res.status(201).json({ entry });
   } catch (e) {
@@ -137,9 +147,21 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
             ? body.day
             : `${existing.day.getUTCFullYear()}-${pad(existing.day.getUTCMonth() + 1)}-${pad(existing.day.getUTCDate())}`;
         const clientName = body.clientName ?? existing.clientName;
+        const venue = body.venue ?? existing.venue;
+        const startTime = body.startTime ?? existing.startTime;
+        const endTime = body.endTime ?? existing.endTime;
+        const addons = body.addons ?? existing.addons;
         const eventDate = parseDayUtc(dayStr);
         const ev = await tx.event.create({
-          data: { clientName, eventDate },
+          data: {
+            clientName,
+            eventDate,
+            venue,
+            shootTime: `${startTime}–${endTime}`,
+            notes: addons,
+            postProductionStarted: true,
+            createdById: req.auth!.userId,
+          },
         });
         eventId = ev.id;
         const rows = buildEventTasks(ev.id, ev.eventDate);
@@ -157,6 +179,13 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
         });
       }
 
+      if (eventId && body.venue !== undefined) {
+        await tx.event.update({
+          where: { id: eventId },
+          data: { venue: body.venue },
+        });
+      }
+
       return tx.shootCalendarEntry.update({
         where: { id },
         data: {
@@ -164,6 +193,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
           ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
           ...(body.clientType !== undefined ? { clientType: body.clientType } : {}),
           ...(body.eventName !== undefined ? { eventName: body.eventName } : {}),
+          ...(body.venue !== undefined ? { venue: body.venue } : {}),
           ...(body.startTime !== undefined ? { startTime: body.startTime } : {}),
           ...(body.endTime !== undefined ? { endTime: body.endTime } : {}),
           ...(body.photoTeam !== undefined ? { photoTeam: body.photoTeam } : {}),
@@ -174,6 +204,8 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
         include: entryInclude,
       });
     });
+
+    if (body.createDeliverableTimeline === true && !existing.eventId) emitTaskRefreshToOps();
 
     res.json({ entry });
   } catch (e) {
@@ -194,16 +226,59 @@ productionCalendarRouter.delete("/entries/:id", requireRole(Role.ADMIN), async (
       await tx.shootCalendarEntry.delete({ where: { id } });
     });
 
+    emitTaskRefreshToOps();
+
     res.json({ ok: true });
   } catch (e) {
     next(e);
   }
 });
 
-productionCalendarRouter.get("/team-members", requireCoordinatorOnly, async (_req, res, next) => {
+productionCalendarRouter.post("/entries/:id/start-post-production", requireCoordinator, async (req, res, next) => {
+  try {
+    const id = z.string().min(1).parse(req.params.id);
+    const auth = req.auth!;
+
+    const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
+    if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
+    if (existing.eventId) throw new HttpError(400, "Post-production already started for this shoot", "BAD_REQUEST");
+
+    const entry = await prisma.$transaction(async (tx) => {
+      const eventDate = existing.day;
+      const ev = await tx.event.create({
+        data: {
+          clientName: existing.clientName,
+          eventDate,
+          venue: existing.venue,
+          shootTime: `${existing.startTime}–${existing.endTime}`,
+          notes: existing.addons,
+          postProductionStarted: true,
+          createdById: auth.userId,
+        },
+      });
+      const rows = buildEventTasks(ev.id, ev.eventDate);
+      for (const row of rows) {
+        await tx.task.create({ data: row });
+      }
+      return tx.shootCalendarEntry.update({
+        where: { id },
+        data: { eventId: ev.id },
+        include: entryInclude,
+      });
+    });
+
+    emitTaskRefreshToOps();
+
+    res.status(201).json({ entry });
+  } catch (e) {
+    next(e);
+  }
+});
+
+productionCalendarRouter.get("/team-members", requireCoordinator, async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
-      where: { role: Role.TEAM_MEMBER, isActive: true },
+      where: { role: Role.EDITOR, isActive: true },
       select: { id: true, name: true, email: true, team: true, designation: true },
       orderBy: [{ team: "asc" }, { name: "asc" }],
     });
