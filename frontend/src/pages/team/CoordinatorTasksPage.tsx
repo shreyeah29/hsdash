@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { Users } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task, Team, User } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { GlassPanel } from "@/components/premium/GlassPanel";
+import { PriorityShowcaseCard } from "@/components/premium/PriorityShowcaseCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
-import { PriorityBadge } from "@/components/PriorityBadge";
 import { Button } from "@/components/ui/button";
 
 async function fetchTasks() {
@@ -19,6 +21,23 @@ async function fetchRoster() {
   const { data } = await api.get<{ users: User[] }>("/production-calendar/team-members");
   return data.users;
 }
+
+const COLUMNS: { key: TaskStatus; label: string; blurb: string; tint: string }[] = [
+  { key: TaskStatus.PENDING, label: "Unassigned / queued", blurb: "Match talent to deadline", tint: "from-amber-500/18 to-transparent" },
+  {
+    key: TaskStatus.IN_PROGRESS,
+    label: "In craft",
+    blurb: "Editors are shipping",
+    tint: "from-cyan-500/15 to-transparent",
+  },
+  { key: TaskStatus.DELAYED, label: "At risk", blurb: "Step in & unblock", tint: "from-rose-500/18 to-transparent" },
+  {
+    key: TaskStatus.COMPLETED,
+    label: "Delivered",
+    blurb: "Timeline kept",
+    tint: "from-emerald-500/15 to-transparent",
+  },
+];
 
 export function CoordinatorTasksPage() {
   const qc = useQueryClient();
@@ -44,6 +63,19 @@ export function CoordinatorTasksPage() {
       return matchesQ && matchesStatus;
     });
   }, [tasks, q, status]);
+
+  const grouped = useMemo(() => {
+    const buckets: Record<TaskStatus, Task[]> = {
+      [TaskStatus.PENDING]: [],
+      [TaskStatus.IN_PROGRESS]: [],
+      [TaskStatus.COMPLETED]: [],
+      [TaskStatus.DELAYED]: [],
+    };
+    for (const t of filtered) {
+      buckets[t.status].push(t);
+    }
+    return buckets;
+  }, [filtered]);
 
   const assign = useMutation({
     mutationFn: async ({ id, assignedToId }: { id: string; assignedToId: string | null }) => {
@@ -75,103 +107,140 @@ export function CoordinatorTasksPage() {
   }
 
   return (
-    <div className="space-y-3 text-white [&_input]:border-white/25 [&_input]:bg-black/30 [&_input]:text-white [&_.text-muted-foreground]:text-white/60">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Assignment board</h1>
-        <p className="text-sm text-white/70">
-          Every post-production task lands here after you start jobs from the shoot calendar. Match each row to the right editor — they only see what&apos;s assigned to them with deadlines and priorities.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          <Input placeholder="Search client or task…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <Select value={status} onValueChange={setStatus}>
-            <SelectItem value="ALL">All</SelectItem>
-            <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
-            <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
-            <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
-            <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
-          </Select>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200/70">Assignment control</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Production routing</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
+            Every deliverable flows here after shoots graduate from the calendar. Seat each piece with the right editor — they only see work routed to them with urgency surfaced upfront.
+          </p>
         </div>
-        <div className="text-sm text-white/65">{filtered.length} tasks</div>
+
+        <GlassPanel className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4" shine>
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+            <Input placeholder="Search client or deliverable…" value={q} onChange={(e) => setQ(e.target.value)} className="min-w-[200px]" />
+            <Select value={status} onValueChange={setStatus}>
+              <SelectItem value="ALL">All statuses</SelectItem>
+              <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
+              <SelectItem value={TaskStatus.IN_PROGRESS}>In progress</SelectItem>
+              <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
+              <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-amber-400/15 bg-amber-500/5 px-3 py-2 text-xs text-amber-100/80">
+            <Users className="h-4 w-4 text-amber-300" />
+            <span>
+              <span className="font-semibold text-white">{filtered.length}</span> visible
+            </span>
+          </div>
+        </GlassPanel>
       </div>
 
-      {isLoading ? <div className="text-sm text-white/65">Loading…</div> : null}
+      {isLoading ? (
+        <GlassPanel className="p-10 text-center text-sm text-zinc-400">Loading assignment board…</GlassPanel>
+      ) : null}
 
-      <div className="rounded-lg border border-white/15 bg-black/35 backdrop-blur-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client</TableHead>
-              <TableHead>Task</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Assignee</TableHead>
-              <TableHead>Deadline</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Progress</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell className="font-medium">{t.event?.clientName ?? "-"}</TableCell>
-                <TableCell>{t.taskType.replaceAll("_", " ")}</TableCell>
-                <TableCell>{t.assignedTeam.replaceAll("_", " ")}</TableCell>
-                <TableCell className="min-w-[160px]">
-                  <Select
-                    value={(t.assignedToId ?? t.assignedTo?.id) ?? "__none__"}
-                    onValueChange={(v) =>
-                      assign.mutate({ id: t.id, assignedToId: v === "__none__" ? null : v })
-                    }
-                  >
-                    <SelectItem value="__none__">Unassigned</SelectItem>
-                    {assigneesForTeam(t.assignedTeam).map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </TableCell>
-                <TableCell>{new Date(t.deadline).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <PriorityBadge priority={t.priority} />
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={t.status} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={updateStatus.isPending}
-                      onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.IN_PROGRESS })}
-                    >
-                      In progress
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={updateStatus.isPending}
-                      onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.COMPLETED })}
-                    >
-                      Done
-                    </Button>
+      {!isLoading && filtered.length === 0 ? (
+        <GlassPanel className="p-14 text-center shine">
+          <p className="text-sm font-medium text-white">Quiet runway</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            No tasks match these filters — kick off post-production from completed shoots on the calendar.
+          </p>
+        </GlassPanel>
+      ) : null}
+
+      {!isLoading && filtered.length > 0 ? (
+      <div className="grid gap-5 xl:grid-cols-4">
+        {COLUMNS.map((col, colIdx) => {
+          const list = grouped[col.key];
+          return (
+            <motion.div
+              key={col.key}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="flex min-h-[320px] flex-col rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent p-4 backdrop-blur-md"
+            >
+              <div className={`mb-4 rounded-xl bg-gradient-to-r px-3 py-3 ${col.tint}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[13px] font-semibold text-white">{col.label}</div>
+                    <div className="text-[11px] text-zinc-500">{col.blurb}</div>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!isLoading && filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                  No tasks yet — open completed shoots on the calendar and tap “Start post-production”.
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableBody>
-        </Table>
+                  <span className="rounded-lg border border-white/10 bg-black/35 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-300">
+                    {list.length}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col gap-3">
+                {list.map((t, rowIdx) => (
+                  <PriorityShowcaseCard
+                    key={t.id}
+                    task={t}
+                    index={colIdx * 24 + rowIdx}
+                    metaRow={
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                        {t.assignedTeam.replaceAll("_", " ")}
+                        {t.assignedTo?.name ? (
+                          <>
+                            {" "}
+                            · <span className="text-zinc-300">{t.assignedTo.name}</span>
+                          </>
+                        ) : (
+                          <span className="text-amber-200/80"> · Unassigned</span>
+                        )}
+                      </p>
+                    }
+                    topTrailing={<StatusBadge status={t.status} />}
+                    footer={
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Assign editor</span>
+                          <Select
+                            value={(t.assignedToId ?? t.assignedTo?.id) ?? "__none__"}
+                            onValueChange={(v) =>
+                              assign.mutate({ id: t.id, assignedToId: v === "__none__" ? null : v })
+                            }
+                          >
+                            <SelectItem value="__none__">Unassigned</SelectItem>
+                            {assigneesForTeam(t.assignedTeam).map((u) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                {u.name}
+                              </SelectItem>
+                            ))}
+                          </Select>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="glass"
+                            className="rounded-xl"
+                            disabled={updateStatus.isPending}
+                            onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.IN_PROGRESS })}
+                          >
+                            Mark in progress
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="premium"
+                            className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-glow-amber hover:brightness-105"
+                            disabled={updateStatus.isPending}
+                            onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.COMPLETED })}
+                          >
+                            Mark done
+                          </Button>
+                        </div>
+                      </div>
+                    }
+                  />
+                ))}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
-    </div>
+      ) : null}
+    </motion.div>
   );
 }

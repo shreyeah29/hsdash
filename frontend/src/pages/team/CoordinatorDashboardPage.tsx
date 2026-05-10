@@ -1,13 +1,19 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Radar,
+  CalendarDays,
+  ClipboardPenLine,
+  Flame,
+  Orbit,
+} from "lucide-react";
 import { api } from "@/services/api";
 import type { ShootCalendarEntry, Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassPanel, AnimatedStatCard, PriorityShowcaseCard, WorkloadBar } from "@/components/premium";
 import { Button } from "@/components/ui/button";
-import { PriorityBadge } from "@/components/PriorityBadge";
-import { StatusBadge } from "@/components/StatusBadge";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -60,7 +66,7 @@ export function CoordinatorDashboardPage() {
     const upcomingShoots = entries.filter((e) => calendarDayKeyFromIso(e.day) >= todayKey).length;
     const completedShootsMonth = entries.filter((e) => calendarDayKeyFromIso(e.day) < todayKey).length;
 
-    const urgent = [...open].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)).slice(0, 5);
+    const urgent = [...open].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)).slice(0, 6);
 
     return {
       delayed,
@@ -73,97 +79,125 @@ export function CoordinatorDashboardPage() {
     };
   }, [entries, tasks, todayKey]);
 
+  const workload = useMemo(() => {
+    const open = tasks.filter((t) => t.status !== TaskStatus.COMPLETED);
+    const map = new Map<string, number>();
+    for (const t of open) map.set(t.assignedTeam, (map.get(t.assignedTeam) ?? 0) + 1);
+    const arr = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+    const max = arr[0]?.[1] ?? 1;
+    return { rows: arr, max };
+  }, [tasks]);
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Operations command center</h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/70">
-          Track shoots, unlock post-production when a wedding wraps, and keep editor assignments moving. Admins build the shoot calendar;
-          you turn finished shoots into delivery tasks.
+    <div className="space-y-10">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
+        <p className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/90">
+          <Orbit className="h-3.5 w-3.5" />
+          Coordinator runway
         </p>
-      </div>
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          Orchestrate shoots. Ignite editing lanes.
+        </h1>
+        <p className="text-sm leading-relaxed text-zinc-400 md:text-[15px]">
+          Bridge logistics into deadlines — unlock post-production when you&apos;re ready, route workload without friction.
+        </p>
+      </motion.div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-amber-400/25 bg-black/30 text-white shadow-lg backdrop-blur-sm">
-          <CardHeader>
-            <CardDescription className="text-amber-100/80">Pending pipeline</CardDescription>
-            <CardTitle className="text-3xl text-amber-50">{summary.pendingPipeline}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-white/65">Shoots logged without post-production tasks yet.</CardContent>
-        </Card>
-        <Card className="border-white/15 bg-black/25 text-white backdrop-blur-sm">
-          <CardHeader>
-            <CardDescription className="text-white/65">Upcoming shoots (month)</CardDescription>
-            <CardTitle className="text-3xl">{loadingCal ? "…" : summary.upcomingShoots}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-white/65">Days from today forward on this calendar view.</CardContent>
-        </Card>
-        <Card className="border-white/15 bg-black/25 text-white backdrop-blur-sm">
-          <CardHeader>
-            <CardDescription className="text-white/65">Open deliverables</CardDescription>
-            <CardTitle className="text-3xl">{loadingTasks ? "…" : summary.totalOpen}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-white/65">{summary.unassigned} waiting for an editor assignment.</CardContent>
-        </Card>
-        <Card className="border-rose-400/30 bg-black/30 text-white backdrop-blur-sm">
-          <CardHeader>
-            <CardDescription className="text-rose-100/80">Delayed / at risk</CardDescription>
-            <CardTitle className="text-3xl text-rose-50">{summary.delayed}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-white/65">Tasks flagged past deadline or stalled.</CardContent>
-        </Card>
+        <AnimatedStatCard
+          label="Pending pipeline"
+          value={loadingCal ? "—" : summary.pendingPipeline}
+          hint="Shoots awaiting kickoff"
+          icon={Radar}
+          accent="amber"
+          delay={0}
+        />
+        <AnimatedStatCard
+          label="Open deliverables"
+          value={loadingTasks ? "—" : summary.totalOpen}
+          hint={`${summary.unassigned} unassigned`}
+          icon={ClipboardPenLine}
+          accent="violet"
+          delay={0.05}
+        />
+        <AnimatedStatCard
+          label="Upcoming shoots"
+          value={loadingCal ? "—" : summary.upcomingShoots}
+          hint="This month ahead"
+          icon={CalendarDays}
+          accent="cyan"
+          delay={0.1}
+        />
+        <AnimatedStatCard
+          label="At-risk rows"
+          value={loadingTasks ? "—" : summary.delayed}
+          hint="Escalate lovingly"
+          icon={Flame}
+          accent="rose"
+          delay={0.15}
+        />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <Card className="border-white/15 bg-black/25 text-white backdrop-blur-sm">
-          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+      <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+        <GlassPanel shine className="p-6 md:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-white">Hot deliveries</CardTitle>
-              <CardDescription className="text-white/65">Closest deadlines across all crews</CardDescription>
+              <h2 className="text-lg font-semibold text-white">Hot runway</h2>
+              <p className="text-sm text-zinc-500">Tightest delivery windows across crews.</p>
             </div>
-            <Button size="sm" variant="secondary" className="bg-amber-500 text-black hover:bg-amber-400" asChild>
+            <Button size="sm" variant="premium" className="rounded-xl px-5" asChild>
               <Link to="/coordinator/assignments">Open assignment board</Link>
             </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {summary.urgent.map((t) => (
-              <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/35 px-3 py-2">
-                <div className="min-w-0">
-                  <div className="truncate font-medium">{t.event?.clientName ?? "Client"}</div>
-                  <div className="truncate text-xs text-white/60">{t.taskType.replaceAll("_", " ")}</div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <PriorityBadge priority={t.priority} />
-                  <StatusBadge status={t.status} />
-                  <span className="text-xs text-white/60">{new Date(t.deadline).toLocaleDateString()}</span>
-                </div>
-              </div>
+          </div>
+          <div className="space-y-3">
+            {summary.urgent.map((t, i) => (
+              <PriorityShowcaseCard key={t.id} task={t} index={i} />
             ))}
             {!loadingTasks && summary.urgent.length === 0 ? (
-              <p className="text-sm text-white/55">No open tasks — great moment to prep the next shoot week.</p>
+              <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+                Queue quiet — prime the next assignment wave from calendar unlocks.
+              </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </GlassPanel>
 
-        <Card className="border-white/15 bg-black/25 text-white backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white">Shoot coverage</CardTitle>
-            <CardDescription className="text-white/65">This month&apos;s logistics footprint</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2">
-              <span className="text-white/70">Past shoot days</span>
-              <span className="font-semibold">{summary.completedShootsMonth}</span>
+        <div className="space-y-4">
+          <GlassPanel className="p-6">
+            <h3 className="text-sm font-semibold text-white">Shoot footprint · month view</h3>
+            <p className="mt-1 text-xs text-zinc-500">Logistics density snapshot.</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-wide text-zinc-500">Past days</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{summary.completedShootsMonth}</p>
+              </div>
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-wide text-zinc-500">Future days</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{summary.upcomingShoots}</p>
+              </div>
             </div>
-            <div className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2">
-              <span className="text-white/70">Future shoot days</span>
-              <span className="font-semibold">{summary.upcomingShoots}</span>
-            </div>
-            <Button variant="outline" className="w-full border-white/25 text-white hover:bg-white/10" asChild>
-              <Link to="/coordinator/shoot-calendar">Review shoot calendar</Link>
+            <Button variant="glass" className="mt-5 w-full border-white/12" asChild>
+              <Link to="/coordinator/shoot-calendar">Enter premium calendar</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </GlassPanel>
+
+          <GlassPanel className="p-6">
+            <h3 className="text-sm font-semibold text-white">Open workload · crews</h3>
+            <div className="mt-5 space-y-5">
+              {workload.rows.map(([team, count], i) => (
+                <WorkloadBar
+                  key={team}
+                  label={team.replaceAll("_", " ")}
+                  value={count}
+                  max={workload.max}
+                  tone={i % 3 === 0 ? "amber" : i % 3 === 1 ? "violet" : "cyan"}
+                />
+              ))}
+              {workload.rows.length === 0 ? (
+                <p className="text-center text-sm text-zinc-500">No workload slices yet.</p>
+              ) : null}
+            </div>
+          </GlassPanel>
+        </div>
       </div>
     </div>
   );

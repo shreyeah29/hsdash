@@ -1,10 +1,16 @@
+import { Home, CheckSquare } from "lucide-react";
 import { ShellLayout } from "@/layouts/ShellLayout";
 
-/** Editors — assignments + deadlines only (no calendar, no company-wide views). */
 export function TeamLayout() {
-  const links = [
-    { to: "/team", label: "My dashboard" },
-    { to: "/team/tasks", label: "My tasks" },
-  ];
-  return <ShellLayout title="Editor workspace" links={links} variant="editor" />;
+  return (
+    <ShellLayout
+      title="Your workspace"
+      subtitle="Deliverables & deadlines"
+      links={[
+        { to: "/team", label: "Today", icon: Home },
+        { to: "/team/tasks", label: "My tasks", icon: CheckSquare },
+      ]}
+      variant="editor"
+    />
+  );
 }

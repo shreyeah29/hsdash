@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import axios from "axios";
+import { Mail, Shield, Sparkles, UserPlus, Users } from "lucide-react";
 import { api } from "@/services/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AnimatedStatCard } from "@/components/premium/AnimatedStatCard";
+import { BorderBeam } from "@/components/premium/BorderBeam";
+import { GlassPanel } from "@/components/premium/GlassPanel";
+import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
+import { Spotlight } from "@/components/premium/Spotlight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import type { User } from "@/types/domain";
 import { Role, Team } from "@/types/domain";
 
@@ -30,6 +37,41 @@ type UserForm = {
   isActive: boolean;
 };
 
+function errMsg(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const msg = (e.response?.data as { message?: string })?.message;
+    if (typeof msg === "string") return msg;
+    return e.message;
+  }
+  return "Something went wrong.";
+}
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
+}
+
+function roleChipClasses(role: string) {
+  if (role === Role.ADMIN) return "border-violet-400/35 bg-violet-500/12 text-violet-100";
+  if (role === Role.COORDINATOR) return "border-amber-400/35 bg-amber-500/12 text-amber-50";
+  return "border-emerald-400/35 bg-emerald-500/12 text-emerald-50";
+}
+
+const listParent = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.055 } },
+};
+const listItem = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const } },
+};
+
 export function TeamManagementPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: fetchUsers });
@@ -47,6 +89,20 @@ export function TeamManagementPage() {
   });
 
   const users = useMemo(() => data ?? [], [data]);
+
+  const stats = useMemo(() => {
+    let admins = 0;
+    let coordinators = 0;
+    let editors = 0;
+    let active = 0;
+    for (const u of users) {
+      if (u.isActive) active++;
+      if (u.role === Role.ADMIN) admins++;
+      else if (u.role === Role.COORDINATOR) coordinators++;
+      else editors++;
+    }
+    return { total: users.length, active, admins, coordinators, editors };
+  }, [users]);
 
   const createUser = useMutation({
     mutationFn: async () => {
@@ -138,145 +194,226 @@ export function TeamManagementPage() {
     (form.role === Role.ADMIN || (needsTeam && !!form.team));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Team Management</h1>
-          <p className="text-sm text-muted-foreground">Add/edit users, activate/deactivate, reset passwords.</p>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-10">
+      <Spotlight className="rounded-3xl border border-white/[0.06]" glowColor="rgba(139, 92, 246, 0.16)">
+        <div className="relative px-1 py-1 md:px-2 md:py-2">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">People & access</p>
+              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                <GradientShimmerText>Roster command center</GradientShimmerText>
+              </h1>
+              <p className="text-sm leading-relaxed text-zinc-400">
+                Invite editors, seat coordinators, and curate studio defaults — crystal-clear roles without enterprise clutter.
+              </p>
+            </div>
+            <Button variant="premium" className="rounded-xl px-6 py-6 text-[15px] shadow-glow" onClick={openCreate}>
+              <UserPlus className="h-4 w-4" />
+              Add member
+            </Button>
+          </div>
         </div>
-        <Button onClick={openCreate}>Add Member</Button>
+      </Spotlight>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AnimatedStatCard label="Studio roster" value={stats.total} hint="Accounts provisioned" accent="violet" delay={0} icon={Users} />
+        <AnimatedStatCard
+          label="Active seats"
+          value={stats.active}
+          hint="Currently signing in"
+          accent="emerald"
+          delay={0.06}
+          icon={Sparkles}
+        />
+        <AnimatedStatCard label="Coordinators" value={stats.coordinators} hint="Routing specialists" accent="amber" delay={0.12} icon={Shield} />
+        <AnimatedStatCard label="Editors" value={stats.editors} hint="Creative throughput" accent="cyan" delay={0.18} icon={Mail} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>{users.length} total</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Designation</TableHead>
-                <TableHead>Active</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>{u.role}</TableCell>
-                  <TableCell>{u.team?.replaceAll("_", " ") ?? "-"}</TableCell>
-                  <TableCell>{u.designation ?? "-"}</TableCell>
-                  <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(u)}>
-                        Edit
-                      </Button>
-                      {u.role !== Role.ADMIN ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={deleteUser.isPending}
-                          onClick={() => deleteUser.mutate(u.id)}
-                        >
-                          Delete
-                        </Button>
-                      ) : null}
+      {isLoading ? (
+        <GlassPanel className="p-12 text-center text-sm text-zinc-400">Syncing roster…</GlassPanel>
+      ) : null}
+
+      {!isLoading && users.length === 0 ? (
+        <GlassPanel className="p-14 text-center shine">
+          <p className="font-medium text-white">No team members yet</p>
+          <p className="mt-2 text-sm text-zinc-500">Spin up your first editor or coordinator to unlock assignments.</p>
+          <Button variant="premium" className="mt-6 rounded-xl" onClick={openCreate}>
+            Create first member
+          </Button>
+        </GlassPanel>
+      ) : null}
+
+      {!isLoading && users.length > 0 ? (
+        <motion.div variants={listParent} initial="hidden" animate="show" className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {users.map((u) => (
+            <motion.div key={u.id} variants={listItem}>
+              <BorderBeam>
+                <GlassPanel className="relative h-full border-white/[0.05] p-6 shine">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/35 to-cyan-500/15 text-lg font-semibold text-white shadow-inner">
+                        {initials(u.name)}
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate text-[17px] font-semibold tracking-tight text-white">{u.name}</p>
+                        <p className="truncate text-sm text-zinc-500">{u.email}</p>
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!isLoading && users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    No users yet.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide",
+                        roleChipClasses(u.role),
+                      )}
+                    >
+                      {u.role}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                    <span className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-zinc-300">
+                      {u.team?.replaceAll("_", " ") ?? "No team"}
+                    </span>
+                    <span className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-zinc-300">
+                      {u.designation?.trim() || "—"}
+                    </span>
+                    <span
+                      className={
+                        u.isActive
+                          ? "rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-200"
+                          : "rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-zinc-500"
+                      }
+                    >
+                      {u.isActive ? "Active" : "Paused"}
+                    </span>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap gap-2 border-t border-white/[0.06] pt-5">
+                    <Button size="sm" variant="glass" className="rounded-xl" onClick={() => openEdit(u)}>
+                      Edit
+                    </Button>
+                    {u.role !== Role.ADMIN ? (
+                      <Button
+                        size="sm"
+                        variant="glass"
+                        className="rounded-xl border-rose-400/25 text-rose-200 hover:bg-rose-500/10"
+                        disabled={deleteUser.isPending}
+                        onClick={() => deleteUser.mutate(u.id)}
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                </GlassPanel>
+              </BorderBeam>
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto border-white/12">
           <DialogHeader>
-            <DialogTitle>{mode === "create" ? "Add Team Member" : "Edit Team Member"}</DialogTitle>
+            <DialogTitle>{mode === "create" ? "Invite teammate" : "Update teammate"}</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-3">
-            <Input placeholder="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            <Input placeholder="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-            <Input
-              type="password"
-              placeholder={mode === "create" ? "Password (min 8 chars)" : "New password (optional)"}
-              value={form.password ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Role</div>
-                <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
-                  <SelectItem value={Role.ADMIN}>ADMIN</SelectItem>
-                  <SelectItem value={Role.COORDINATOR}>COORDINATOR</SelectItem>
-                  <SelectItem value={Role.EDITOR}>EDITOR</SelectItem>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Team</div>
-                <Select value={form.team} onValueChange={(v) => setForm((f) => ({ ...f, team: v }))}>
-                  <SelectItem value={Team.PHOTO_TEAM}>PHOTO_TEAM</SelectItem>
-                  <SelectItem value={Team.CINEMATIC_TEAM}>CINEMATIC_TEAM</SelectItem>
-                  <SelectItem value={Team.TRADITIONAL_TEAM}>TRADITIONAL_TEAM</SelectItem>
-                  <SelectItem value={Team.ALBUM_TEAM}>ALBUM_TEAM</SelectItem>
-                  <SelectItem value={Team.COORDINATOR_TEAM}>COORDINATOR_TEAM</SelectItem>
-                </Select>
-              </div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-zinc-400">Name</div>
+              <Input placeholder="Full name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
-
-            <Input
-              placeholder="Designation (e.g. Photo Editor)"
-              value={form.designation}
-              onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
-            />
-
-            <div className="flex items-center justify-between">
-              <label className="text-sm">Active</label>
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-zinc-400">Email</div>
+              <Input
+                type="email"
+                placeholder="you@studio.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-zinc-400">
+                {mode === "create" ? "Password (min 8 chars)" : "New password (optional)"}
+              </div>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={form.password ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-zinc-400">Role</div>
+                <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
+                  <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+                  <SelectItem value={Role.COORDINATOR}>Coordinator</SelectItem>
+                  <SelectItem value={Role.EDITOR}>Editor</SelectItem>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-zinc-400">Team</div>
+                <Select disabled={!needsTeam} value={form.team} onValueChange={(v) => setForm((f) => ({ ...f, team: v }))}>
+                  <SelectItem value={Team.PHOTO_TEAM}>Photo team</SelectItem>
+                  <SelectItem value={Team.CINEMATIC_TEAM}>Cinematic team</SelectItem>
+                  <SelectItem value={Team.TRADITIONAL_TEAM}>Traditional team</SelectItem>
+                  <SelectItem value={Team.ALBUM_TEAM}>Album team</SelectItem>
+                  <SelectItem value={Team.COORDINATOR_TEAM}>Coordinator team</SelectItem>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-zinc-400">Designation</div>
+              <Input
+                placeholder="e.g. Lead cinematic editor"
+                value={form.designation}
+                disabled={form.role === Role.ADMIN}
+                onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
+              />
+            </div>
+
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+              <span className="text-sm text-zinc-300">Active seat</span>
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-white/20 bg-black/40 text-violet-500 focus:ring-violet-500/40"
+                checked={form.isActive}
+                onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+              />
+            </label>
+
+            {createUser.isError ? <p className="text-xs text-rose-300">{errMsg(createUser.error)}</p> : null}
+            {updateUser.isError ? <p className="text-xs text-rose-300">{errMsg(updateUser.error)}</p> : null}
+
+            <div className="mt-2 flex flex-wrap justify-end gap-2 border-t border-white/[0.06] pt-4">
               {mode === "edit" && form.id && form.password ? (
                 <Button
-                  variant="outline"
+                  variant="glass"
+                  className="rounded-xl"
+                  type="button"
+                  disabled={resetPassword.isPending || form.password.length < 8}
                   onClick={() => resetPassword.mutate({ id: form.id!, password: form.password! })}
                 >
-                  Reset Password
+                  Reset password
                 </Button>
               ) : null}
+              <Button variant="glass" className="rounded-xl" type="button" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
               <Button
+                variant="premium"
+                className="rounded-xl"
+                type="button"
                 disabled={!canSubmit || createUser.isPending || updateUser.isPending}
                 onClick={() => (mode === "create" ? createUser.mutate() : updateUser.mutate())}
               >
-                Save
+                {createUser.isPending || updateUser.isPending ? "Saving…" : "Save"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
-

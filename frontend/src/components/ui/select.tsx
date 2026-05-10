@@ -5,15 +5,18 @@ export function Select({
   value,
   onValueChange,
   children,
+  disabled,
 }: {
   value?: string;
   onValueChange?: (v: string) => void;
   children: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <select
-      className={cn("h-10 rounded-md border border-input bg-background px-3 text-sm")}
+      className={cn("premium-field h-10 cursor-pointer py-0", disabled && "cursor-not-allowed opacity-55")}
       value={value}
+      disabled={disabled}
       onChange={(e) => onValueChange?.(e.target.value)}
     >
       {children}

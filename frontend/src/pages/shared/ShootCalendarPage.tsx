@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/services/api";
 import type { ShootCalendarEntry, Task } from "@/types/domain";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassPanel } from "@/components/premium/GlassPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -230,11 +232,15 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
   const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/team/tasks";
 
+  const surfaceMuted = coordinatorMode ? "text-zinc-400" : "text-zinc-500";
+  const heading = coordinatorMode ? "text-white" : "text-white";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className={cn("text-xl font-semibold", coordinatorMode && "text-white")}>Shoot operations calendar</h1>
-        <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/70")}>
+    <div className="space-y-8">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Shoot logistics</p>
+        <h1 className={cn("text-3xl font-semibold tracking-tight md:text-4xl", heading)}>Production calendar</h1>
+        <p className={cn("text-sm leading-relaxed md:text-[15px]", surfaceMuted)}>
           {canMutate ? (
             <>
               Log shoot-day logistics only — client intel, timings, venue, attending crews, notes. After the wedding wraps, Emmanuel starts
@@ -251,114 +257,118 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             </>
           )}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_minmax(300px,380px)]">
-        <Card className={cn(coordinatorMode && "border-white/15 bg-black/30 text-white backdrop-blur-sm")}>
-          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 pb-4">
+      <div className="grid gap-6 xl:grid-cols-[1fr_minmax(320px,400px)]">
+        <GlassPanel shine className="overflow-hidden p-6 md:p-8">
+          <div className="mb-6 flex flex-row flex-wrap items-center justify-between gap-4">
             <div>
-              <CardTitle className={cn(coordinatorMode && "text-white")}>{label}</CardTitle>
-              <CardDescription className={cn(coordinatorMode && "text-white/65")}>
-                {isLoading ? "Loading…" : canMutate ? "Click a day to add or edit shoots." : "Click a day to review shoots."}
-              </CardDescription>
+              <h2 className="text-xl font-semibold text-white">{label}</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {isLoading ? "Loading…" : canMutate ? "Select cells to orchestrate shoot logistics." : "Review admin-logged coverage."}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" type="button" onClick={() => shiftMonth(-1)}>
-                Previous
+              <Button variant="glass" size="sm" type="button" className="rounded-xl border-white/12" onClick={() => shiftMonth(-1)}>
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" type="button" onClick={() => shiftMonth(1)}>
-                Next
+              <Button variant="glass" size="sm" type="button" className="rounded-xl border-white/12" onClick={() => shiftMonth(1)}>
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground sm:text-xs">
-              {WEEKDAYS.map((w) => (
-                <div key={w}>{w}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {grid.map((cell, i) => {
-                if (cell.day === null) {
-                  return <div key={`p-${i}`} className="min-h-[88px] rounded-md bg-muted/30 sm:min-h-[96px]" />;
-                }
-                const key = localDayKey(cursor.y, cursor.m, cell.day);
-                const list = entriesByDay.get(key) ?? [];
-                const dueN = duesInMonth.get(key)?.length ?? 0;
-                const isToday = key === localDayKey(now.getFullYear(), now.getMonth(), now.getDate());
-                const isSel = selectedKey === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSelectedKey(key)}
-                    className={cn(
-                      "flex min-h-[88px] flex-col rounded-md border p-1.5 text-left text-[11px] transition-colors hover:bg-accent/50 sm:min-h-[96px] sm:text-xs",
-                      isToday && "border-primary ring-1 ring-primary/30",
-                      isSel && "bg-accent ring-2 ring-primary/40",
-                      coordinatorMode && "border-white/15 bg-black/20 hover:bg-white/10",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-1 font-semibold">
-                      <span>{cell.day}</span>
-                      <span className="flex gap-0.5">
-                        {list.length > 0 ? <span className="h-2 w-2 rounded-full bg-primary" title="Shoot logged" /> : null}
-                        {dueN > 0 ? <span className="h-2 w-2 rounded-full bg-amber-500" title="Deliverable due" /> : null}
-                      </span>
-                    </div>
-                    <div className="mt-1 space-y-0.5 overflow-hidden">
-                      {list.slice(0, 2).map((e) => (
-                        <div key={e.id} className="truncate text-muted-foreground" title={e.clientName}>
-                          {e.clientName}
-                        </div>
-                      ))}
-                      {list.length > 2 ? <div className="text-muted-foreground">+{list.length - 2} more</div> : null}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" /> Shoot entry
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500" /> Deliverable due (linked job)
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mb-3 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
+            {WEEKDAYS.map((w) => (
+              <div key={w}>{w}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {grid.map((cell, i) => {
+              if (cell.day === null) {
+                return <div key={`p-${i}`} className="min-h-[96px] rounded-xl bg-white/[0.02] sm:min-h-[104px]" />;
+              }
+              const key = localDayKey(cursor.y, cursor.m, cell.day);
+              const list = entriesByDay.get(key) ?? [];
+              const dueN = duesInMonth.get(key)?.length ?? 0;
+              const isToday = key === localDayKey(now.getFullYear(), now.getMonth(), now.getDate());
+              const isSel = selectedKey === key;
+              return (
+                <motion.button
+                  key={key}
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedKey(key)}
+                  className={cn(
+                    "cal-cell-premium flex min-h-[96px] flex-col rounded-xl border p-2 text-left text-[11px] sm:min-h-[104px] sm:text-xs",
+                    "border-white/[0.08] bg-white/[0.03] text-zinc-200 shadow-inner hover:border-white/20 hover:bg-white/[0.06]",
+                    isToday && "border-cyan-400/40 ring-1 ring-cyan-400/30 shadow-glow-cyan",
+                    isSel && "border-violet-400/50 bg-gradient-to-br from-violet-500/15 to-cyan-500/10 shadow-glow",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-1 font-semibold text-white">
+                    <span>{cell.day}</span>
+                    <span className="flex gap-1">
+                      {list.length > 0 ? (
+                        <span className="h-2 w-2 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.8)]" title="Shoot" />
+                      ) : null}
+                      {dueN > 0 ? (
+                        <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]" title="Due" />
+                      ) : null}
+                    </span>
+                  </div>
+                  <div className="mt-1 space-y-0.5 overflow-hidden">
+                    {list.slice(0, 2).map((e) => (
+                      <div key={e.id} className="truncate text-zinc-500" title={e.clientName}>
+                        {e.clientName}
+                      </div>
+                    ))}
+                    {list.length > 2 ? <div className="text-zinc-600">+{list.length - 2}</div> : null}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-5 text-xs text-zinc-500">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-violet-400" /> Shoot logged
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-400" /> Deliverable deadline
+            </span>
+          </div>
+        </GlassPanel>
 
-        <Card className={cn("xl:sticky xl:top-4 xl:self-start", coordinatorMode && "border-white/15 bg-black/30 text-white backdrop-blur-sm")}>
-          <CardHeader>
-            <CardTitle className={cn(coordinatorMode && "text-white")}>{selectedKey ?? "Pick a day"}</CardTitle>
-            <CardDescription className={cn(coordinatorMode && "text-white/65")}>Shoot logistics and linked post-production tasks.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <motion.div layout className="xl:sticky xl:top-6 xl:self-start">
+          <GlassPanel className="space-y-6 p-6 md:p-8">
+            <div>
+              <h2 className="text-lg font-semibold text-white">{selectedKey ?? "Select a day"}</h2>
+              <p className="mt-1 text-sm text-zinc-500">Shoot intel & linked deliverable milestones.</p>
+            </div>
+            <div className="space-y-4">
             {!selectedKey ? (
-              <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>Select a date on the calendar.</p>
+              <p className="rounded-xl border border-dashed border-white/10 py-14 text-center text-sm text-zinc-500">
+                Select a date on the calendar to reveal logistics & timelines.
+              </p>
             ) : (
               <>
                 {canMutate ? (
-                  <Button type="button" className="w-full" onClick={openNew}>
+                  <Button type="button" variant="premium" className="w-full rounded-xl py-6" onClick={openNew}>
                     Add shoot / event details
                   </Button>
                 ) : null}
 
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Logged shoots</div>
+                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Logged shoots</div>
                   <div className="space-y-3">
                     {selectedEntries.map((e) => (
                       <div
                         key={e.id}
-                        className={cn(
-                          "rounded-lg border bg-muted/30 p-3 text-sm",
-                          coordinatorMode && "border-white/15 bg-black/40 text-white",
-                        )}
+                        className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 text-sm text-zinc-200 shadow-inner"
                       >
-                        <div className="font-medium">{e.clientName}</div>
-                        {e.eventName ? <div className="text-muted-foreground">{e.eventName}</div> : null}
-                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        <div className="font-semibold text-white">{e.clientName}</div>
+                        {e.eventName ? <div className="text-zinc-400">{e.eventName}</div> : null}
+                        <div className="mt-2 space-y-0.5 text-xs text-zinc-500">
                           {e.clientType ? <div>Type: {e.clientType}</div> : null}
                           {e.venue ? <div>Venue: {e.venue}</div> : null}
                           {(e.startTime || e.endTime) && (
@@ -369,19 +379,24 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           {e.photoTeam ? <div className="whitespace-pre-wrap">Photo on-site: {e.photoTeam}</div> : null}
                           {e.videoTeam ? <div className="whitespace-pre-wrap">Video on-site: {e.videoTeam}</div> : null}
                           {e.addons ? <div className="whitespace-pre-wrap">Notes: {e.addons}</div> : null}
-                          <div className="text-[11px]">Recorded by {e.createdBy.name}</div>
+                          <div className="text-[11px] text-zinc-600">Recorded by {e.createdBy.name}</div>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
                           {e.eventId ? (
-                            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs">Post-production active</span>
+                            <span className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
+                              Post-production active
+                            </span>
                           ) : (
-                            <span className="rounded-md border border-dashed px-2 py-0.5 text-xs">Awaiting coordinator kickoff</span>
+                            <span className="rounded-lg border border-dashed border-white/15 px-2.5 py-1 text-xs text-zinc-400">
+                              Awaiting coordinator kickoff
+                            </span>
                           )}
                           {coordinatorMode && !e.eventId ? (
                             <Button
                               size="sm"
                               type="button"
-                              className="bg-amber-500 text-black hover:bg-amber-400"
+                              variant="premium"
+                              className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-glow-amber hover:brightness-105"
                               disabled={startPostProduction.isPending}
                               onClick={() => startPostProduction.mutate(e.id)}
                             >
@@ -390,13 +405,14 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           ) : null}
                           {canMutate ? (
                             <>
-                              <Button variant="outline" size="sm" type="button" onClick={() => openEdit(e)}>
+                              <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => openEdit(e)}>
                                 Edit
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 type="button"
+                                className="rounded-xl border-rose-400/30 text-rose-200 hover:bg-rose-500/10"
                                 disabled={deleteEntry.isPending}
                                 onClick={() => deleteEntry.mutate(e.id)}
                               >
@@ -411,7 +427,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                       </div>
                     ))}
                     {selectedEntries.length === 0 ? (
-                      <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>
+                      <p className="rounded-xl border border-dashed border-white/10 py-10 text-center text-sm text-zinc-500">
                         {canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}
                       </p>
                     ) : null}
@@ -419,15 +435,19 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 </div>
 
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables due this day</div>
+                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Deliverables due this day</div>
                   {selectedDues.length === 0 ? (
-                    <p className={cn("text-sm text-muted-foreground", coordinatorMode && "text-white/65")}>No linked deadlines on this date.</p>
+                    <p className="text-sm text-zinc-500">No linked deadlines on this date.</p>
                   ) : (
                     <ul className="space-y-2 text-sm">
                       {selectedDues.map(({ task: t, clientName }) => (
-                        <li key={t.id} className="rounded-md border px-3 py-2">
-                          <span className="font-medium">{clientName}</span> — {t.taskType.replaceAll("_", " ")}
-                          {t.assignedTo ? <span className="text-muted-foreground"> · {t.assignedTo.name}</span> : null}
+                        <li
+                          key={t.id}
+                          className="rounded-xl border border-white/[0.07] bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3 text-zinc-200"
+                        >
+                          <span className="font-medium text-white">{clientName}</span>{" "}
+                          <span className="text-zinc-500">—</span> {t.taskType.replaceAll("_", " ")}
+                          {t.assignedTo ? <span className="text-zinc-500"> · {t.assignedTo.name}</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -435,8 +455,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+            </div>
+          </GlassPanel>
+        </motion.div>
       </div>
 
       {canMutate ? (
@@ -447,11 +468,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Day</div>
+                <div className="text-xs font-medium text-zinc-400">Day</div>
                 <Input type="date" value={form.day} onChange={(ev) => setForm((f) => ({ ...f, day: ev.target.value }))} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Client name</div>
+                <div className="text-xs font-medium text-zinc-400">Client name</div>
                 <Input
                   value={form.clientName}
                   onChange={(ev) => setForm((f) => ({ ...f, clientName: ev.target.value }))}
@@ -459,83 +480,80 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 />
               </div>
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Type of client</div>
+                <div className="text-xs font-medium text-zinc-400">Type of client</div>
                 <Input value={form.clientType} onChange={(ev) => setForm((f) => ({ ...f, clientType: ev.target.value }))} placeholder="Wedding, corporate…" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Event name</div>
+                <div className="text-xs font-medium text-zinc-400">Event name</div>
                 <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Venue</div>
+                <div className="text-xs font-medium text-zinc-400">Venue</div>
                 <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Start time</div>
+                <div className="text-xs font-medium text-zinc-400">Start time</div>
                 <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">End time</div>
+                <div className="text-xs font-medium text-zinc-400">End time</div>
                 <Input value={form.endTime} onChange={(ev) => setForm((f) => ({ ...f, endTime: ev.target.value }))} placeholder="6:00 PM" />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Photo team (on-site)</div>
+                <div className="text-xs font-medium text-zinc-400">Photo team (on-site)</div>
                 <textarea
-                  className={cn(
-                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
+                  className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.photoTeam}
                   onChange={(ev) => setForm((f) => ({ ...f, photoTeam: ev.target.value }))}
                   placeholder="Names / crew going"
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Video team (on-site)</div>
+                <div className="text-xs font-medium text-zinc-400">Video team (on-site)</div>
                 <textarea
-                  className={cn(
-                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
+                  className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.videoTeam}
                   onChange={(ev) => setForm((f) => ({ ...f, videoTeam: ev.target.value }))}
                   placeholder="Names / crew going"
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Notes / add-ons</div>
+                <div className="text-xs font-medium text-zinc-400">Notes / add-ons</div>
                 <textarea
-                  className={cn(
-                    "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
+                  className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.addons}
                   onChange={(ev) => setForm((f) => ({ ...f, addons: ev.target.value }))}
                   placeholder="Anything extra to remember"
                 />
               </div>
-              <label className="flex cursor-pointer items-start gap-2 sm:col-span-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 sm:col-span-2">
                 <input
                   type="checkbox"
-                  className="mt-1"
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/40 text-violet-500 focus:ring-violet-500/40"
                   checked={timelineAlreadyLinked ? false : form.createDeliverableTimeline}
                   disabled={timelineAlreadyLinked}
                   onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
                 />
-                <span className="text-sm leading-snug">
+                <span className="text-sm leading-snug text-zinc-300">
                   Immediately seed standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d). Leave off if Emmanuel should create tasks after the shoot.
                   {timelineAlreadyLinked ? (
-                    <span className="block text-xs text-muted-foreground">This row already has a linked timeline.</span>
+                    <span className="mt-1 block text-xs text-zinc-500">This row already has a linked timeline.</span>
                   ) : null}
                 </span>
               </label>
             </div>
-            {saveEntry.isError ? <p className="mt-2 text-sm text-destructive">{errMsg(saveEntry.error)}</p> : null}
-            <div className="mt-4 flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            {saveEntry.isError ? <p className="mt-2 text-sm text-rose-300">{errMsg(saveEntry.error)}</p> : null}
+            <div className="mt-6 flex justify-end gap-2 border-t border-white/[0.06] pt-4">
+              <Button type="button" variant="glass" className="rounded-xl" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="button" disabled={saveEntry.isPending || !form.clientName.trim()} onClick={() => saveEntry.mutate()}>
+              <Button
+                type="button"
+                variant="premium"
+                className="rounded-xl"
+                disabled={saveEntry.isPending || !form.clientName.trim()}
+                onClick={() => saveEntry.mutate()}
+              >
                 {saveEntry.isPending ? "Saving…" : "Save"}
               </Button>
             </div>

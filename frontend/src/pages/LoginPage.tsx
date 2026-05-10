@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft } from "lucide-react";
 import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Role } from "@/types/domain";
-import { ArrowLeft } from "lucide-react";
+import { AppBackground } from "@/components/premium/AppBackground";
+import { GlassPanel } from "@/components/premium/GlassPanel";
+import { BorderBeam } from "@/components/premium/BorderBeam";
+import { Spotlight } from "@/components/premium/Spotlight";
+import { Input } from "@/components/ui/input";
 
 const schema = z.object({
   email: z.string().email(),
@@ -29,11 +35,14 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
     defaultValues: { email: "", password: "" },
   });
 
-  const title = loginKind === "admin" ? "Admin sign in" : "Staff sign in";
+  const title = loginKind === "admin" ? "Principal access" : "Crew access";
   const description =
     loginKind === "admin"
-      ? "Owner / manager — shoot calendar, analytics, and monitoring."
-      : "Editors & Emmanuel — coordinators see calendar + assignments; editors see only their tasks.";
+      ? "Owner login — analytics, calendar intelligence, team roster."
+      : "Editors & coordinators — tailored workspaces after authentication.";
+
+  const spotlightTint =
+    loginKind === "admin" ? "rgba(139, 92, 246, 0.18)" : "rgba(52, 211, 153, 0.14)";
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -82,47 +91,54 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-background text-foreground px-6">
-      <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
-        <Link
-          to="/login"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          Back to login options
-        </Link>
+    <div className="relative min-h-full text-zinc-100">
+      <AppBackground accent={loginKind === "admin" ? "admin" : "editor"} />
+      <div className="relative z-10 flex min-h-full items-center justify-center px-6 py-16">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+          <Spotlight className="rounded-2xl" glowColor={spotlightTint}>
+            <BorderBeam>
+              <GlassPanel shine className="p-8 transition-transform duration-300 group-hover:-translate-y-0.5 md:p-10">
+                <Link
+                  to="/login"
+                  className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  Back
+                </Link>
 
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
-          <p className="text-xs text-muted-foreground pt-2">Wedding Production Dashboard</p>
-        </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                    {loginKind === "admin" ? "Admin lane" : "Staff lane"}
+                  </p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
+                  <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+                </div>
 
-        <form className="mt-6 space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Email</label>
-            <input
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              {...form.register("email")}
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Password</label>
-            <input
-              type="password"
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              {...form.register("password")}
-              autoComplete="current-password"
-            />
-          </div>
+                <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-zinc-400">Email</label>
+                    <Input {...form.register("email")} autoComplete="email" placeholder="you@studio.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-zinc-400">Password</label>
+                    <Input
+                      type="password"
+                      {...form.register("password")}
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                    />
+                  </div>
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+                  {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-          <Button className="w-full" type="submit">
-            Sign in
-          </Button>
-        </form>
+                  <Button type="submit" variant="premium" className="mt-2 w-full rounded-xl py-6 text-[15px] font-semibold">
+                    Enter dashboard
+                  </Button>
+                </form>
+              </GlassPanel>
+            </BorderBeam>
+          </Spotlight>
+        </motion.div>
       </div>
     </div>
   );

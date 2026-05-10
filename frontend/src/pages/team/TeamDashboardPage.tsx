@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Zap, CalendarHeart, AlertOctagon, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { api } from "@/services/api";
 import type { Task, UserNotification } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PriorityBadge } from "@/components/PriorityBadge";
+import { GlassPanel, AnimatedStatCard, PriorityShowcaseCard } from "@/components/premium";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -87,141 +88,121 @@ export function TeamDashboardPage() {
   const firstName = user?.name?.split(/\s+/)[0] ?? "there";
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border bg-card/80 p-6 shadow-sm backdrop-blur-sm">
-        <p className="text-sm font-medium text-muted-foreground">
-          {greeting(hour)}, {firstName}{" "}
-          <span aria-hidden className="inline-block animate-pulse">
-            👋
-          </span>
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Stay in flow — your desk is clear of noise.</h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          You have{" "}
-          <span className="font-semibold text-foreground">{stats.open}</span> active edits
-          {stats.cinematic > 0 ? (
-            <>
-              , including <span className="font-semibold text-foreground">{stats.cinematic}</span> cinematic cuts still cooking
-            </>
-          ) : null}
-          .{" "}
-          {stats.urgent > 0 ? (
-            <>
-              <span className="font-semibold text-amber-700 dark:text-amber-400">{stats.urgent}</span> need attention in the next day.
-            </>
-          ) : (
-            <>Nothing screaming urgent — keep pacing toward your deadlines.</>
-          )}{" "}
-          <span className="font-semibold text-foreground">{stats.dueThisWeek}</span> due within seven days.
-        </p>
+    <div className="space-y-10">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-panel shine-border relative overflow-hidden p-8 md:p-10"
+      >
+        <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-emerald-500/15 blur-[90px]" />
+        <div className="relative space-y-4">
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-200/90">
+            <span className="text-lg">👋</span>
+            {greeting(hour)}, {firstName}
+          </p>
+          <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-white md:text-[2.1rem]">
+            Your edit bay is tuned —{" "}
+            <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+              {stats.open > 0 ? `${stats.open} cuts need your signature.` : "fresh canvas awaiting Emmanuel's next drop."}
+            </span>
+          </h1>
+          <p className="max-w-2xl text-sm leading-relaxed text-zinc-400 md:text-[15px]">
+            {stats.cinematic > 0 ? (
+              <>
+                <span className="font-semibold text-white">{stats.cinematic}</span> cinematic edits still simmering.{" "}
+              </>
+            ) : null}
+            {stats.urgent > 0 ? (
+              <>
+                <span className="font-semibold text-amber-300">{stats.urgent}</span> ask for love within 24h.{" "}
+              </>
+            ) : (
+              <>Cadence looks humane — protect deep focus time. </>
+            )}
+            <span className="font-semibold text-white">{stats.dueThisWeek}</span> deliveries horizon within seven days.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Button variant="premium" className="rounded-xl px-6" asChild>
+              <Link to="/team/tasks">Jump into tasks</Link>
+            </Button>
+            <Button variant="glass" className="rounded-xl border-white/15" asChild>
+              <Link to="/team/tasks">Update statuses</Link>
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AnimatedStatCard label="Urgent horizon" value={stats.urgent} hint="≤ 24 hours" icon={Zap} accent="amber" delay={0} />
+        <AnimatedStatCard label="This week" value={stats.dueThisWeek} hint="Stay ahead" icon={CalendarHeart} accent="cyan" delay={0.05} />
+        <AnimatedStatCard label="Overdue" value={stats.overdue} hint="Recover gracefully" icon={AlertOctagon} accent="rose" delay={0.1} />
+        <AnimatedStatCard label="Completion" value={`${stats.progress}%`} hint="Personal throughput" icon={Sparkles} accent="emerald" delay={0.15} />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+      <GlassPanel shine className="p-6 md:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              Live assignments
-              {unreadCount > 0 ? (
-                <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-normal text-primary-foreground">{unreadCount}</span>
-              ) : null}
-            </CardTitle>
-            <CardDescription>Fresh briefs from Emmanuel land here — deadlines stay synced with My Tasks.</CardDescription>
+            <h2 className="text-lg font-semibold text-white">Signal inbox</h2>
+            <p className="text-sm text-zinc-500">Coordinator pings sync instantly — acknowledge when ready.</p>
           </div>
           {unreadCount > 0 ? (
-            <Button type="button" variant="outline" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
-              Mark all read
+            <Button variant="glass" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
+              Clear unread ({unreadCount})
             </Button>
           ) : null}
-        </CardHeader>
-        <CardContent className="space-y-3">
+        </div>
+        <div className="mt-6 space-y-3">
           {notifications.slice(0, 12).map((n) => (
             <div
               key={n.id}
-              className={cn("rounded-md border p-3 text-sm", !n.read && "border-primary/35 bg-primary/5")}
+              className={cn(
+                "rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors",
+                !n.read && "border-emerald-400/25 bg-emerald-500/[0.07]",
+              )}
             >
-              <div className="font-medium">{n.title}</div>
-              <div className="text-muted-foreground">{n.body}</div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="font-medium text-white">{n.title}</div>
+              <div className="mt-1 text-sm text-zinc-400">{n.body}</div>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {!n.read ? (
-                  <Button type="button" variant="outline" size="sm" disabled={markRead.isPending} onClick={() => markRead.mutate(n.id)}>
+                  <Button variant="glass" size="sm" disabled={markRead.isPending} onClick={() => markRead.mutate(n.id)}>
                     Mark read
                   </Button>
                 ) : null}
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" asChild>
-                  <Link to="/team/tasks">Open My Tasks</Link>
+                <Button variant="ghost" size="sm" className="text-emerald-300 hover:text-emerald-200" asChild>
+                  <Link to="/team/tasks">Open tasks →</Link>
                 </Button>
               </div>
             </div>
           ))}
-          {notifications.length === 0 ? <p className="text-sm text-muted-foreground">No assignment pings yet — check back after the next drop.</p> : null}
-        </CardContent>
-      </Card>
+          {notifications.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+              Quiet channel — new assignments appear here the moment they&apos;re yours.
+            </p>
+          ) : null}
+        </div>
+      </GlassPanel>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardDescription>Urgent window</CardDescription>
-            <CardTitle>{stats.urgent}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Due this week</CardDescription>
-            <CardTitle>{stats.dueThisWeek}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Overdue</CardDescription>
-            <CardTitle className={stats.overdue > 0 ? "text-destructive" : undefined}>{stats.overdue}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Completion</CardDescription>
-            <CardTitle>{stats.progress}%</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+      <GlassPanel className="p-6 md:p-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <CardTitle>Next countdowns</CardTitle>
-            <CardDescription>Closest deadlines on your plate</CardDescription>
+            <h2 className="text-lg font-semibold text-white">Incoming countdowns</h2>
+            <p className="text-sm text-zinc-500">Closest deadlines first — tap tasks for granular controls.</p>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/team/tasks">Manage statuses</Link>
+          <Button variant="premium" size="sm" className="rounded-xl" asChild>
+            <Link to="/team/tasks">Expand workspace</Link>
           </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {nextUp.map((t) => {
-              const due = new Date(t.deadline);
-              const ms = due.getTime() - now.getTime();
-              const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
-              const countdown =
-                days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : days === 1 ? "1 day left" : `${days} days`;
-              return (
-                <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 p-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{t.event?.clientName ?? "-"}</div>
-                    <div className="truncate text-xs text-muted-foreground">{t.taskType.replaceAll("_", " ")}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <PriorityBadge priority={t.priority} />
-                    <div className="text-right text-xs">
-                      <div className="font-medium tabular-nums">{countdown}</div>
-                      <div className="text-muted-foreground">{due.toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {stats.total === 0 ? <div className="text-sm text-muted-foreground">No tasks yet — your queue is ready when Emmanuel assigns work.</div> : null}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="space-y-3">
+          {nextUp.map((t, i) => (
+            <PriorityShowcaseCard key={t.id} task={t} index={i} />
+          ))}
+          {stats.total === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+              Queue pristine — Emmanuel routes work here when shoots unlock.
+            </div>
+          ) : null}
+        </div>
+      </GlassPanel>
     </div>
   );
 }

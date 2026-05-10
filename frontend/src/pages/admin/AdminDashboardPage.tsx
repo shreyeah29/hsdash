@@ -1,10 +1,17 @@
 import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, Sparkles } from "lucide-react";
 import { api } from "@/services/api";
 import type { Event, Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PriorityBadge } from "@/components/PriorityBadge";
+import {
+  GlassPanel,
+  AnimatedStatCard,
+  ProgressRing,
+  PriorityShowcaseCard,
+  WorkloadBar,
+} from "@/components/premium";
 
 async function fetchAdminData() {
   const [eventsRes, tasksRes] = await Promise.all([
@@ -28,8 +35,10 @@ export function AdminDashboardPage() {
       .length;
     const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
     const pending = tasks.filter((t) => t.status === TaskStatus.PENDING).length;
+    const total = tasks.length;
+    const completionRate = total ? Math.round((completed / total) * 100) : 0;
 
-    return { dueToday, overdue, completed, pending, weddings: (data?.events ?? []).length };
+    return { dueToday, overdue, completed, pending, weddings: (data?.events ?? []).length, completionRate, total };
   }, [data]);
 
   const priorityQueue = useMemo(() => {
@@ -47,94 +56,128 @@ export function AdminDashboardPage() {
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [data]);
 
+  const workloadMax = workload[0]?.[1] ?? 1;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Dashboard Overview</h1>
-        <p className="text-sm text-muted-foreground">At-a-glance deadlines, workload, and priority queue.</p>
+    <div className="space-y-10">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
+      >
+        <div className="max-w-2xl space-y-3">
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <Sparkles className="h-3.5 w-3.5 text-violet-300" />
+            Wedding production OS
+          </p>
+          <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            Mission control for every celebration you&apos;re crafting.
+          </h1>
+          <p className="text-sm leading-relaxed text-zinc-400 md:text-base">
+            Live snapshot of commitments, risk, and throughput — tuned for calm mornings and decisive afternoons.
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4 backdrop-blur-xl">
+          <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Delivery health</p>
+            <p className="mt-1 text-2xl font-semibold text-white">{isLoading ? "—" : `${stats.completionRate}%`}</p>
+            <p className="text-xs text-zinc-500">
+              {stats.completed} sealed · {stats.total - stats.completed} in motion
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <AnimatedStatCard
+          label="Active weddings"
+          value={isLoading ? "—" : stats.weddings}
+          hint="Events on record"
+          icon={Heart}
+          accent="violet"
+          delay={0}
+        />
+        <AnimatedStatCard
+          label="Due today"
+          value={isLoading ? "—" : stats.dueToday}
+          hint="Calendar-critical handoffs"
+          icon={CalendarClock}
+          accent="cyan"
+          delay={0.05}
+        />
+        <AnimatedStatCard
+          label="Overdue"
+          value={isLoading ? "—" : stats.overdue}
+          hint="Needs coordinator heat"
+          icon={AlertTriangle}
+          accent="rose"
+          delay={0.1}
+        />
+        <AnimatedStatCard
+          label="Completed"
+          value={isLoading ? "—" : stats.completed}
+          hint="Momentum vault"
+          icon={CircleCheck}
+          accent="emerald"
+          delay={0.15}
+        />
+        <AnimatedStatCard
+          label="Pending kickoff"
+          value={isLoading ? "—" : stats.pending}
+          hint="Awaiting movement"
+          icon={Hourglass}
+          accent="amber"
+          delay={0.2}
+        />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader>
-            <CardDescription>Active Weddings</CardDescription>
-            <CardTitle>{isLoading ? "—" : stats.weddings}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Due Today</CardDescription>
-            <CardTitle>{isLoading ? "—" : stats.dueToday}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Overdue</CardDescription>
-            <CardTitle>{isLoading ? "—" : stats.overdue}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Completed</CardDescription>
-            <CardTitle>{isLoading ? "—" : stats.completed}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Pending</CardDescription>
-            <CardTitle>{isLoading ? "—" : stats.pending}</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Priority Queue</CardTitle>
-            <CardDescription>Most urgent tasks across all teams.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {priorityQueue.map((t) => (
-                <div key={t.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{t.event?.clientName ?? "-"}</div>
-                    <div className="truncate text-xs text-muted-foreground">{t.taskType.replaceAll("_", " ")}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <PriorityBadge priority={t.priority} />
-                    <div className="text-xs text-muted-foreground">{new Date(t.deadline).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))}
-              {priorityQueue.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No tasks yet.</div>
-              ) : null}
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+        <GlassPanel shine className="p-6 md:p-8">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Priority runway</h2>
+              <p className="mt-1 text-sm text-zinc-500">Highest leverage deliverables across every crew.</p>
             </div>
-          </CardContent>
-        </Card>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-zinc-400">
+              Live queue · top {priorityQueue.length}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {priorityQueue.map((t, i) => (
+              <PriorityShowcaseCard key={t.id} task={t} index={i} />
+            ))}
+            {!isLoading && priorityQueue.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] py-14 text-center text-sm text-zinc-500">
+                Nothing in flight yet — add shoots from the calendar to ignite the pipeline.
+              </div>
+            ) : null}
+          </div>
+        </GlassPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Workload</CardTitle>
-            <CardDescription>Open tasks per team.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {workload.map(([team, count]) => (
-                <div key={team} className="flex items-center justify-between rounded-md border p-3">
-                  <div className="text-sm font-medium">{team.replaceAll("_", " ")}</div>
-                  <div className="text-sm text-muted-foreground">{count}</div>
-                </div>
-              ))}
-              {workload.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No workload data yet.</div>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
+        <GlassPanel className="flex flex-col p-6 md:p-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-white">Team workload</h2>
+            <p className="mt-1 text-sm text-zinc-500">Open tasks per crew — where attention compounds.</p>
+          </div>
+          <div className="flex flex-1 flex-col justify-center gap-6">
+            {workload.map(([team, count], i) => (
+              <WorkloadBar
+                key={team}
+                label={team.replaceAll("_", " ")}
+                value={count}
+                max={workloadMax}
+                tone={i % 3 === 0 ? "violet" : i % 3 === 1 ? "cyan" : "amber"}
+              />
+            ))}
+            {!isLoading && workload.length === 0 ? (
+              <p className="py-10 text-center text-sm text-zinc-500">Workload charts populate once tasks spin up.</p>
+            ) : null}
+          </div>
+        </GlassPanel>
       </div>
     </div>
   );
 }
-
