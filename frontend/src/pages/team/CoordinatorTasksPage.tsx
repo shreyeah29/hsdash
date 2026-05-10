@@ -23,19 +23,19 @@ async function fetchRoster() {
 }
 
 const COLUMNS: { key: TaskStatus; label: string; blurb: string; tint: string }[] = [
-  { key: TaskStatus.PENDING, label: "Unassigned / queued", blurb: "Match talent to deadline", tint: "from-amber-500/18 to-transparent" },
+  { key: TaskStatus.PENDING, label: "Unassigned / queued", blurb: "Match talent to deadline", tint: "from-amber-50 to-transparent" },
   {
     key: TaskStatus.IN_PROGRESS,
     label: "In craft",
     blurb: "Editors are shipping",
-    tint: "from-cyan-500/15 to-transparent",
+    tint: "from-cyan-50 to-transparent",
   },
-  { key: TaskStatus.DELAYED, label: "At risk", blurb: "Step in & unblock", tint: "from-rose-500/18 to-transparent" },
+  { key: TaskStatus.DELAYED, label: "At risk", blurb: "Step in & unblock", tint: "from-rose-50 to-transparent" },
   {
     key: TaskStatus.COMPLETED,
     label: "Delivered",
     blurb: "Timeline kept",
-    tint: "from-emerald-500/15 to-transparent",
+    tint: "from-emerald-50 to-transparent",
   },
 ];
 
@@ -110,9 +110,9 @@ export function CoordinatorTasksPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200/70">Assignment control</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Production routing</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">Assignment control</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900">Production routing</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
             Every deliverable flows here after shoots graduate from the calendar. Seat each piece with the right editor — they only see work routed to them with urgency surfaced upfront.
           </p>
         </div>
@@ -128,10 +128,10 @@ export function CoordinatorTasksPage() {
               <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
             </Select>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-amber-400/15 bg-amber-500/5 px-3 py-2 text-xs text-amber-100/80">
-            <Users className="h-4 w-4 text-amber-300" />
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <Users className="h-4 w-4 text-amber-700" />
             <span>
-              <span className="font-semibold text-white">{filtered.length}</span> visible
+              <span className="font-semibold text-zinc-900">{filtered.length}</span> visible
             </span>
           </div>
         </GlassPanel>
@@ -143,7 +143,7 @@ export function CoordinatorTasksPage() {
 
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
-          <p className="text-sm font-medium text-white">Quiet runway</p>
+          <p className="text-sm font-medium text-zinc-900">Quiet runway</p>
           <p className="mt-2 text-sm text-zinc-500">
             No tasks match these filters — kick off post-production from completed shoots on the calendar.
           </p>
@@ -160,15 +160,15 @@ export function CoordinatorTasksPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="flex min-h-[320px] flex-col rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent p-4 backdrop-blur-md"
+              className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/80 p-4 shadow-sm"
             >
               <div className={`mb-4 rounded-xl bg-gradient-to-r px-3 py-3 ${col.tint}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <div className="text-[13px] font-semibold text-white">{col.label}</div>
+                    <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
                     <div className="text-[11px] text-zinc-500">{col.blurb}</div>
                   </div>
-                  <span className="rounded-lg border border-white/10 bg-black/35 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-300">
+                  <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
                     {list.length}
                   </span>
                 </div>
@@ -185,10 +185,10 @@ export function CoordinatorTasksPage() {
                         {t.assignedTo?.name ? (
                           <>
                             {" "}
-                            · <span className="text-zinc-300">{t.assignedTo.name}</span>
+                            · <span className="text-zinc-800">{t.assignedTo.name}</span>
                           </>
                         ) : (
-                          <span className="text-amber-200/80"> · Unassigned</span>
+                          <span className="font-medium text-amber-700"> · Unassigned</span>
                         )}
                       </p>
                     }

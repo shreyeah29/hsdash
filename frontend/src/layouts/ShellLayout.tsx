@@ -38,23 +38,23 @@ export function ShellLayout({
     variant === "coordinator"
       ? {
           active:
-            "bg-gradient-to-r from-amber-500/20 to-orange-600/10 text-amber-50 ring-1 ring-amber-400/25 shadow-glow-amber",
-          idle: "text-zinc-400 hover:bg-white/[0.06] hover:text-white",
+            "bg-gradient-to-r from-amber-100 to-orange-50 text-amber-950 ring-1 ring-amber-200/80 shadow-sm shadow-amber-200/40",
+          idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
         }
       : variant === "editor"
         ? {
             active:
-              "bg-gradient-to-r from-emerald-500/18 to-teal-600/10 text-emerald-50 ring-1 ring-emerald-400/20 shadow-[0_0_28px_-8px_rgba(16,185,129,0.35)]",
-            idle: "text-zinc-400 hover:bg-white/[0.06] hover:text-white",
+              "bg-gradient-to-r from-emerald-100 to-teal-50 text-emerald-950 ring-1 ring-emerald-200/80 shadow-sm shadow-emerald-200/35",
+            idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
           }
         : {
             active:
-              "bg-gradient-to-r from-violet-500/20 to-cyan-500/10 text-white ring-1 ring-violet-400/25 shadow-glow",
-            idle: "text-zinc-400 hover:bg-white/[0.06] hover:text-white",
+              "bg-gradient-to-r from-violet-100 to-cyan-50 text-violet-950 ring-1 ring-violet-200/80 shadow-sm shadow-violet-200/40",
+            idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
           };
 
   return (
-    <div className="relative min-h-full text-zinc-100">
+    <div className="relative min-h-full text-zinc-900">
       <AppBackground accent={accent} />
 
       <div className="relative z-10 flex min-h-screen gap-3 p-3 md:gap-5 md:p-5 lg:p-6">
@@ -64,9 +64,9 @@ export function ShellLayout({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="glass-panel shine-border flex w-[248px] shrink-0 flex-col md:w-[268px]"
         >
-          <div className="border-b border-white/[0.06] p-5">
+          <div className="border-b border-zinc-200/80 p-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">HS Dash</p>
-            <h1 className="mt-2 text-lg font-semibold tracking-tight text-white">{title}</h1>
+            <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
               {subtitle ??
                 (variant === "coordinator"
@@ -100,8 +100,8 @@ export function ShellLayout({
                       {l.icon ? (
                         <span
                           className={cn(
-                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-black/30",
-                            isActive && "border-white/15 bg-white/[0.08]",
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700",
+                            isActive && "border-zinc-300 bg-white shadow-sm",
                           )}
                         >
                           <l.icon className="h-[18px] w-[18px] opacity-90" strokeWidth={1.75} />
@@ -115,10 +115,10 @@ export function ShellLayout({
             ))}
           </nav>
 
-          <div className="border-t border-white/[0.06] p-3">
+          <div className="border-t border-zinc-200/80 p-3">
             <Button
-              variant="glass"
-              className="w-full justify-center gap-2 border-white/10 text-zinc-300"
+              variant="outline"
+              className="w-full justify-center gap-2 border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
               onClick={() => void logout()}
             >
               <LogOut className="h-4 w-4" />

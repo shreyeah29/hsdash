@@ -42,7 +42,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
       : "Editors & coordinators — tailored workspaces after authentication.";
 
   const spotlightTint =
-    loginKind === "admin" ? "rgba(139, 92, 246, 0.18)" : "rgba(52, 211, 153, 0.14)";
+    loginKind === "admin" ? "rgba(139, 92, 246, 0.08)" : "rgba(52, 211, 153, 0.06)";
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -91,7 +91,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   }
 
   return (
-    <div className="relative min-h-full text-zinc-100">
+    <div className="relative min-h-full text-zinc-900">
       <AppBackground accent={loginKind === "admin" ? "admin" : "editor"} />
       <div className="relative z-10 flex min-h-full items-center justify-center px-6 py-16">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
@@ -100,7 +100,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
               <GlassPanel shine className="p-8 transition-transform duration-300 group-hover:-translate-y-0.5 md:p-10">
                 <Link
                   to="/login"
-                  className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+                  className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500 transition-colors hover:text-zinc-900"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden />
                   Back
@@ -110,17 +110,17 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
                     {loginKind === "admin" ? "Admin lane" : "Staff lane"}
                   </p>
-                  <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
-                  <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{title}</h1>
+                  <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
                 </div>
 
                 <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-400">Email</label>
+                    <label className="text-xs font-medium text-zinc-700">Email</label>
                     <Input {...form.register("email")} autoComplete="email" placeholder="you@studio.com" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-400">Password</label>
+                    <label className="text-xs font-medium text-zinc-700">Password</label>
                     <Input
                       type="password"
                       {...form.register("password")}
@@ -129,7 +129,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
                     />
                   </div>
 
-                  {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+                  {error ? <p className="text-sm text-rose-600">{error}</p> : null}
 
                   <Button type="submit" variant="premium" className="mt-2 w-full rounded-xl py-6 text-[15px] font-semibold">
                     Enter dashboard

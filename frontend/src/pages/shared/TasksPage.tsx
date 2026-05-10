@@ -18,19 +18,19 @@ async function fetchTasks() {
 }
 
 const COLUMNS: { key: TaskStatus; label: string; blurb: string; tint: string }[] = [
-  { key: TaskStatus.PENDING, label: "Queued", blurb: "Ready to pick up", tint: "from-zinc-500/15 to-transparent" },
+  { key: TaskStatus.PENDING, label: "Queued", blurb: "Ready to pick up", tint: "from-zinc-100 to-transparent" },
   {
     key: TaskStatus.IN_PROGRESS,
     label: "In motion",
     blurb: "Active craft time",
-    tint: "from-cyan-500/15 to-transparent",
+    tint: "from-cyan-50 to-transparent",
   },
-  { key: TaskStatus.DELAYED, label: "Needs air cover", blurb: "Unblock or reset", tint: "from-rose-500/15 to-transparent" },
+  { key: TaskStatus.DELAYED, label: "Needs air cover", blurb: "Unblock or reset", tint: "from-rose-50 to-transparent" },
   {
     key: TaskStatus.COMPLETED,
     label: "Shipped",
     blurb: "Delivered momentum",
-    tint: "from-emerald-500/15 to-transparent",
+    tint: "from-emerald-50 to-transparent",
   },
 ];
 
@@ -87,8 +87,8 @@ export function TasksPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Workflow</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Your queue</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900">Your queue</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
             Assignments routed to you — move cards forward as you progress. Everything stays cinematic, nothing feels like a spreadsheet.
           </p>
         </div>
@@ -103,10 +103,10 @@ export function TasksPage() {
               <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
             </Select>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-xs text-zinc-400">
-            <LayoutList className="h-4 w-4 text-violet-300/90" />
+          <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+            <LayoutList className="h-4 w-4 text-violet-600" />
             <span>
-              <span className="font-semibold text-white">{filtered.length}</span> visible
+              <span className="font-semibold text-zinc-900">{filtered.length}</span> visible
             </span>
           </div>
         </GlassPanel>
@@ -116,12 +116,12 @@ export function TasksPage() {
         <GlassPanel className="p-10 text-center text-sm text-zinc-400">Loading your board…</GlassPanel>
       ) : null}
       {error ? (
-        <GlassPanel className="border-rose-500/25 bg-rose-950/20 p-6 text-sm text-rose-200">Failed to load tasks.</GlassPanel>
+        <GlassPanel className="border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">Failed to load tasks.</GlassPanel>
       ) : null}
 
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
-          <p className="text-sm font-medium text-white">You&apos;re clear</p>
+          <p className="text-sm font-medium text-zinc-900">You&apos;re clear</p>
           <p className="mt-2 text-sm text-zinc-500">No tasks match these filters — check back after coordinators route new work.</p>
         </GlassPanel>
       ) : null}
@@ -136,15 +136,15 @@ export function TasksPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="flex min-h-[280px] flex-col rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent p-4 backdrop-blur-md"
+              className="flex min-h-[280px] flex-col rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/80 p-4 shadow-sm"
             >
               <div className={`mb-4 rounded-xl bg-gradient-to-r px-3 py-3 ${col.tint}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <div className="text-[13px] font-semibold text-white">{col.label}</div>
+                    <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
                     <div className="text-[11px] text-zinc-500">{col.blurb}</div>
                   </div>
-                  <span className="rounded-lg border border-white/10 bg-black/35 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-300">
+                  <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
                     {list.length}
                   </span>
                 </div>

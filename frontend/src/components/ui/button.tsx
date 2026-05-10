@@ -16,7 +16,7 @@ const buttonVariants = cva(
         premium:
           "rounded-xl bg-gradient-to-r from-violet-600 via-violet-500 to-cyan-500 text-white shadow-lg shadow-violet-500/25 hover:brightness-110",
         glass:
-          "rounded-xl border border-white/12 bg-white/[0.06] text-zinc-100 backdrop-blur-sm hover:bg-white/[0.1]",
+          "rounded-xl border border-zinc-200 bg-white text-zinc-800 shadow-sm backdrop-blur-sm hover:bg-zinc-50",
       },
       size: {
         default: "h-10 px-4 py-2",

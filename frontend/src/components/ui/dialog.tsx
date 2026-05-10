@@ -34,7 +34,7 @@ export function Dialog({
     >
       <button
         type="button"
-        className="fixed inset-0 bg-black/55 backdrop-blur-md focus:outline-none"
+        className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm focus:outline-none"
         aria-label="Close dialog"
         onClick={() => onOpenChange(false)}
       />
@@ -51,7 +51,7 @@ export function DialogContent({ className, ...props }: React.HTMLAttributes<HTML
     <div
       data-lenis-prevent
       className={cn(
-        "mx-auto max-h-[min(90vh,calc(100dvh-4rem))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/12 bg-zinc-900/85 p-6 shadow-2xl backdrop-blur-2xl",
+        "mx-auto max-h-[min(90vh,calc(100dvh-4rem))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl shadow-zinc-900/10",
         className,
       )}
       {...props}
@@ -64,5 +64,5 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 }
 
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-lg font-semibold tracking-tight text-white", className)} {...props} />;
+  return <h2 className={cn("text-lg font-semibold tracking-tight text-zinc-900", className)} {...props} />;
 }

@@ -232,8 +232,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
   const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/team/tasks";
 
-  const surfaceMuted = coordinatorMode ? "text-zinc-400" : "text-zinc-500";
-  const heading = coordinatorMode ? "text-white" : "text-white";
+  const surfaceMuted = coordinatorMode ? "text-zinc-600" : "text-zinc-600";
+  const heading = "text-zinc-900";
 
   return (
     <div className="space-y-8">
@@ -249,8 +249,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           ) : (
             <>
               Read-only logistics mirror what Admin captured. After the shoot, use{" "}
-              <span className="font-medium text-amber-200">Start post-production</span> on each completed row to spawn editing tasks, then assign editors in{" "}
-              <Link className="underline text-amber-200" to={assignmentsLink}>
+              <span className="font-medium text-amber-700">Start post-production</span> on each completed row to spawn editing tasks, then assign editors in{" "}
+              <Link className="font-medium text-amber-700 underline" to={assignmentsLink}>
                 Assignments
               </Link>
               .
@@ -263,16 +263,16 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         <GlassPanel shine className="overflow-hidden p-6 md:p-8">
           <div className="mb-6 flex flex-row flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-white">{label}</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">{label}</h2>
               <p className="mt-1 text-sm text-zinc-500">
                 {isLoading ? "Loading…" : canMutate ? "Select cells to orchestrate shoot logistics." : "Review admin-logged coverage."}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="glass" size="sm" type="button" className="rounded-xl border-white/12" onClick={() => shiftMonth(-1)}>
+              <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => shiftMonth(-1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="glass" size="sm" type="button" className="rounded-xl border-white/12" onClick={() => shiftMonth(1)}>
+              <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => shiftMonth(1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -285,7 +285,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           <div className="grid grid-cols-7 gap-2">
             {grid.map((cell, i) => {
               if (cell.day === null) {
-                return <div key={`p-${i}`} className="min-h-[96px] rounded-xl bg-white/[0.02] sm:min-h-[104px]" />;
+                return <div key={`p-${i}`} className="min-h-[96px] rounded-xl bg-zinc-100/40 sm:min-h-[104px]" />;
               }
               const key = localDayKey(cursor.y, cursor.m, cell.day);
               const list = entriesByDay.get(key) ?? [];
@@ -301,12 +301,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   onClick={() => setSelectedKey(key)}
                   className={cn(
                     "cal-cell-premium flex min-h-[96px] flex-col rounded-xl border p-2 text-left text-[11px] sm:min-h-[104px] sm:text-xs",
-                    "border-white/[0.08] bg-white/[0.03] text-zinc-200 shadow-inner hover:border-white/20 hover:bg-white/[0.06]",
-                    isToday && "border-cyan-400/40 ring-1 ring-cyan-400/30 shadow-glow-cyan",
-                    isSel && "border-violet-400/50 bg-gradient-to-br from-violet-500/15 to-cyan-500/10 shadow-glow",
+                    "border-zinc-200 bg-white text-zinc-800 shadow-sm hover:border-zinc-300 hover:bg-zinc-50",
+                    isToday && "border-cyan-400 ring-1 ring-cyan-200",
+                    isSel && "border-violet-400 bg-gradient-to-br from-violet-50 to-cyan-50 ring-1 ring-violet-200",
                   )}
                 >
-                  <div className="flex items-center justify-between gap-1 font-semibold text-white">
+                  <div className="flex items-center justify-between gap-1 font-semibold text-zinc-900">
                     <span>{cell.day}</span>
                     <span className="flex gap-1">
                       {list.length > 0 ? (
@@ -319,7 +319,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   </div>
                   <div className="mt-1 space-y-0.5 overflow-hidden">
                     {list.slice(0, 2).map((e) => (
-                      <div key={e.id} className="truncate text-zinc-500" title={e.clientName}>
+                      <div key={e.id} className="truncate text-zinc-600" title={e.clientName}>
                         {e.clientName}
                       </div>
                     ))}
@@ -342,12 +342,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         <motion.div layout className="xl:sticky xl:top-6 xl:self-start">
           <GlassPanel className="space-y-6 p-6 md:p-8">
             <div>
-              <h2 className="text-lg font-semibold text-white">{selectedKey ?? "Select a day"}</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">{selectedKey ?? "Select a day"}</h2>
               <p className="mt-1 text-sm text-zinc-500">Shoot intel & linked deliverable milestones.</p>
             </div>
             <div className="space-y-4">
             {!selectedKey ? (
-              <p className="rounded-xl border border-dashed border-white/10 py-14 text-center text-sm text-zinc-500">
+              <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-500">
                 Select a date on the calendar to reveal logistics & timelines.
               </p>
             ) : (
@@ -364,9 +364,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                     {selectedEntries.map((e) => (
                       <div
                         key={e.id}
-                        className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 text-sm text-zinc-200 shadow-inner"
+                        className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 shadow-sm"
                       >
-                        <div className="font-semibold text-white">{e.clientName}</div>
+                        <div className="font-semibold text-zinc-900">{e.clientName}</div>
                         {e.eventName ? <div className="text-zinc-400">{e.eventName}</div> : null}
                         <div className="mt-2 space-y-0.5 text-xs text-zinc-500">
                           {e.clientType ? <div>Type: {e.clientType}</div> : null}
@@ -383,11 +383,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {e.eventId ? (
-                            <span className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
+                            <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
                               Post-production active
                             </span>
                           ) : (
-                            <span className="rounded-lg border border-dashed border-white/15 px-2.5 py-1 text-xs text-zinc-400">
+                            <span className="rounded-lg border border-dashed border-zinc-300 px-2.5 py-1 text-xs text-zinc-600">
                               Awaiting coordinator kickoff
                             </span>
                           )}
@@ -412,7 +412,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                                 variant="outline"
                                 size="sm"
                                 type="button"
-                                className="rounded-xl border-rose-400/30 text-rose-200 hover:bg-rose-500/10"
+                                className="rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50"
                                 disabled={deleteEntry.isPending}
                                 onClick={() => deleteEntry.mutate(e.id)}
                               >
@@ -422,12 +422,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           ) : null}
                         </div>
                         {startPostProduction.isError ? (
-                          <p className="mt-2 text-xs text-rose-300">{errMsg(startPostProduction.error)}</p>
+                          <p className="mt-2 text-xs text-rose-600">{errMsg(startPostProduction.error)}</p>
                         ) : null}
                       </div>
                     ))}
                     {selectedEntries.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-white/10 py-10 text-center text-sm text-zinc-500">
+                      <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-10 text-center text-sm text-zinc-500">
                         {canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}
                       </p>
                     ) : null}
@@ -443,9 +443,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                       {selectedDues.map(({ task: t, clientName }) => (
                         <li
                           key={t.id}
-                          className="rounded-xl border border-white/[0.07] bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3 text-zinc-200"
+                          className="rounded-xl border border-amber-100 bg-gradient-to-r from-amber-50 to-transparent px-4 py-3 text-zinc-800"
                         >
-                          <span className="font-medium text-white">{clientName}</span>{" "}
+                          <span className="font-medium text-zinc-900">{clientName}</span>{" "}
                           <span className="text-zinc-500">—</span> {t.taskType.replaceAll("_", " ")}
                           {t.assignedTo ? <span className="text-zinc-500"> · {t.assignedTo.name}</span> : null}
                         </li>
@@ -526,15 +526,15 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   placeholder="Anything extra to remember"
                 />
               </div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 sm:col-span-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 sm:col-span-2">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/40 text-violet-500 focus:ring-violet-500/40"
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
                   checked={timelineAlreadyLinked ? false : form.createDeliverableTimeline}
                   disabled={timelineAlreadyLinked}
                   onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
                 />
-                <span className="text-sm leading-snug text-zinc-300">
+                <span className="text-sm leading-snug text-zinc-700">
                   Immediately seed standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d). Leave off if Emmanuel should create tasks after the shoot.
                   {timelineAlreadyLinked ? (
                     <span className="mt-1 block text-xs text-zinc-500">This row already has a linked timeline.</span>
@@ -542,8 +542,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 </span>
               </label>
             </div>
-            {saveEntry.isError ? <p className="mt-2 text-sm text-rose-300">{errMsg(saveEntry.error)}</p> : null}
-            <div className="mt-6 flex justify-end gap-2 border-t border-white/[0.06] pt-4">
+            {saveEntry.isError ? <p className="mt-2 text-sm text-rose-600">{errMsg(saveEntry.error)}</p> : null}
+            <div className="mt-6 flex justify-end gap-2 border-t border-zinc-100 pt-4">
               <Button type="button" variant="glass" className="rounded-xl" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>

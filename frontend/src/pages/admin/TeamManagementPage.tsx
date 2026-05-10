@@ -195,15 +195,15 @@ export function TeamManagementPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-10">
-      <Spotlight className="rounded-3xl border border-white/[0.06]" glowColor="rgba(139, 92, 246, 0.16)">
+      <Spotlight className="rounded-3xl border border-zinc-200/80" glowColor="rgba(139, 92, 246, 0.08)">
         <div className="relative px-1 py-1 md:px-2 md:py-2">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">People & access</p>
-              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
                 <GradientShimmerText>Roster command center</GradientShimmerText>
               </h1>
-              <p className="text-sm leading-relaxed text-zinc-400">
+              <p className="text-sm leading-relaxed text-zinc-600">
                 Invite editors, seat coordinators, and curate studio defaults — crystal-clear roles without enterprise clutter.
               </p>
             </div>
@@ -235,7 +235,7 @@ export function TeamManagementPage() {
 
       {!isLoading && users.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
-          <p className="font-medium text-white">No team members yet</p>
+          <p className="font-medium text-zinc-900">No team members yet</p>
           <p className="mt-2 text-sm text-zinc-500">Spin up your first editor or coordinator to unlock assignments.</p>
           <Button variant="premium" className="mt-6 rounded-xl" onClick={openCreate}>
             Create first member
@@ -248,14 +248,14 @@ export function TeamManagementPage() {
           {users.map((u) => (
             <motion.div key={u.id} variants={listItem}>
               <BorderBeam>
-                <GlassPanel className="relative h-full border-white/[0.05] p-6 shine">
+                <GlassPanel className="relative h-full border-zinc-100 p-6 shine">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/35 to-cyan-500/15 text-lg font-semibold text-white shadow-inner">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-cyan-50 text-lg font-semibold text-violet-900 shadow-inner ring-1 ring-zinc-200/80">
                         {initials(u.name)}
                       </div>
                       <div className="min-w-0 space-y-1">
-                        <p className="truncate text-[17px] font-semibold tracking-tight text-white">{u.name}</p>
+                        <p className="truncate text-[17px] font-semibold tracking-tight text-zinc-900">{u.name}</p>
                         <p className="truncate text-sm text-zinc-500">{u.email}</p>
                       </div>
                     </div>
@@ -270,24 +270,24 @@ export function TeamManagementPage() {
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                    <span className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-zinc-300">
+                    <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
                       {u.team?.replaceAll("_", " ") ?? "No team"}
                     </span>
-                    <span className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-zinc-300">
+                    <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
                       {u.designation?.trim() || "—"}
                     </span>
                     <span
                       className={
                         u.isActive
                           ? "rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-200"
-                          : "rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-zinc-500"
+                          : "rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-zinc-600"
                       }
                     >
                       {u.isActive ? "Active" : "Paused"}
                     </span>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap gap-2 border-t border-white/[0.06] pt-5">
+                  <div className="mt-6 flex flex-wrap gap-2 border-t border-zinc-100 pt-5">
                     <Button size="sm" variant="glass" className="rounded-xl" onClick={() => openEdit(u)}>
                       Edit
                     </Button>
@@ -311,7 +311,7 @@ export function TeamManagementPage() {
       ) : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto border-white/12">
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto border-zinc-200">
           <DialogHeader>
             <DialogTitle>{mode === "create" ? "Invite teammate" : "Update teammate"}</DialogTitle>
           </DialogHeader>
@@ -373,11 +373,11 @@ export function TeamManagementPage() {
               />
             </div>
 
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-              <span className="text-sm text-zinc-300">Active seat</span>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+              <span className="text-sm text-zinc-800">Active seat</span>
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-white/20 bg-black/40 text-violet-500 focus:ring-violet-500/40"
+                className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
                 checked={form.isActive}
                 onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
               />
@@ -386,7 +386,7 @@ export function TeamManagementPage() {
             {createUser.isError ? <p className="text-xs text-rose-300">{errMsg(createUser.error)}</p> : null}
             {updateUser.isError ? <p className="text-xs text-rose-300">{errMsg(updateUser.error)}</p> : null}
 
-            <div className="mt-2 flex flex-wrap justify-end gap-2 border-t border-white/[0.06] pt-4">
+            <div className="mt-2 flex flex-wrap justify-end gap-2 border-t border-zinc-100 pt-4">
               {mode === "edit" && form.id && form.password ? (
                 <Button
                   variant="glass"

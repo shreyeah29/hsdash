@@ -94,38 +94,38 @@ export function TeamDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-panel shine-border relative overflow-hidden p-8 md:p-10"
       >
-        <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-emerald-500/15 blur-[90px]" />
+        <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-emerald-200/50 blur-[90px]" />
         <div className="relative space-y-4">
-          <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-200/90">
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-800">
             <span className="text-lg">👋</span>
             {greeting(hour)}, {firstName}
           </p>
-          <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-white md:text-[2.1rem]">
+          <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-[2.1rem]">
             Your edit bay is tuned —{" "}
-            <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-700 to-cyan-700 bg-clip-text text-transparent">
               {stats.open > 0 ? `${stats.open} cuts need your signature.` : "fresh canvas awaiting Emmanuel's next drop."}
             </span>
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-zinc-400 md:text-[15px]">
+          <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 md:text-[15px]">
             {stats.cinematic > 0 ? (
               <>
-                <span className="font-semibold text-white">{stats.cinematic}</span> cinematic edits still simmering.{" "}
+                <span className="font-semibold text-zinc-900">{stats.cinematic}</span> cinematic edits still simmering.{" "}
               </>
             ) : null}
             {stats.urgent > 0 ? (
               <>
-                <span className="font-semibold text-amber-300">{stats.urgent}</span> ask for love within 24h.{" "}
+                <span className="font-semibold text-amber-700">{stats.urgent}</span> ask for love within 24h.{" "}
               </>
             ) : (
               <>Cadence looks humane — protect deep focus time. </>
             )}
-            <span className="font-semibold text-white">{stats.dueThisWeek}</span> deliveries horizon within seven days.
+            <span className="font-semibold text-zinc-900">{stats.dueThisWeek}</span> deliveries horizon within seven days.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Button variant="premium" className="rounded-xl px-6" asChild>
               <Link to="/team/tasks">Jump into tasks</Link>
             </Button>
-            <Button variant="glass" className="rounded-xl border-white/15" asChild>
+            <Button variant="glass" className="rounded-xl" asChild>
               <Link to="/team/tasks">Update statuses</Link>
             </Button>
           </div>
@@ -142,7 +142,7 @@ export function TeamDashboardPage() {
       <GlassPanel shine className="p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Signal inbox</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">Signal inbox</h2>
             <p className="text-sm text-zinc-500">Coordinator pings sync instantly — acknowledge when ready.</p>
           </div>
           {unreadCount > 0 ? (
@@ -156,26 +156,26 @@ export function TeamDashboardPage() {
             <div
               key={n.id}
               className={cn(
-                "rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors",
-                !n.read && "border-emerald-400/25 bg-emerald-500/[0.07]",
+                "rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 transition-colors",
+                !n.read && "border-emerald-300 bg-emerald-50",
               )}
             >
-              <div className="font-medium text-white">{n.title}</div>
-              <div className="mt-1 text-sm text-zinc-400">{n.body}</div>
+              <div className="font-medium text-zinc-900">{n.title}</div>
+              <div className="mt-1 text-sm text-zinc-600">{n.body}</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {!n.read ? (
                   <Button variant="glass" size="sm" disabled={markRead.isPending} onClick={() => markRead.mutate(n.id)}>
                     Mark read
                   </Button>
                 ) : null}
-                <Button variant="ghost" size="sm" className="text-emerald-300 hover:text-emerald-200" asChild>
+                <Button variant="ghost" size="sm" className="text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" asChild>
                   <Link to="/team/tasks">Open tasks →</Link>
                 </Button>
               </div>
             </div>
           ))}
           {notifications.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
               Quiet channel — new assignments appear here the moment they&apos;re yours.
             </p>
           ) : null}
@@ -185,7 +185,7 @@ export function TeamDashboardPage() {
       <GlassPanel className="p-6 md:p-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Incoming countdowns</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">Incoming countdowns</h2>
             <p className="text-sm text-zinc-500">Closest deadlines first — tap tasks for granular controls.</p>
           </div>
           <Button variant="premium" size="sm" className="rounded-xl" asChild>
@@ -197,7 +197,7 @@ export function TeamDashboardPage() {
             <PriorityShowcaseCard key={t.id} task={t} index={i} />
           ))}
           {stats.total === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
               Queue pristine — Emmanuel routes work here when shoots unlock.
             </div>
           ) : null}

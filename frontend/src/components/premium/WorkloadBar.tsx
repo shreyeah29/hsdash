@@ -22,10 +22,10 @@ export function WorkloadBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-zinc-300">{label}</span>
+        <span className="font-medium text-zinc-800">{label}</span>
         <span className="tabular-nums text-zinc-500">{value}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
         <motion.div
           className={`h-full rounded-full bg-gradient-to-r ${grad}`}
           initial={{ width: 0 }}

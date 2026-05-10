@@ -4,12 +4,12 @@ import { TaskPriority } from "@/types/domain";
 export function PriorityBadge({ priority }: { priority: TaskPriority }) {
   const className =
     priority === TaskPriority.CRITICAL
-      ? "border border-rose-400/40 bg-rose-500/15 text-rose-100 shadow-[0_0_16px_-4px_rgba(244,63,94,0.45)]"
+      ? "border border-rose-200 bg-rose-50 text-rose-800 shadow-sm"
       : priority === TaskPriority.HIGH
-        ? "border border-amber-400/35 bg-amber-500/12 text-amber-100"
+        ? "border border-amber-200 bg-amber-50 text-amber-900"
         : priority === TaskPriority.MEDIUM
-          ? "border border-yellow-400/25 bg-yellow-400/10 text-yellow-100"
-          : "border border-emerald-400/30 bg-emerald-500/12 text-emerald-100";
+          ? "border border-yellow-200 bg-yellow-50 text-yellow-900"
+          : "border border-emerald-200 bg-emerald-50 text-emerald-900";
 
   return (
     <Badge className={`font-medium tracking-wide ${className}`}>

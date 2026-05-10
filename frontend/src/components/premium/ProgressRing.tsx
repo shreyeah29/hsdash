@@ -27,7 +27,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          className="stroke-white/[0.08]"
+          className="stroke-zinc-200"
           strokeWidth={stroke}
         />
         <motion.circle
@@ -51,7 +51,7 @@ export function ProgressRing({
         </defs>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-semibold tabular-nums text-white">{Math.round(pct)}%</span>
+        <span className="text-sm font-semibold tabular-nums text-zinc-900">{Math.round(pct)}%</span>
       </div>
     </div>
   );

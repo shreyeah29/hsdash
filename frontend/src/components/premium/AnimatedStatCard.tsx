@@ -4,11 +4,11 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const accents = {
-  violet: "from-violet-500/20 via-transparent to-cyan-500/10 shadow-glow",
-  cyan: "from-cyan-500/20 via-transparent to-violet-500/10 shadow-glow-cyan",
-  amber: "from-amber-500/25 via-transparent to-orange-600/10 shadow-glow-amber",
-  rose: "from-rose-500/20 via-transparent to-transparent shadow-[0_0_36px_-10px_rgba(244,63,94,0.35)]",
-  emerald: "from-emerald-500/18 via-transparent to-teal-500/10 shadow-[0_0_36px_-10px_rgba(16,185,129,0.25)]",
+  violet: "from-violet-50 via-white to-cyan-50/80 shadow-violet-100/80",
+  cyan: "from-cyan-50 via-white to-violet-50/80 shadow-cyan-100/60",
+  amber: "from-amber-50 via-white to-orange-50/80 shadow-amber-100/70",
+  rose: "from-rose-50 via-white to-white shadow-rose-100/60",
+  emerald: "from-emerald-50 via-white to-teal-50/80 shadow-emerald-100/60",
 } as const;
 
 export type StatAccent = keyof typeof accents;
@@ -35,20 +35,20 @@ export function AnimatedStatCard({
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
       className={cn(
-        "glass-panel shine-border relative overflow-hidden p-5",
+        "glass-panel shine-border relative overflow-hidden border-zinc-200/90 p-5 shadow-md",
         "bg-gradient-to-br",
         accents[accent],
       )}
     >
-      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/[0.04] blur-2xl" />
+      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/80 blur-2xl" />
       <div className="relative flex items-start justify-between gap-3">
         <div className="space-y-2">
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">{label}</p>
-          <p className="text-3xl font-semibold tracking-tight text-white tabular-nums">{value}</p>
+          <p className="text-3xl font-semibold tracking-tight text-zinc-900 tabular-nums">{value}</p>
           {hint ? <p className="text-xs text-zinc-500">{hint}</p> : null}
         </div>
         {Icon ? (
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/90 shadow-inner">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
             <Icon className="h-5 w-5" strokeWidth={1.75} />
           </div>
         ) : null}

@@ -42,10 +42,10 @@ export function PriorityShowcaseCard({
   const level = urgency(task);
   const border =
     level === "critical"
-      ? "border-l-rose-500 shadow-[inset_4px_0_0_0_theme(colors.rose.500)] shadow-rose-500/15"
+      ? "border-l-rose-500 shadow-[inset_4px_0_0_0_theme(colors.rose.500)] shadow-rose-100"
       : level === "high"
-        ? "border-l-amber-400 shadow-[inset_4px_0_0_0_theme(colors.amber.400)] shadow-amber-400/12"
-        : "border-l-cyan-400/80 shadow-[inset_4px_0_0_0_theme(colors.cyan.400)] shadow-cyan-500/10";
+        ? "border-l-amber-400 shadow-[inset_4px_0_0_0_theme(colors.amber.400)] shadow-amber-100"
+        : "border-l-cyan-500 shadow-[inset_4px_0_0_0_theme(colors.cyan.500)] shadow-cyan-100";
 
   return (
     <motion.div
@@ -55,16 +55,16 @@ export function PriorityShowcaseCard({
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ scale: 1.01, transition: { duration: 0.18 } }}
       className={cn(
-        "glass-inner group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 pl-5 transition-shadow hover:border-white/15 hover:shadow-lg hover:shadow-black/30",
+        "glass-inner group relative overflow-hidden rounded-xl border border-zinc-200/90 bg-white p-4 pl-5 shadow-sm transition-shadow hover:border-zinc-300 hover:shadow-md",
         border,
       )}
     >
       {level !== "normal" ? (
         <div
           className={cn(
-            "pointer-events-none absolute right-4 top-4 opacity-40",
-            level === "critical" && "text-rose-400 animate-pulse-soft",
-            level === "high" && "text-amber-300",
+            "pointer-events-none absolute right-4 top-4 opacity-50",
+            level === "critical" && "text-rose-500 animate-pulse-soft",
+            level === "high" && "text-amber-500",
           )}
         >
           <Flame className="h-5 w-5" />
@@ -73,20 +73,22 @@ export function PriorityShowcaseCard({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
-          <p className="truncate text-[15px] font-semibold tracking-tight text-white">{task.event?.clientName ?? "Client"}</p>
-          <p className="text-sm text-zinc-400">{task.taskType.replaceAll("_", " ")}</p>
+          <p className="truncate text-[15px] font-semibold tracking-tight text-zinc-900">
+            {task.event?.clientName ?? "Client"}
+          </p>
+          <p className="text-sm text-zinc-600">{task.taskType.replaceAll("_", " ")}</p>
           {metaRow ? <div className="mt-2">{metaRow}</div> : null}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {topTrailing}
           <PriorityBadge priority={task.priority} />
-          <span className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-[11px] font-medium text-zinc-400">
+          <span className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] font-medium text-zinc-600">
             <Clock className="h-3 w-3" />
             {countdownLabel(task)}
           </span>
         </div>
       </div>
-      {footer ? <div className="mt-3 border-t border-white/[0.07] pt-3">{footer}</div> : null}
+      {footer ? <div className="mt-3 border-t border-zinc-100 pt-3">{footer}</div> : null}
     </motion.div>
   );
 }

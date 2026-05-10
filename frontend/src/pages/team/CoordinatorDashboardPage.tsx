@@ -91,14 +91,14 @@ export function CoordinatorDashboardPage() {
   return (
     <div className="space-y-10">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
-        <p className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/90">
-          <Orbit className="h-3.5 w-3.5" />
+        <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-900">
+          <Orbit className="h-3.5 w-3.5 text-amber-700" />
           Coordinator runway
         </p>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Orchestrate shoots. Ignite editing lanes.
         </h1>
-        <p className="text-sm leading-relaxed text-zinc-400 md:text-[15px]">
+        <p className="text-sm leading-relaxed text-zinc-600 md:text-[15px]">
           Bridge logistics into deadlines — unlock post-production when you&apos;re ready, route workload without friction.
         </p>
       </motion.div>
@@ -142,7 +142,7 @@ export function CoordinatorDashboardPage() {
         <GlassPanel shine className="p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Hot runway</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">Hot runway</h2>
               <p className="text-sm text-zinc-500">Tightest delivery windows across crews.</p>
             </div>
             <Button size="sm" variant="premium" className="rounded-xl px-5" asChild>
@@ -154,7 +154,7 @@ export function CoordinatorDashboardPage() {
               <PriorityShowcaseCard key={t.id} task={t} index={i} />
             ))}
             {!loadingTasks && summary.urgent.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-zinc-500">
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
                 Queue quiet — prime the next assignment wave from calendar unlocks.
               </div>
             ) : null}
@@ -163,25 +163,25 @@ export function CoordinatorDashboardPage() {
 
         <div className="space-y-4">
           <GlassPanel className="p-6">
-            <h3 className="text-sm font-semibold text-white">Shoot footprint · month view</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">Shoot footprint · month view</h3>
             <p className="mt-1 text-xs text-zinc-500">Logistics density snapshot.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-[11px] uppercase tracking-wide text-zinc-500">Past days</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{summary.completedShootsMonth}</p>
+                <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.completedShootsMonth}</p>
               </div>
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-[11px] uppercase tracking-wide text-zinc-500">Future days</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{summary.upcomingShoots}</p>
+                <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.upcomingShoots}</p>
               </div>
             </div>
-            <Button variant="glass" className="mt-5 w-full border-white/12" asChild>
+            <Button variant="glass" className="mt-5 w-full" asChild>
               <Link to="/coordinator/shoot-calendar">Enter premium calendar</Link>
             </Button>
           </GlassPanel>
 
           <GlassPanel className="p-6">
-            <h3 className="text-sm font-semibold text-white">Open workload · crews</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">Open workload · crews</h3>
             <div className="mt-5 space-y-5">
               {workload.rows.map(([team, count], i) => (
                 <WorkloadBar
