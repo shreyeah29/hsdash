@@ -12,6 +12,80 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+type TimeParts = { hour: number; minute: number; ampm: "AM" | "PM" };
+
+function toTimeLabel(p: TimeParts) {
+  const hh = Math.min(12, Math.max(1, p.hour));
+  const mm = String(Math.min(59, Math.max(0, p.minute))).padStart(2, "0");
+  return `${hh}:${mm} ${p.ampm}`;
+}
+
+function parseTimeLabel(raw: string | null | undefined): TimeParts | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2] ?? "0");
+  const ampm = (m[3] ? m[3].toUpperCase() : "AM") as "AM" | "PM";
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (hour < 1 || hour > 12) return null;
+  if (minute < 0 || minute > 59) return null;
+  return { hour, minute, ampm };
+}
+
+function TimePicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const parsed = parseTimeLabel(value) ?? { hour: 10, minute: 0, ampm: "AM" as const };
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+  return (
+    <div className="space-y-1">
+      <div className="text-xs font-medium text-zinc-600">{label}</div>
+      <div className="grid grid-cols-[1fr_1fr_1fr] gap-2">
+        <select
+          className="premium-field h-10 cursor-pointer py-0"
+          value={String(parsed.hour)}
+          onChange={(e) => onChange(toTimeLabel({ ...parsed, hour: Number(e.target.value) }))}
+        >
+          {hours.map((h) => (
+            <option key={h} value={String(h)}>
+              {h}
+            </option>
+          ))}
+        </select>
+        <select
+          className="premium-field h-10 cursor-pointer py-0"
+          value={String(parsed.minute)}
+          onChange={(e) => onChange(toTimeLabel({ ...parsed, minute: Number(e.target.value) }))}
+        >
+          {minutes.map((m) => (
+            <option key={m} value={String(m)}>
+              {String(m).padStart(2, "0")}
+            </option>
+          ))}
+        </select>
+        <select
+          className="premium-field h-10 cursor-pointer py-0"
+          value={parsed.ampm}
+          onChange={(e) => onChange(toTimeLabel({ ...parsed, ampm: e.target.value as "AM" | "PM" }))}
+        >
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -531,14 +605,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 <div className="text-xs font-medium text-zinc-600">Venue</div>
                 <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
               </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">Start time</div>
-                <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">End time</div>
-                <Input value={form.endTime} onChange={(ev) => setForm((f) => ({ ...f, endTime: ev.target.value }))} placeholder="6:00 PM" />
-              </div>
+              <TimePicker label="Start time" value={form.startTime} onChange={(next) => setForm((f) => ({ ...f, startTime: next }))} />
+              <TimePicker label="End time" value={form.endTime} onChange={(next) => setForm((f) => ({ ...f, endTime: next }))} />
               <div className="space-y-1 sm:col-span-2">
                 <div className="text-xs font-medium text-zinc-600">Photo team (on-site)</div>
                 <textarea

@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Radar } from "lucide-react";
+import { ChevronDown, ChevronRight, Radar, TriangleAlert } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
 import { GlassPanel } from "@/components/premium/GlassPanel";
-import { PriorityShowcaseCard } from "@/components/premium/PriorityShowcaseCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -16,27 +15,35 @@ async function fetchAllTasks() {
   return data.tasks;
 }
 
-const COLUMNS: { key: TaskStatus; label: string; blurb: string; tint: string }[] = [
-  { key: TaskStatus.PENDING, label: "Awaiting pickup", blurb: "Routing pending", tint: "from-violet-50 to-transparent" },
-  {
-    key: TaskStatus.IN_PROGRESS,
-    label: "Live production",
-    blurb: "Teams executing",
-    tint: "from-cyan-50 to-transparent",
-  },
-  { key: TaskStatus.DELAYED, label: "Escalations", blurb: "Needs visibility", tint: "from-rose-50 to-transparent" },
-  {
-    key: TaskStatus.COMPLETED,
-    label: "Closed loops",
-    blurb: "Delivered beautifully",
-    tint: "from-emerald-50 to-transparent",
-  },
-];
+function taskLabel(taskType: string) {
+  return taskType.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\w/g, (m) => m.toUpperCase());
+}
+
+function daysUntil(isoOrDate: string) {
+  const due = new Date(isoOrDate);
+  const start = new Date();
+  const ms = due.getTime() - start.getTime();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+type WeddingRow = {
+  eventId: string;
+  clientName: string;
+  eventDate: string | null;
+  tasks: Task[];
+  completedCount: number;
+  totalCount: number;
+  nextDue: string | null;
+  overdueCount: number;
+  delayedCount: number;
+  uniqueEditors: string[];
+};
 
 /** Read-only mission monitor — coordinators own routing; admins watch momentum. */
 export function AdminDeliverablesStatusPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("ALL");
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["tasks", "admin-monitor"],
@@ -56,17 +63,57 @@ export function AdminDeliverablesStatusPage() {
     });
   }, [data, q, status]);
 
-  const grouped = useMemo(() => {
-    const buckets: Record<TaskStatus, Task[]> = {
-      [TaskStatus.PENDING]: [],
-      [TaskStatus.IN_PROGRESS]: [],
-      [TaskStatus.COMPLETED]: [],
-      [TaskStatus.DELAYED]: [],
-    };
+  const weddings = useMemo((): WeddingRow[] => {
+    const byEvent = new Map<string, Task[]>();
     for (const t of filtered) {
-      buckets[t.status].push(t);
+      const eventId = t.eventId || t.event?.id;
+      if (!eventId) continue;
+      byEvent.set(eventId, [...(byEvent.get(eventId) ?? []), t]);
     }
-    return buckets;
+
+    const rows: WeddingRow[] = [];
+    for (const [eventId, tasks] of byEvent.entries()) {
+      const clientName = tasks[0]?.event?.clientName ?? "Wedding";
+      const eventDate = tasks[0]?.event?.eventDate ?? null;
+
+      const totalCount = tasks.length;
+      const completedCount = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
+      const delayedCount = tasks.filter((t) => t.status === TaskStatus.DELAYED).length;
+      const overdueCount = tasks.filter((t) => {
+        if (t.status === TaskStatus.COMPLETED) return false;
+        return new Date(t.deadline).getTime() < Date.now();
+      }).length;
+
+      const nextDueTask = [...tasks]
+        .filter((t) => t.status !== TaskStatus.COMPLETED)
+        .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())[0];
+
+      const uniqueEditors = Array.from(
+        new Set(tasks.map((t) => t.assignedTo?.name).filter((x): x is string => Boolean(x))),
+      );
+
+      rows.push({
+        eventId,
+        clientName,
+        eventDate,
+        tasks: [...tasks].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
+        completedCount,
+        totalCount,
+        nextDue: nextDueTask?.deadline ?? null,
+        overdueCount,
+        delayedCount,
+        uniqueEditors,
+      });
+    }
+
+    return rows.sort((a, b) => {
+      const aRisk = a.overdueCount + a.delayedCount;
+      const bRisk = b.overdueCount + b.delayedCount;
+      if (aRisk !== bRisk) return bRisk - aRisk;
+      const aNext = a.nextDue ? new Date(a.nextDue).getTime() : Number.POSITIVE_INFINITY;
+      const bNext = b.nextDue ? new Date(b.nextDue).getTime() : Number.POSITIVE_INFINITY;
+      return aNext - bNext;
+    });
   }, [filtered]);
 
   return (
@@ -94,7 +141,7 @@ export function AdminDeliverablesStatusPage() {
           <div className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900">
             <Radar className="h-4 w-4 text-violet-600" />
             <span>
-              <span className="font-semibold text-zinc-900">{filtered.length}</span> live signals
+              <span className="font-semibold text-zinc-900">{weddings.length}</span> weddings
             </span>
           </div>
         </GlassPanel>
@@ -114,52 +161,119 @@ export function AdminDeliverablesStatusPage() {
         </GlassPanel>
       ) : null}
 
-      {!isLoading && filtered.length > 0 ? (
-      <div className="grid gap-5 xl:grid-cols-4">
-        {COLUMNS.map((col, colIdx) => {
-          const list = grouped[col.key];
-          return (
-            <motion.div
-              key={col.key}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-              className="flex min-h-[280px] flex-col rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/80 p-4 shadow-sm"
-            >
-              <div className={`mb-4 rounded-xl bg-gradient-to-r px-3 py-3 ${col.tint}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
-                    <div className="text-[11px] text-zinc-600">{col.blurb}</div>
-                  </div>
-                  <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
-                    {list.length}
-                  </span>
+      {!isLoading && weddings.length > 0 ? (
+        <GlassPanel className="overflow-hidden p-0" shine>
+          <div className="border-b border-zinc-100 bg-zinc-50 px-5 py-4">
+            <div className="grid grid-cols-[28px_1.4fr_0.9fr_0.8fr_0.8fr_1fr] items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+              <div />
+              <div>Wedding</div>
+              <div>Event date</div>
+              <div>Progress</div>
+              <div>Next due</div>
+              <div>Editors</div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-zinc-100">
+            {weddings.map((w) => {
+              const expanded = Boolean(open[w.eventId]);
+              const progressPct = w.totalCount ? Math.round((w.completedCount / w.totalCount) * 100) : 0;
+              const risk = w.overdueCount + w.delayedCount;
+              const nextDueDays = w.nextDue ? daysUntil(w.nextDue) : null;
+
+              return (
+                <div key={w.eventId} className="bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setOpen((s) => ({ ...s, [w.eventId]: !s[w.eventId] }))}
+                    className="grid w-full grid-cols-[28px_1.4fr_0.9fr_0.8fr_0.8fr_1fr] items-center gap-3 px-5 py-4 text-left hover:bg-zinc-50"
+                  >
+                    <div className="text-zinc-500">
+                      {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="truncate text-sm font-semibold text-zinc-900">{w.clientName}</div>
+                        {risk > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">
+                            <TriangleAlert className="h-3.5 w-3.5" />
+                            {risk} risk
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                            On track
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-600">{w.totalCount} deliverables</div>
+                    </div>
+
+                    <div className="text-sm text-zinc-700">
+                      {w.eventDate ? new Date(w.eventDate).toLocaleDateString() : "—"}
+                    </div>
+
+                    <div className="text-sm text-zinc-700">
+                      <span className="font-semibold text-zinc-900">{w.completedCount}</span>/{w.totalCount}
+                      <span className="ml-2 text-xs text-zinc-600">{progressPct}%</span>
+                    </div>
+
+                    <div className="text-sm text-zinc-700">
+                      {w.nextDue ? (
+                        <div className="space-y-0.5">
+                          <div className="tabular-nums font-medium text-zinc-900">{new Date(w.nextDue).toLocaleDateString()}</div>
+                          <div className="text-xs text-zinc-600">
+                            {nextDueDays !== null ? (nextDueDays < 0 ? `${Math.abs(nextDueDays)}d overdue` : `in ${nextDueDays}d`) : ""}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-600">—</span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 text-sm text-zinc-700">
+                      {w.uniqueEditors.length > 0 ? (
+                        <span className="truncate">{w.uniqueEditors.join(", ")}</span>
+                      ) : (
+                        <span className="text-zinc-600">Unassigned</span>
+                      )}
+                    </div>
+                  </button>
+
+                  {expanded ? (
+                    <div className="bg-zinc-50 px-5 pb-5">
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                        <div className="grid grid-cols-[1.2fr_0.9fr_0.7fr_1fr_0.9fr] items-center gap-3 border-b border-zinc-100 pb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+                          <div>Deliverable</div>
+                          <div>Team</div>
+                          <div>Status</div>
+                          <div>Editor</div>
+                          <div>Deadline</div>
+                        </div>
+                        <div className="divide-y divide-zinc-100">
+                          {w.tasks.map((t) => (
+                            <div key={t.id} className="grid grid-cols-[1.2fr_0.9fr_0.7fr_1fr_0.9fr] items-center gap-3 py-3 text-sm">
+                              <div className="min-w-0">
+                                <div className="truncate font-medium text-zinc-900">{taskLabel(t.taskType)}</div>
+                                <div className="mt-0.5 text-xs text-zinc-600">{t.priority.toLowerCase()}</div>
+                              </div>
+                              <div className="text-zinc-700">{t.assignedTeam.replaceAll("_", " ")}</div>
+                              <div>
+                                <StatusBadge status={t.status} />
+                              </div>
+                              <div className="min-w-0 text-zinc-700">{t.assignedTo?.name ?? "Unassigned"}</div>
+                              <div className="tabular-nums text-zinc-700">{new Date(t.deadline).toLocaleDateString()}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              <div className="flex flex-1 flex-col gap-3">
-                {list.map((t, rowIdx) => (
-                  <PriorityShowcaseCard
-                    key={t.id}
-                    task={t}
-                    index={colIdx * 24 + rowIdx}
-                    metaRow={
-                      <p className="text-[11px] text-zinc-600">
-                        <span className="font-medium text-zinc-600">{t.assignedTeam.replaceAll("_", " ")}</span>
-                        {" · "}
-                        <span className="text-zinc-800">{t.assignedTo?.name ?? "Unassigned"}</span>
-                        {" · "}
-                        <span className="tabular-nums">{new Date(t.deadline).toLocaleDateString()}</span>
-                      </p>
-                    }
-                    topTrailing={<StatusBadge status={t.status} />}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </GlassPanel>
       ) : null}
     </motion.div>
   );
