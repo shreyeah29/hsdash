@@ -1,5 +1,7 @@
+import type { Prisma } from "@prisma/client";
 import { Team, TaskPriority, TaskStatus, TaskType } from "@prisma/client";
 import { computePriority } from "./taskPriority";
+import { resolveTaskAssigneeTx } from "./taskAssignee";
 
 export type AutoTaskTemplate = {
   taskType: TaskType;
@@ -30,5 +32,43 @@ export function buildEventTasks(eventId: string, eventDate: Date) {
       priority: priority ?? TaskPriority.LOW,
     };
   });
+}
+
+export type EventTaskAssignments = Partial<Record<Team, string | null>>;
+
+export async function createEventTasksTx(
+  tx: Prisma.TransactionClient,
+  args: {
+    eventId: string;
+    eventDate: Date;
+    createdById: string | null;
+    assignments?: EventTaskAssignments;
+  },
+) {
+  const rows = buildEventTasks(args.eventId, args.eventDate);
+  const created = [];
+
+  for (const row of rows) {
+    const assignedToId = args.assignments
+      ? await resolveTaskAssigneeTx(tx, args.assignments[row.assignedTeam], row.assignedTeam)
+      : null;
+
+    created.push(
+      await tx.task.create({
+        data: {
+          ...row,
+          assignedToId,
+          assignedById: assignedToId ? args.createdById : null,
+        },
+        include: {
+          event: true,
+          assignedTo: { select: { id: true, name: true, email: true, team: true } },
+          assignedBy: { select: { id: true, name: true, email: true } },
+        },
+      }),
+    );
+  }
+
+  return created;
 }
 

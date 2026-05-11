@@ -81,7 +81,7 @@ export function AdminNotificationsPage() {
       <Spotlight className="rounded-3xl border border-zinc-200/80" glowColor="rgba(34, 211, 238, 0.07)">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-3 px-1 py-1 md:px-2 md:py-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Signal stream</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Signal stream</p>
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
               <GradientShimmerText>Team pulse</GradientShimmerText>
             </h1>
@@ -120,12 +120,12 @@ export function AdminNotificationsPage() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Activity timeline</h2>
-            <p className="text-xs text-zinc-500">Newest signals first · synced with backend audit trail</p>
+            <p className="text-xs text-zinc-600">Newest signals first · synced with backend audit trail</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-5">
-          {isFetching && !isLoading ? <span className="text-xs text-zinc-500">Refreshing feed…</span> : null}
+          {isFetching && !isLoading ? <span className="text-xs text-zinc-600">Refreshing feed…</span> : null}
         </div>
 
         {error ? (
@@ -134,12 +134,12 @@ export function AdminNotificationsPage() {
           </div>
         ) : null}
 
-        {isLoading ? <p className="mt-8 text-center text-sm text-zinc-500">Pulling latest transitions…</p> : null}
+        {isLoading ? <p className="mt-8 text-center text-sm text-zinc-600">Pulling latest transitions…</p> : null}
 
         {showEmpty ? (
           <div className="mt-10 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-14 text-center">
             <p className="text-sm font-medium text-zinc-900">Quiet channel</p>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-zinc-600">
               No updates yet. Once editors move tasks between lanes, the timeline glows automatically.
             </p>
           </div>
@@ -155,8 +155,8 @@ export function AdminNotificationsPage() {
 
                   <BorderBeam>
                     <GlassPanel className="border-zinc-100 p-5">
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        <span className="tabular-nums text-zinc-500">{fmtWhen(a.createdAt)}</span>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-600">
+                        <span className="tabular-nums text-zinc-600">{fmtWhen(a.createdAt)}</span>
                         <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] normal-case tracking-normal text-zinc-600">
                           {a.task.assignedTeam.replaceAll("_", " ")}
                         </span>
@@ -165,12 +165,12 @@ export function AdminNotificationsPage() {
                       <p className="mt-3 text-[15px] font-semibold text-zinc-900">
                         {a.actor?.name ?? "Someone"}
                         {a.actor?.team ? (
-                          <span className="font-normal text-zinc-500"> · {a.actor.team.replaceAll("_", " ")}</span>
+                          <span className="font-normal text-zinc-600"> · {a.actor.team.replaceAll("_", " ")}</span>
                         ) : null}
                       </p>
 
-                      <p className="mt-2 text-sm text-zinc-400">
-                        <span className="text-zinc-500">Deliverable · </span>
+                      <p className="mt-2 text-sm text-zinc-600">
+                        <span className="text-zinc-600">Deliverable · </span>
                         {a.task.event?.clientName ?? "Unknown client"}
                         <span className="text-zinc-600"> — </span>
                         <span className="font-medium text-zinc-800">{a.task.taskType.replaceAll("_", " ")}</span>
@@ -183,7 +183,7 @@ export function AdminNotificationsPage() {
                             <span className="text-xs text-zinc-600">→</span>
                           </>
                         ) : (
-                          <span className="text-[11px] uppercase tracking-wide text-zinc-500">Initialized</span>
+                          <span className="text-[11px] uppercase tracking-wide text-zinc-600">Initialized</span>
                         )}
                         <StatusBadge status={a.newStatus} />
                       </div>

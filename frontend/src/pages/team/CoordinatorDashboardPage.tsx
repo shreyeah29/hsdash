@@ -143,7 +143,7 @@ export function CoordinatorDashboardPage() {
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">Hot runway</h2>
-              <p className="text-sm text-zinc-500">Tightest delivery windows across crews.</p>
+              <p className="text-sm text-zinc-600">Tightest delivery windows across crews.</p>
             </div>
             <Button size="sm" variant="premium" className="rounded-xl px-5" asChild>
               <Link to="/coordinator/assignments">Open assignment board</Link>
@@ -154,7 +154,7 @@ export function CoordinatorDashboardPage() {
               <PriorityShowcaseCard key={t.id} task={t} index={i} />
             ))}
             {!loadingTasks && summary.urgent.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
                 Queue quiet — prime the next assignment wave from calendar unlocks.
               </div>
             ) : null}
@@ -164,14 +164,14 @@ export function CoordinatorDashboardPage() {
         <div className="space-y-4">
           <GlassPanel className="p-6">
             <h3 className="text-sm font-semibold text-zinc-900">Shoot footprint · month view</h3>
-            <p className="mt-1 text-xs text-zinc-500">Logistics density snapshot.</p>
+            <p className="mt-1 text-xs text-zinc-600">Logistics density snapshot.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] uppercase tracking-wide text-zinc-500">Past days</p>
+                <p className="text-[11px] uppercase tracking-wide text-zinc-600">Past days</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.completedShootsMonth}</p>
               </div>
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] uppercase tracking-wide text-zinc-500">Future days</p>
+                <p className="text-[11px] uppercase tracking-wide text-zinc-600">Future days</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.upcomingShoots}</p>
               </div>
             </div>
@@ -193,7 +193,7 @@ export function CoordinatorDashboardPage() {
                 />
               ))}
               {workload.rows.length === 0 ? (
-                <p className="text-center text-sm text-zinc-500">No workload slices yet.</p>
+                <p className="text-center text-sm text-zinc-600">No workload slices yet.</p>
               ) : null}
             </div>
           </GlassPanel>

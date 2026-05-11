@@ -102,7 +102,7 @@ export function TeamDashboardPage() {
           </p>
           <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-[2.1rem]">
             Your edit bay is tuned —{" "}
-            <span className="bg-gradient-to-r from-emerald-700 to-cyan-700 bg-clip-text text-transparent">
+            <span className="font-semibold text-emerald-800">
               {stats.open > 0 ? `${stats.open} cuts need your signature.` : "fresh canvas awaiting Emmanuel's next drop."}
             </span>
           </h1>
@@ -143,7 +143,7 @@ export function TeamDashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Signal inbox</h2>
-            <p className="text-sm text-zinc-500">Coordinator pings sync instantly — acknowledge when ready.</p>
+            <p className="text-sm text-zinc-600">Coordinator pings sync instantly — acknowledge when ready.</p>
           </div>
           {unreadCount > 0 ? (
             <Button variant="glass" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
@@ -175,7 +175,7 @@ export function TeamDashboardPage() {
             </div>
           ))}
           {notifications.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
+            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
               Quiet channel — new assignments appear here the moment they&apos;re yours.
             </p>
           ) : null}
@@ -186,7 +186,7 @@ export function TeamDashboardPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Incoming countdowns</h2>
-            <p className="text-sm text-zinc-500">Closest deadlines first — tap tasks for granular controls.</p>
+            <p className="text-sm text-zinc-600">Closest deadlines first — tap tasks for granular controls.</p>
           </div>
           <Button variant="premium" size="sm" className="rounded-xl" asChild>
             <Link to="/team/tasks">Expand workspace</Link>
@@ -197,7 +197,7 @@ export function TeamDashboardPage() {
             <PriorityShowcaseCard key={t.id} task={t} index={i} />
           ))}
           {stats.total === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
+            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
               Queue pristine — Emmanuel routes work here when shoots unlock.
             </div>
           ) : null}

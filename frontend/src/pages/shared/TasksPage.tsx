@@ -86,7 +86,7 @@ export function TasksPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Workflow</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Workflow</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900">Your queue</h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
             Assignments routed to you — move cards forward as you progress. Everything stays cinematic, nothing feels like a spreadsheet.
@@ -113,7 +113,7 @@ export function TasksPage() {
       </div>
 
       {isLoading ? (
-        <GlassPanel className="p-10 text-center text-sm text-zinc-400">Loading your board…</GlassPanel>
+        <GlassPanel className="p-10 text-center text-sm text-zinc-600">Loading your board…</GlassPanel>
       ) : null}
       {error ? (
         <GlassPanel className="border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">Failed to load tasks.</GlassPanel>
@@ -122,7 +122,7 @@ export function TasksPage() {
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
           <p className="text-sm font-medium text-zinc-900">You&apos;re clear</p>
-          <p className="mt-2 text-sm text-zinc-500">No tasks match these filters — check back after coordinators route new work.</p>
+          <p className="mt-2 text-sm text-zinc-600">No tasks match these filters — check back after coordinators route new work.</p>
         </GlassPanel>
       ) : null}
 
@@ -142,7 +142,7 @@ export function TasksPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
-                    <div className="text-[11px] text-zinc-500">{col.blurb}</div>
+                    <div className="text-[11px] text-zinc-600">{col.blurb}</div>
                   </div>
                   <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
                     {list.length}

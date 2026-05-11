@@ -108,7 +108,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
                   </Link>
 
                   <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-600">
                       {loginKind === "admin" ? "Admin lane" : "Staff lane"}
                     </p>
                     <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">{title}</h1>

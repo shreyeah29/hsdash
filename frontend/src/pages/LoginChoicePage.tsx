@@ -19,7 +19,7 @@ export function LoginChoicePage() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="mb-12 max-w-xl text-center"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Wedding production OS</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-600">Wedding production OS</p>
           <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
             Craft celebrations with <GradientShimmerText className="font-semibold">studio-grade calm.</GradientShimmerText>
           </h1>

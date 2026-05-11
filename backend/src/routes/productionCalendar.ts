@@ -275,7 +275,7 @@ productionCalendarRouter.post("/entries/:id/start-post-production", requireCoord
   }
 });
 
-productionCalendarRouter.get("/team-members", requireCoordinator, async (_req, res, next) => {
+productionCalendarRouter.get("/team-members", requireCoordinatorOrAdmin, async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       where: { role: Role.EDITOR, isActive: true },

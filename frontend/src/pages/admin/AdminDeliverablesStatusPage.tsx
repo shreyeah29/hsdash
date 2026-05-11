@@ -73,7 +73,7 @@ export function AdminDeliverablesStatusPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Operations radar</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Operations radar</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900">Deliverables status</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
             Monitor deadlines, seating, and momentum studio-wide. Assignment moves happen in the coordinator console — this board stays pristine for leadership visibility.
@@ -101,7 +101,7 @@ export function AdminDeliverablesStatusPage() {
       </div>
 
       {isLoading ? (
-        <GlassPanel className="p-10 text-center text-sm text-zinc-400">Pulling studio telemetry…</GlassPanel>
+        <GlassPanel className="p-10 text-center text-sm text-zinc-600">Pulling studio telemetry…</GlassPanel>
       ) : null}
       {error ? (
         <GlassPanel className="border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">Failed to load deliverables.</GlassPanel>
@@ -110,7 +110,7 @@ export function AdminDeliverablesStatusPage() {
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
           <p className="text-sm font-medium text-zinc-900">No matching deliverables</p>
-          <p className="mt-2 text-sm text-zinc-500">Adjust filters or sync with coordinators on incoming timelines.</p>
+          <p className="mt-2 text-sm text-zinc-600">Adjust filters or sync with coordinators on incoming timelines.</p>
         </GlassPanel>
       ) : null}
 
@@ -130,7 +130,7 @@ export function AdminDeliverablesStatusPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
-                    <div className="text-[11px] text-zinc-500">{col.blurb}</div>
+                    <div className="text-[11px] text-zinc-600">{col.blurb}</div>
                   </div>
                   <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
                     {list.length}
@@ -144,7 +144,7 @@ export function AdminDeliverablesStatusPage() {
                     task={t}
                     index={colIdx * 24 + rowIdx}
                     metaRow={
-                      <p className="text-[11px] text-zinc-500">
+                      <p className="text-[11px] text-zinc-600">
                         <span className="font-medium text-zinc-600">{t.assignedTeam.replaceAll("_", " ")}</span>
                         {" · "}
                         <span className="text-zinc-800">{t.assignedTo?.name ?? "Unassigned"}</span>

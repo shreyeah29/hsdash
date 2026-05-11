@@ -50,7 +50,7 @@ export function PriorityShowcaseCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: -12 }}
+      initial={{ opacity: 1, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ scale: 1.01, transition: { duration: 0.18 } }}

@@ -4,8 +4,9 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
-import { buildEventTasks } from "../services/eventTasks";
-import { emitTaskRefreshToOps } from "../realtime/socket";
+import { Team } from "@prisma/client";
+import { createEventTasksTx, type EventTaskAssignments } from "../services/eventTasks";
+import { emitNotificationRefresh, emitTaskRefreshToOps, emitToUser } from "../realtime/socket";
 
 export const eventsRouter = Router();
 
@@ -18,6 +19,11 @@ const taskInclude = {
 const createEventSchema = z.object({
   clientName: z.string().min(1),
   eventDate: z.coerce.date(),
+  /** Optional editor assignments — tasks will be generated + assigned immediately. */
+  photoEditorId: z.string().min(1).optional(),
+  cinematicEditorId: z.string().min(1).optional(),
+  traditionalEditorId: z.string().min(1).optional(),
+  albumEditorId: z.string().min(1).optional(),
 });
 
 eventsRouter.get("/", async (_req, res) => {
@@ -33,6 +39,13 @@ eventsRouter.post("/", async (req, res, next) => {
     const body = createEventSchema.parse(req.body);
     const auth = req.auth!;
 
+    const assignments: EventTaskAssignments = {
+      [Team.PHOTO_TEAM]: body.photoEditorId ?? null,
+      [Team.CINEMATIC_TEAM]: body.cinematicEditorId ?? null,
+      [Team.TRADITIONAL_TEAM]: body.traditionalEditorId ?? null,
+      [Team.ALBUM_TEAM]: body.albumEditorId ?? null,
+    };
+
     const event = await prisma.$transaction(async (tx) => {
       const created = await tx.event.create({
         data: {
@@ -43,22 +56,44 @@ eventsRouter.post("/", async (req, res, next) => {
         },
       });
 
-      const rows = buildEventTasks(created.id, created.eventDate);
-      for (const row of rows) {
-        await tx.task.create({ data: row });
+      const tasks = await createEventTasksTx(tx, {
+        eventId: created.id,
+        eventDate: created.eventDate,
+        createdById: auth.userId,
+        assignments,
+      });
+
+      // Notify assigned editors immediately.
+      for (const t of tasks) {
+        if (!t.assignedToId) continue;
+        const due = t.deadline.toISOString().slice(0, 10);
+        const taskLabel = String(t.taskType).replaceAll("_", " ");
+        await tx.userNotification.create({
+          data: {
+            userId: t.assignedToId,
+            taskId: t.id,
+            title: "New wedding assigned",
+            body: `${created.clientName} — ${taskLabel}. Deadline: ${due}.`,
+          },
+        });
       }
 
       return created;
     });
 
     emitTaskRefreshToOps();
-
-    const full = await prisma.event.findUnique({
+    const fullAfter = await prisma.event.findUnique({
       where: { id: event.id },
       include: { tasks: { include: taskInclude } },
     });
+    const recipients = new Set<string>();
+    for (const t of fullAfter?.tasks ?? []) if (t.assignedToId) recipients.add(t.assignedToId);
+    for (const userId of recipients) {
+      emitNotificationRefresh(userId);
+      emitToUser(userId, "task:updated");
+    }
 
-    res.status(201).json({ event: full });
+    res.status(201).json({ event: fullAfter });
   } catch (e) {
     next(e);
   }

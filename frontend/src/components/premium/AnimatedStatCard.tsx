@@ -30,7 +30,7 @@ export function AnimatedStatCard({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 1, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
@@ -43,9 +43,9 @@ export function AnimatedStatCard({
       <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/80 blur-2xl" />
       <div className="relative flex items-start justify-between gap-3">
         <div className="space-y-2">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">{label}</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-600">{label}</p>
           <p className="text-3xl font-semibold tracking-tight text-zinc-900 tabular-nums">{value}</p>
-          {hint ? <p className="text-xs text-zinc-500">{hint}</p> : null}
+          {hint ? <p className="text-xs text-zinc-600">{hint}</p> : null}
         </div>
         {Icon ? (
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">

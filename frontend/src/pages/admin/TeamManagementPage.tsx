@@ -199,7 +199,7 @@ export function TeamManagementPage() {
         <div className="relative px-1 py-1 md:px-2 md:py-2">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">People & access</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">People & access</p>
               <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
                 <GradientShimmerText>Roster command center</GradientShimmerText>
               </h1>
@@ -230,13 +230,13 @@ export function TeamManagementPage() {
       </div>
 
       {isLoading ? (
-        <GlassPanel className="p-12 text-center text-sm text-zinc-400">Syncing roster…</GlassPanel>
+        <GlassPanel className="p-12 text-center text-sm text-zinc-600">Syncing roster…</GlassPanel>
       ) : null}
 
       {!isLoading && users.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
           <p className="font-medium text-zinc-900">No team members yet</p>
-          <p className="mt-2 text-sm text-zinc-500">Spin up your first editor or coordinator to unlock assignments.</p>
+          <p className="mt-2 text-sm text-zinc-600">Spin up your first editor or coordinator to unlock assignments.</p>
           <Button variant="premium" className="mt-6 rounded-xl" onClick={openCreate}>
             Create first member
           </Button>
@@ -256,7 +256,7 @@ export function TeamManagementPage() {
                       </div>
                       <div className="min-w-0 space-y-1">
                         <p className="truncate text-[17px] font-semibold tracking-tight text-zinc-900">{u.name}</p>
-                        <p className="truncate text-sm text-zinc-500">{u.email}</p>
+                        <p className="truncate text-sm text-zinc-600">{u.email}</p>
                       </div>
                     </div>
                     <span
@@ -269,7 +269,7 @@ export function TeamManagementPage() {
                     </span>
                   </div>
 
-                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-600">
                     <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
                       {u.team?.replaceAll("_", " ") ?? "No team"}
                     </span>
@@ -318,11 +318,11 @@ export function TeamManagementPage() {
 
           <div className="grid gap-3">
             <div className="space-y-1">
-              <div className="text-xs font-medium text-zinc-400">Name</div>
+              <div className="text-xs font-medium text-zinc-600">Name</div>
               <Input placeholder="Full name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <div className="text-xs font-medium text-zinc-400">Email</div>
+              <div className="text-xs font-medium text-zinc-600">Email</div>
               <Input
                 type="email"
                 placeholder="you@studio.com"
@@ -331,7 +331,7 @@ export function TeamManagementPage() {
               />
             </div>
             <div className="space-y-1">
-              <div className="text-xs font-medium text-zinc-400">
+              <div className="text-xs font-medium text-zinc-600">
                 {mode === "create" ? "Password (min 8 chars)" : "New password (optional)"}
               </div>
               <Input
@@ -344,7 +344,7 @@ export function TeamManagementPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">Role</div>
+                <div className="text-xs font-medium text-zinc-600">Role</div>
                 <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
                   <SelectItem value={Role.ADMIN}>Admin</SelectItem>
                   <SelectItem value={Role.COORDINATOR}>Coordinator</SelectItem>
@@ -352,7 +352,7 @@ export function TeamManagementPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">Team</div>
+                <div className="text-xs font-medium text-zinc-600">Team</div>
                 <Select disabled={!needsTeam} value={form.team} onValueChange={(v) => setForm((f) => ({ ...f, team: v }))}>
                   <SelectItem value={Team.PHOTO_TEAM}>Photo team</SelectItem>
                   <SelectItem value={Team.CINEMATIC_TEAM}>Cinematic team</SelectItem>
@@ -364,7 +364,7 @@ export function TeamManagementPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="text-xs font-medium text-zinc-400">Designation</div>
+              <div className="text-xs font-medium text-zinc-600">Designation</div>
               <Input
                 placeholder="e.g. Lead cinematic editor"
                 value={form.designation}

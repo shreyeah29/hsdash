@@ -23,7 +23,7 @@ export function WorkloadBar({
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium text-zinc-800">{label}</span>
-        <span className="tabular-nums text-zinc-500">{value}</span>
+        <span className="tabular-nums text-zinc-700">{value}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
         <motion.div

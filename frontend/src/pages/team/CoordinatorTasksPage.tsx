@@ -138,13 +138,13 @@ export function CoordinatorTasksPage() {
       </div>
 
       {isLoading ? (
-        <GlassPanel className="p-10 text-center text-sm text-zinc-400">Loading assignment board…</GlassPanel>
+        <GlassPanel className="p-10 text-center text-sm text-zinc-600">Loading assignment board…</GlassPanel>
       ) : null}
 
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
           <p className="text-sm font-medium text-zinc-900">Quiet runway</p>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-600">
             No tasks match these filters — kick off post-production from completed shoots on the calendar.
           </p>
         </GlassPanel>
@@ -166,7 +166,7 @@ export function CoordinatorTasksPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
-                    <div className="text-[11px] text-zinc-500">{col.blurb}</div>
+                    <div className="text-[11px] text-zinc-600">{col.blurb}</div>
                   </div>
                   <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
                     {list.length}
@@ -180,7 +180,7 @@ export function CoordinatorTasksPage() {
                     task={t}
                     index={colIdx * 24 + rowIdx}
                     metaRow={
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-600">
                         {t.assignedTeam.replaceAll("_", " ")}
                         {t.assignedTo?.name ? (
                           <>
@@ -196,7 +196,7 @@ export function CoordinatorTasksPage() {
                     footer={
                       <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Assign editor</span>
+                          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-600">Assign editor</span>
                           <Select
                             value={(t.assignedToId ?? t.assignedTo?.id) ?? "__none__"}
                             onValueChange={(v) =>

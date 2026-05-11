@@ -39,18 +39,18 @@ export function ShellLayout({
       ? {
           active:
             "bg-gradient-to-r from-amber-100 to-orange-50 text-amber-950 ring-1 ring-amber-200/80 shadow-sm shadow-amber-200/40",
-          idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+          idle: "text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950",
         }
       : variant === "editor"
         ? {
             active:
               "bg-gradient-to-r from-emerald-100 to-teal-50 text-emerald-950 ring-1 ring-emerald-200/80 shadow-sm shadow-emerald-200/35",
-            idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+            idle: "text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950",
           }
         : {
             active:
               "bg-gradient-to-r from-violet-100 to-cyan-50 text-violet-950 ring-1 ring-violet-200/80 shadow-sm shadow-violet-200/40",
-            idle: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+            idle: "text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950",
           };
 
   return (
@@ -64,12 +64,11 @@ export function ShellLayout({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="glass-panel shine-border flex w-[248px] shrink-0 flex-col md:w-[268px]"
         >
-          {/* Above shine-border ::before so labels/icons aren’t covered (Safari / compositing). */}
-          <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
+          <div className="relative flex min-h-0 flex-1 flex-col">
             <div className="border-b border-zinc-200/80 p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">HS Dash</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">HS Dash</p>
               <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600">
                 {subtitle ??
                   (variant === "coordinator"
                     ? "Operations pipeline"
@@ -83,9 +82,9 @@ export function ShellLayout({
               {links.map((l, i) => (
                 <motion.div
                   key={l.to}
-                  initial={{ opacity: 0, x: -8 }}
+                  initial={{ opacity: 1, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.06 * i + 0.1, duration: 0.35 }}
+                  transition={{ delay: 0.04 * i, duration: 0.28 }}
                 >
                   <NavLink
                     to={l.to}

@@ -5,10 +5,11 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/services/api";
-import type { ShootCalendarEntry, Task } from "@/types/domain";
+import type { ShootCalendarEntry, Task, User } from "@/types/domain";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,11 @@ async function fetchEntries(from: string, to: string) {
   return data.entries;
 }
 
+async function fetchRoster() {
+  const { data } = await api.get<{ users: User[] }>("/production-calendar/team-members");
+  return data.users;
+}
+
 type FormState = {
   day: string;
   clientName: string;
@@ -60,6 +66,10 @@ type FormState = {
   videoTeam: string;
   addons: string;
   createDeliverableTimeline: boolean;
+  photoEditorId: string;
+  cinematicEditorId: string;
+  traditionalEditorId: string;
+  albumEditorId: string;
 };
 
 const emptyForm = (day: string): FormState => ({
@@ -73,7 +83,12 @@ const emptyForm = (day: string): FormState => ({
   photoTeam: "",
   videoTeam: "",
   addons: "",
-  createDeliverableTimeline: false,
+  // New workflow: saving an event activates the pipeline immediately.
+  createDeliverableTimeline: true,
+  photoEditorId: "",
+  cinematicEditorId: "",
+  traditionalEditorId: "",
+  albumEditorId: "",
 });
 
 export type ShootCalendarMode = "admin" | "coordinator";
@@ -90,6 +105,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["production-calendar-entries", from, to],
     queryFn: () => fetchEntries(from, to),
+  });
+
+  const { data: roster = [] } = useQuery({
+    queryKey: ["production-calendar-roster"],
+    queryFn: fetchRoster,
+    enabled: canMutate,
   });
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -149,7 +170,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         photoTeam: form.photoTeam,
         videoTeam: form.videoTeam,
         addons: form.addons,
-        ...(form.createDeliverableTimeline ? { createDeliverableTimeline: true } : {}),
+        createDeliverableTimeline: form.createDeliverableTimeline,
+        ...(form.photoEditorId ? { photoEditorId: form.photoEditorId } : {}),
+        ...(form.cinematicEditorId ? { cinematicEditorId: form.cinematicEditorId } : {}),
+        ...(form.traditionalEditorId ? { traditionalEditorId: form.traditionalEditorId } : {}),
+        ...(form.albumEditorId ? { albumEditorId: form.albumEditorId } : {}),
       };
       if (editingId && editingId !== "new") {
         const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
@@ -225,7 +250,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       photoTeam: entry.photoTeam,
       videoTeam: entry.videoTeam,
       addons: entry.addons,
+      // If timeline isn’t linked yet, default to creating it now.
       createDeliverableTimeline: !entry.eventId,
+      photoEditorId: "",
+      cinematicEditorId: "",
+      traditionalEditorId: "",
+      albumEditorId: "",
     });
     setDialogOpen(true);
   }
@@ -238,13 +268,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   return (
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Shoot logistics</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-600">Shoot logistics</p>
         <h1 className={cn("text-3xl font-semibold tracking-tight md:text-4xl", heading)}>Production calendar</h1>
         <p className={cn("text-sm leading-relaxed md:text-[15px]", surfaceMuted)}>
           {canMutate ? (
             <>
-              Log shoot-day logistics only — client intel, timings, venue, attending crews, notes. After the wedding wraps, Emmanuel starts
-              post-production tasks from his dashboard (not here). Optional shortcut: tick below to seed standard deadlines immediately (most teams wait for Emmanuel).
+              Create the shoot and assign the editors involved. The moment you save, standard deliverables are generated automatically, deadlines start, and assigned editors are notified instantly.
             </>
           ) : (
             <>
@@ -264,7 +293,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           <div className="mb-6 flex flex-row flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-zinc-900">{label}</h2>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-zinc-600">
                 {isLoading ? "Loading…" : canMutate ? "Select cells to orchestrate shoot logistics." : "Review admin-logged coverage."}
               </p>
             </div>
@@ -277,7 +306,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               </Button>
             </div>
           </div>
-          <div className="mb-3 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
+          <div className="mb-3 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-600 sm:text-xs">
             {WEEKDAYS.map((w) => (
               <div key={w}>{w}</div>
             ))}
@@ -329,7 +358,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               );
             })}
           </div>
-          <div className="mt-5 flex flex-wrap gap-5 text-xs text-zinc-500">
+          <div className="mt-5 flex flex-wrap gap-5 text-xs text-zinc-600">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-violet-400" /> Shoot logged
             </span>
@@ -343,11 +372,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           <GlassPanel className="space-y-6 p-6 md:p-8">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{selectedKey ?? "Select a day"}</h2>
-              <p className="mt-1 text-sm text-zinc-500">Shoot intel & linked deliverable milestones.</p>
+              <p className="mt-1 text-sm text-zinc-600">Shoot intel & linked deliverable milestones.</p>
             </div>
             <div className="space-y-4">
             {!selectedKey ? (
-              <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-500">
+              <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-600">
                 Select a date on the calendar to reveal logistics & timelines.
               </p>
             ) : (
@@ -359,7 +388,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 ) : null}
 
                 <div>
-                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Logged shoots</div>
+                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">Logged shoots</div>
                   <div className="space-y-3">
                     {selectedEntries.map((e) => (
                       <div
@@ -367,8 +396,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                         className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 shadow-sm"
                       >
                         <div className="font-semibold text-zinc-900">{e.clientName}</div>
-                        {e.eventName ? <div className="text-zinc-400">{e.eventName}</div> : null}
-                        <div className="mt-2 space-y-0.5 text-xs text-zinc-500">
+                        {e.eventName ? <div className="text-zinc-600">{e.eventName}</div> : null}
+                        <div className="mt-2 space-y-0.5 text-xs text-zinc-600">
                           {e.clientType ? <div>Type: {e.clientType}</div> : null}
                           {e.venue ? <div>Venue: {e.venue}</div> : null}
                           {(e.startTime || e.endTime) && (
@@ -427,7 +456,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                       </div>
                     ))}
                     {selectedEntries.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-10 text-center text-sm text-zinc-500">
+                      <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-10 text-center text-sm text-zinc-600">
                         {canMutate ? "Nothing logged for this day yet." : "Nothing logged for this day."}
                       </p>
                     ) : null}
@@ -435,9 +464,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 </div>
 
                 <div>
-                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Deliverables due this day</div>
+                  <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">Deliverables due this day</div>
                   {selectedDues.length === 0 ? (
-                    <p className="text-sm text-zinc-500">No linked deadlines on this date.</p>
+                    <p className="text-sm text-zinc-600">No linked deadlines on this date.</p>
                   ) : (
                     <ul className="space-y-2 text-sm">
                       {selectedDues.map(({ task: t, clientName }) => (
@@ -446,8 +475,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           className="rounded-xl border border-amber-100 bg-gradient-to-r from-amber-50 to-transparent px-4 py-3 text-zinc-800"
                         >
                           <span className="font-medium text-zinc-900">{clientName}</span>{" "}
-                          <span className="text-zinc-500">—</span> {t.taskType.replaceAll("_", " ")}
-                          {t.assignedTo ? <span className="text-zinc-500"> · {t.assignedTo.name}</span> : null}
+                          <span className="text-zinc-600">—</span> {t.taskType.replaceAll("_", " ")}
+                          {t.assignedTo ? <span className="text-zinc-600"> · {t.assignedTo.name}</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -468,11 +497,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Day</div>
+                <div className="text-xs font-medium text-zinc-600">Day</div>
                 <Input type="date" value={form.day} onChange={(ev) => setForm((f) => ({ ...f, day: ev.target.value }))} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Client name</div>
+                <div className="text-xs font-medium text-zinc-600">Client name</div>
                 <Input
                   value={form.clientName}
                   onChange={(ev) => setForm((f) => ({ ...f, clientName: ev.target.value }))}
@@ -480,27 +509,27 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 />
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">Type of client</div>
+                <div className="text-xs font-medium text-zinc-600">Type of client</div>
                 <Input value={form.clientType} onChange={(ev) => setForm((f) => ({ ...f, clientType: ev.target.value }))} placeholder="Wedding, corporate…" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">Event name</div>
+                <div className="text-xs font-medium text-zinc-600">Event name</div>
                 <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Venue</div>
+                <div className="text-xs font-medium text-zinc-600">Venue</div>
                 <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">Start time</div>
+                <div className="text-xs font-medium text-zinc-600">Start time</div>
                 <Input value={form.startTime} onChange={(ev) => setForm((f) => ({ ...f, startTime: ev.target.value }))} placeholder="10:00 AM" />
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-400">End time</div>
+                <div className="text-xs font-medium text-zinc-600">End time</div>
                 <Input value={form.endTime} onChange={(ev) => setForm((f) => ({ ...f, endTime: ev.target.value }))} placeholder="6:00 PM" />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Photo team (on-site)</div>
+                <div className="text-xs font-medium text-zinc-600">Photo team (on-site)</div>
                 <textarea
                   className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.photoTeam}
@@ -509,7 +538,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Video team (on-site)</div>
+                <div className="text-xs font-medium text-zinc-600">Video team (on-site)</div>
                 <textarea
                   className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.videoTeam}
@@ -518,7 +547,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-400">Notes / add-ons</div>
+                <div className="text-xs font-medium text-zinc-600">Notes / add-ons</div>
                 <textarea
                   className={cn("premium-field min-h-[72px] w-full resize-y")}
                   value={form.addons}
@@ -535,12 +564,82 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
                 />
                 <span className="text-sm leading-snug text-zinc-700">
-                  Immediately seed standard deliverable deadlines (preview +7d, full photos +20d, videos +30/+45d, album +45d). Leave off if Emmanuel should create tasks after the shoot.
+                  Generate the standard deliverable deadlines now (preview +7d, full photos +20d, videos +30/+45d, album +45d) and notify assigned editors immediately.
                   {timelineAlreadyLinked ? (
-                    <span className="mt-1 block text-xs text-zinc-500">This row already has a linked timeline.</span>
+                    <span className="mt-1 block text-xs text-zinc-600">This row already has a linked timeline.</span>
                   ) : null}
                 </span>
               </label>
+
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:col-span-2">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Assign editors (instant tasks)</div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-zinc-700">Photo editor</div>
+                    <Select value={form.photoEditorId} onValueChange={(v) => setForm((f) => ({ ...f, photoEditorId: v }))}>
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {roster
+                        .filter((u) => u.team === "PHOTO_TEAM")
+                        .map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-zinc-700">Cinematic editor</div>
+                    <Select
+                      value={form.cinematicEditorId}
+                      onValueChange={(v) => setForm((f) => ({ ...f, cinematicEditorId: v }))}
+                    >
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {roster
+                        .filter((u) => u.team === "CINEMATIC_TEAM")
+                        .map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-zinc-700">Traditional editor</div>
+                    <Select
+                      value={form.traditionalEditorId}
+                      onValueChange={(v) => setForm((f) => ({ ...f, traditionalEditorId: v }))}
+                    >
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {roster
+                        .filter((u) => u.team === "TRADITIONAL_TEAM")
+                        .map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-zinc-700">Album editor</div>
+                    <Select value={form.albumEditorId} onValueChange={(v) => setForm((f) => ({ ...f, albumEditorId: v }))}>
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {roster
+                        .filter((u) => u.team === "ALBUM_TEAM")
+                        .map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                    </Select>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-zinc-600">
+                  If you leave a lane unassigned, the coordinator can reassign later from the Assignments board.
+                </p>
+              </div>
             </div>
             {saveEntry.isError ? <p className="mt-2 text-sm text-rose-600">{errMsg(saveEntry.error)}</p> : null}
             <div className="mt-6 flex justify-end gap-2 border-t border-zinc-100 pt-4">

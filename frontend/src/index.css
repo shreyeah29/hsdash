@@ -86,8 +86,9 @@ body {
     @apply rounded-xl border border-zinc-100 bg-zinc-50/80 shadow-inner;
   }
 
+  /* Inset highlight only — avoids full-card ::before masks painting over labels (Safari / compositing). */
   .shine-border {
-    @apply relative before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:p-px before:content-[''] before:bg-gradient-to-br before:from-white before:via-zinc-100 before:to-zinc-200/80 before:[mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] before:[mask-composite:xor] before:[-webkit-mask-composite:xor];
+    @apply relative ring-1 ring-inset ring-white/90;
   }
 
   .cal-cell-premium {

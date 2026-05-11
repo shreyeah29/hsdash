@@ -67,7 +67,7 @@ export function AdminDashboardPage() {
         className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="max-w-2xl space-y-3">
-          <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+          <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-600">
             <Sparkles className="h-3.5 w-3.5 text-violet-600" />
             Wedding production OS
           </p>
@@ -82,9 +82,9 @@ export function AdminDashboardPage() {
         <div className="flex shrink-0 items-center gap-5 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
           <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Delivery health</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Delivery health</p>
             <p className="mt-1 text-2xl font-semibold text-zinc-900">{isLoading ? "—" : `${stats.completionRate}%`}</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-600">
               {stats.completed} sealed · {stats.total - stats.completed} in motion
             </p>
           </div>
@@ -139,7 +139,7 @@ export function AdminDashboardPage() {
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">Priority runway</h2>
-              <p className="mt-1 text-sm text-zinc-500">Highest leverage deliverables across every crew.</p>
+              <p className="mt-1 text-sm text-zinc-600">Highest leverage deliverables across every crew.</p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
               Live queue · top {priorityQueue.length}
@@ -150,7 +150,7 @@ export function AdminDashboardPage() {
               <PriorityShowcaseCard key={t.id} task={t} index={i} />
             ))}
             {!isLoading && priorityQueue.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-500">
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-600">
                 Nothing in flight yet — add shoots from the calendar to ignite the pipeline.
               </div>
             ) : null}
@@ -160,7 +160,7 @@ export function AdminDashboardPage() {
         <GlassPanel className="flex flex-col p-6 md:p-8">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-zinc-900">Team workload</h2>
-            <p className="mt-1 text-sm text-zinc-500">Open tasks per crew — where attention compounds.</p>
+            <p className="mt-1 text-sm text-zinc-600">Open tasks per crew — where attention compounds.</p>
           </div>
           <div className="flex flex-1 flex-col justify-center gap-6">
             {workload.map(([team, count], i) => (
@@ -173,7 +173,7 @@ export function AdminDashboardPage() {
               />
             ))}
             {!isLoading && workload.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-500">Workload charts populate once tasks spin up.</p>
+              <p className="py-10 text-center text-sm text-zinc-600">Workload charts populate once tasks spin up.</p>
             ) : null}
           </div>
         </GlassPanel>
