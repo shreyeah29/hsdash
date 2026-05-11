@@ -9,7 +9,6 @@ import type { ShootCalendarEntry, Task, User } from "@/types/domain";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +111,18 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     queryFn: fetchRoster,
     enabled: canMutate,
   });
+
+  const rosterByTeam = useMemo(() => {
+    const by = new Map<string, User[]>();
+    for (const u of roster) {
+      const k = u.team ?? "UNASSIGNED_TEAM";
+      by.set(k, [...(by.get(k) ?? []), u]);
+    }
+    for (const [k, arr] of by.entries()) {
+      by.set(k, [...arr].sort((a, b) => a.name.localeCompare(b.name)));
+    }
+    return by;
+  }, [roster]);
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -573,71 +584,54 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
               <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:col-span-2">
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Assign editors (instant tasks)</div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-zinc-700">Photo editor</div>
-                    <Select value={form.photoEditorId} onValueChange={(v) => setForm((f) => ({ ...f, photoEditorId: v }))}>
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {roster
-                        .filter((u) => u.team === "PHOTO_TEAM")
-                        .map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-zinc-700">Cinematic editor</div>
-                    <Select
-                      value={form.cinematicEditorId}
-                      onValueChange={(v) => setForm((f) => ({ ...f, cinematicEditorId: v }))}
-                    >
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {roster
-                        .filter((u) => u.team === "CINEMATIC_TEAM")
-                        .map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-zinc-700">Traditional editor</div>
-                    <Select
-                      value={form.traditionalEditorId}
-                      onValueChange={(v) => setForm((f) => ({ ...f, traditionalEditorId: v }))}
-                    >
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {roster
-                        .filter((u) => u.team === "TRADITIONAL_TEAM")
-                        .map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-zinc-700">Album editor</div>
-                    <Select value={form.albumEditorId} onValueChange={(v) => setForm((f) => ({ ...f, albumEditorId: v }))}>
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {roster
-                        .filter((u) => u.team === "ALBUM_TEAM")
-                        .map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                    </Select>
-                  </div>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  {(
+                    [
+                      ["Photo editor", "PHOTO_TEAM", "photoEditorId"] as const,
+                      ["Cinematic editor", "CINEMATIC_TEAM", "cinematicEditorId"] as const,
+                      ["Traditional editor", "TRADITIONAL_TEAM", "traditionalEditorId"] as const,
+                      ["Album editor", "ALBUM_TEAM", "albumEditorId"] as const,
+                    ] as const
+                  ).map(([label, teamKey, field]) => {
+                    const options = rosterByTeam.get(teamKey) ?? [];
+                    return (
+                      <div key={teamKey} className="space-y-2">
+                        <div className="text-xs font-medium text-zinc-700">{label}</div>
+                        <div className="space-y-1 rounded-xl border border-zinc-200 bg-zinc-50 p-2">
+                          <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-800 hover:bg-white">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
+                              checked={!form[field]}
+                              onChange={() => setForm((f) => ({ ...f, [field]: "" }))}
+                            />
+                            <span>Unassigned</span>
+                          </label>
+                          {options.length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-zinc-600">No editors listed for this team yet.</div>
+                          ) : (
+                            options.map((u) => (
+                              <label
+                                key={u.id}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-800 hover:bg-white"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
+                                  checked={form[field] === u.id}
+                                  onChange={() => setForm((f) => ({ ...f, [field]: f[field] === u.id ? "" : u.id }))}
+                                />
+                                <span className="truncate">{u.name}</span>
+                              </label>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <p className="mt-3 text-xs text-zinc-600">
-                  If you leave a lane unassigned, the coordinator can reassign later from the Assignments board.
+                  Editors are notified when you press Save (not while ticking boxes). If you leave a lane unassigned, the coordinator can reassign later from the Assignments board.
                 </p>
               </div>
             </div>
