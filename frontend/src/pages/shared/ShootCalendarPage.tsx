@@ -249,6 +249,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         videoTeam: form.videoTeam,
         addons: form.addons,
         createDeliverableTimeline: form.createDeliverableTimeline,
+        syncEditorAssignments: true,
         ...(form.photoEditorId ? { photoEditorId: form.photoEditorId } : {}),
         ...(form.cinematicEditorId ? { cinematicEditorId: form.cinematicEditorId } : {}),
         ...(form.traditionalEditorId ? { traditionalEditorId: form.traditionalEditorId } : {}),
@@ -403,7 +404,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         <p className={cn("text-sm leading-relaxed md:text-[15px]", surfaceMuted)}>
           {canMutate ? (
             <>
-              Create the shoot and assign the editors involved. The moment you save, standard deliverables are generated automatically, deadlines start, and assigned editors are notified instantly.
+              Create the shoot and assign editors when you can. The moment you save, every crew member gets a notification instantly; assigned editors also receive their deliverable tasks right away — no need to wait for Emmanuel.
             </>
           ) : (
             <>
@@ -885,7 +886,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   })}
                 </div>
                 <p className="mt-3 text-xs text-zinc-600">
-                  Editors are notified when you press Save (not while ticking boxes). You can also assign later from{" "}
+                  When you press Save, each checked editor gets their tasks on their dashboard right away (e.g. Laxman sees photo deliverables). All crew also get a shoot alert. Reassign anytime from{" "}
                   <Link to="/admin/assignments" className="skiper-link-accent font-medium text-violet-700">
                     Assign crew
                   </Link>

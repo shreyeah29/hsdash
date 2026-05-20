@@ -8,7 +8,7 @@ import { resolveTaskAssigneeTx } from "../services/taskAssignee";
 import { computeDelayedStatus, computePriority } from "../services/taskPriority";
 import { recordTaskStatusChange } from "../services/taskActivity";
 import { HttpError } from "../utils/httpError";
-import { emitNotificationRefresh, emitTaskRefreshToOps, emitToUser } from "../realtime/socket";
+import { notifyAssignedTaskTx, pulseAssigneesImmediate } from "../services/assignmentNotify";
 
 export const tasksRouter = Router();
 
@@ -103,8 +103,7 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
       await recordTaskStatusChange(id, auth.userId, previousStatus, updated.status);
     }
 
-    emitTaskRefreshToOps();
-    if (updated.assignedToId) emitToUser(updated.assignedToId, "task:updated");
+    if (updated.assignedToId) pulseAssigneesImmediate([updated.assignedToId]);
 
     res.json({ task: updated });
   } catch (e) {
@@ -143,23 +142,21 @@ tasksRouter.put("/:id/assignee", requireCoordinatorOrAdmin, async (req, res, nex
       });
     });
 
-    if (updated.assignedToId && updated.assignedToId !== previousAssigneeId) {
+    if (updated.assignedToId) {
       const clientName = updated.event?.clientName ?? "Job";
-      const due = updated.deadline.toISOString().slice(0, 10);
-      const taskLabel = String(updated.taskType).replaceAll("_", " ");
-      await prisma.userNotification.create({
-        data: {
-          userId: updated.assignedToId,
+      await prisma.$transaction(async (tx) => {
+        await notifyAssignedTaskTx(tx, {
+          userId: updated.assignedToId!,
           taskId: updated.id,
-          title: "New task assignment",
-          body: `${taskLabel} — ${clientName}. Deadline: ${due}.`,
-        },
+          clientName,
+          taskType: updated.taskType,
+          deadline: updated.deadline,
+        });
       });
-      emitNotificationRefresh(updated.assignedToId);
-      emitToUser(updated.assignedToId, "task:updated");
+      pulseAssigneesImmediate([updated.assignedToId]);
+    } else if (previousAssigneeId) {
+      pulseAssigneesImmediate([previousAssigneeId]);
     }
-
-    emitTaskRefreshToOps();
 
     res.json({ task: updated });
   } catch (e) {

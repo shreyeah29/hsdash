@@ -6,7 +6,8 @@ import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
 import { Team } from "@prisma/client";
 import { createEventTasksTx, type EventTaskAssignments } from "../services/eventTasks";
-import { emitNotificationRefresh, emitTaskRefreshToOps, emitToUser } from "../realtime/socket";
+import { notifyAllAssignedTasksTx, pulseAssigneesImmediate } from "../services/assignmentNotify";
+import { emitTaskRefreshToOps } from "../realtime/socket";
 
 export const eventsRouter = Router();
 
@@ -63,20 +64,7 @@ eventsRouter.post("/", async (req, res, next) => {
         assignments,
       });
 
-      // Notify assigned editors immediately.
-      for (const t of tasks) {
-        if (!t.assignedToId) continue;
-        const due = t.deadline.toISOString().slice(0, 10);
-        const taskLabel = String(t.taskType).replaceAll("_", " ");
-        await tx.userNotification.create({
-          data: {
-            userId: t.assignedToId,
-            taskId: t.id,
-            title: "New wedding assigned",
-            body: `${created.clientName} — ${taskLabel}. Deadline: ${due}.`,
-          },
-        });
-      }
+      await notifyAllAssignedTasksTx(tx, tasks, created.clientName);
 
       return created;
     });
@@ -88,10 +76,7 @@ eventsRouter.post("/", async (req, res, next) => {
     });
     const recipients = new Set<string>();
     for (const t of fullAfter?.tasks ?? []) if (t.assignedToId) recipients.add(t.assignedToId);
-    for (const userId of recipients) {
-      emitNotificationRefresh(userId);
-      emitToUser(userId, "task:updated");
-    }
+    pulseAssigneesImmediate(recipients);
 
     res.status(201).json({ event: fullAfter });
   } catch (e) {

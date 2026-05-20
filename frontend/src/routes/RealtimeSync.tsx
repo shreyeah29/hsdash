@@ -35,11 +35,23 @@ export function RealtimeSync() {
       void qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
     };
 
+    const bumpNotifications = () => {
+      void qc.invalidateQueries({ queryKey: ["my-notifications"] });
+    };
+
     socket.on("task:updated", bumpAllProduction);
     socket.on("production:cleared", bumpAllProduction);
-    socket.on("notification:new", () => {
-      void qc.invalidateQueries({ queryKey: ["my-notifications"] });
+    const bumpAssignments = () => {
+      bumpTasks();
+      bumpNotifications();
+    };
+
+    socket.on("shoot:created", () => {
+      bumpAllProduction();
+      bumpNotifications();
     });
+    socket.on("assignment:updated", bumpAssignments);
+    socket.on("notification:new", bumpNotifications);
 
     return () => {
       socket?.disconnect();
