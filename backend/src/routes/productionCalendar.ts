@@ -31,6 +31,12 @@ const entryInclude = {
   },
 } satisfies Prisma.ShootCalendarEntryInclude;
 
+function editorIdFromBody(value: string | undefined): string | null {
+  const id = value?.trim();
+  return id ? id : null;
+}
+
+/** Full map for new events (missing lanes = unassigned). */
 function assignmentsFromBody(body: {
   photoEditorId?: string;
   cinematicEditorId?: string;
@@ -38,11 +44,26 @@ function assignmentsFromBody(body: {
   albumEditorId?: string;
 }): EventTaskAssignments {
   return {
-    [Team.PHOTO_TEAM]: body.photoEditorId?.trim() || null,
-    [Team.CINEMATIC_TEAM]: body.cinematicEditorId?.trim() || null,
-    [Team.TRADITIONAL_TEAM]: body.traditionalEditorId?.trim() || null,
-    [Team.ALBUM_TEAM]: body.albumEditorId?.trim() || null,
+    [Team.PHOTO_TEAM]: editorIdFromBody(body.photoEditorId),
+    [Team.CINEMATIC_TEAM]: editorIdFromBody(body.cinematicEditorId),
+    [Team.TRADITIONAL_TEAM]: editorIdFromBody(body.traditionalEditorId),
+    [Team.ALBUM_TEAM]: editorIdFromBody(body.albumEditorId),
   };
+}
+
+/** Only lanes the client sent — avoids wiping teams omitted from a partial PUT body. */
+function explicitAssignmentsFromBody(body: {
+  photoEditorId?: string;
+  cinematicEditorId?: string;
+  traditionalEditorId?: string;
+  albumEditorId?: string;
+}): EventTaskAssignments {
+  const out: EventTaskAssignments = {};
+  if ("photoEditorId" in body) out[Team.PHOTO_TEAM] = editorIdFromBody(body.photoEditorId);
+  if ("cinematicEditorId" in body) out[Team.CINEMATIC_TEAM] = editorIdFromBody(body.cinematicEditorId);
+  if ("traditionalEditorId" in body) out[Team.TRADITIONAL_TEAM] = editorIdFromBody(body.traditionalEditorId);
+  if ("albumEditorId" in body) out[Team.ALBUM_TEAM] = editorIdFromBody(body.albumEditorId);
+  return out;
 }
 
 function hasEditorAssignmentFields(body: {
@@ -63,6 +84,30 @@ function shootDayKey(day: Date, override?: string) {
   if (override) return override;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}`;
+}
+
+async function buildAssignmentSummary(assigneeIds: Iterable<string>) {
+  const ids = [...new Set(assigneeIds)];
+  if (ids.length === 0) return [];
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, name: true, email: true },
+  });
+
+  const counts = await prisma.task.groupBy({
+    by: ["assignedToId"],
+    where: { assignedToId: { in: ids } },
+    _count: { id: true },
+  });
+  const countByUser = new Map(counts.map((c) => [c.assignedToId!, c._count.id]));
+
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    taskCount: countByUser.get(u.id) ?? 0,
+  }));
 }
 
 function pulseAfterAdminSave(crewIds: Iterable<string>, assigneeIds: Iterable<string>) {
@@ -164,10 +209,10 @@ const baseFields = z.object({
   videoTeam: z.string().max(4000).optional().default(""),
   addons: z.string().max(8000).optional().default(""),
   createDeliverableTimeline: z.boolean().optional().default(false),
-  photoEditorId: z.string().min(1).optional(),
-  cinematicEditorId: z.string().min(1).optional(),
-  traditionalEditorId: z.string().min(1).optional(),
-  albumEditorId: z.string().min(1).optional(),
+  photoEditorId: z.string().optional(),
+  cinematicEditorId: z.string().optional(),
+  traditionalEditorId: z.string().optional(),
+  albumEditorId: z.string().optional(),
 });
 
 productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, res, next) => {
@@ -249,6 +294,7 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
     res.status(201).json({
       entry,
       assignedEditorIds: [...assigneeIds],
+      assignedEditors: await buildAssignmentSummary(assigneeIds),
     });
   } catch (e) {
     next(e);
@@ -265,7 +311,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
     const id = z.string().min(1).parse(req.params.id);
     const body = patchSchema.parse(req.body);
     const auth = req.auth!;
-    const assignments = assignmentsFromBody(body);
+    const explicitAssignments = explicitAssignmentsFromBody(body);
     const assigneeIds = new Set<string>();
     let crewIds: string[] = [];
 
@@ -303,7 +349,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
           eventId: ev.id,
           eventDate: ev.eventDate,
           createdById: auth.userId,
-          assignments,
+          assignments: assignmentsFromBody(body),
         });
 
         await notifyAllAssignedTasksTx(tx, tasks, ev.clientName);
@@ -325,9 +371,10 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
           eventId,
           eventDate: event.eventDate,
           clientName,
-          assignments,
+          assignments: explicitAssignments,
           assignedById: auth.userId,
           forceNotify: true,
+          onlyListedTeams: true,
         });
         for (const uid of synced) assigneeIds.add(uid);
       }
@@ -372,6 +419,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
     res.json({
       entry,
       assignedEditorIds: [...assigneeIds],
+      assignedEditors: await buildAssignmentSummary(assigneeIds),
     });
   } catch (e) {
     next(e);
@@ -400,10 +448,10 @@ productionCalendarRouter.delete("/entries/:id", requireRole(Role.ADMIN), async (
 });
 
 const startPostProductionBody = z.object({
-  photoEditorId: z.string().min(1).optional(),
-  cinematicEditorId: z.string().min(1).optional(),
-  traditionalEditorId: z.string().min(1).optional(),
-  albumEditorId: z.string().min(1).optional(),
+  photoEditorId: z.string().optional(),
+  cinematicEditorId: z.string().optional(),
+  traditionalEditorId: z.string().optional(),
+  albumEditorId: z.string().optional(),
 });
 
 productionCalendarRouter.post(

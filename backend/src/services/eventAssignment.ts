@@ -14,8 +14,9 @@ export async function syncEventAssignmentsTx(
     clientName: string;
     assignments: EventTaskAssignments;
     assignedById: string;
-    /** When true (calendar Save), every selected editor gets a fresh assignment alert. */
     forceNotify?: boolean;
+    /** When true, only update teams present in `assignments` (partial calendar save). */
+    onlyListedTeams?: boolean;
   },
 ) {
   const assigneeIds = new Set<string>();
@@ -34,7 +35,12 @@ export async function syncEventAssignmentsTx(
   }
 
   for (const task of tasks) {
-    const nextAssignee = await resolveTaskAssigneeTx(tx, args.assignments[task.assignedTeam], task.assignedTeam);
+    if (args.onlyListedTeams && args.assignments[task.assignedTeam] === undefined) {
+      continue;
+    }
+
+    const editorPick = args.assignments[task.assignedTeam] ?? null;
+    const nextAssignee = await resolveTaskAssigneeTx(tx, editorPick, task.assignedTeam);
     const previousAssignee = task.assignedToId;
 
     if (nextAssignee !== previousAssignee) {

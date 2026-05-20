@@ -258,10 +258,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         addons: form.addons,
         createDeliverableTimeline,
         syncEditorAssignments: true,
-        ...(form.photoEditorId ? { photoEditorId: form.photoEditorId } : {}),
-        ...(form.cinematicEditorId ? { cinematicEditorId: form.cinematicEditorId } : {}),
-        ...(form.traditionalEditorId ? { traditionalEditorId: form.traditionalEditorId } : {}),
-        ...(form.albumEditorId ? { albumEditorId: form.albumEditorId } : {}),
+        photoEditorId: form.photoEditorId,
+        cinematicEditorId: form.cinematicEditorId,
+        traditionalEditorId: form.traditionalEditorId,
+        albumEditorId: form.albumEditorId,
       };
       if (editingId && editingId !== "new") {
         const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
@@ -270,14 +270,23 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       const { data } = await api.post("/production-calendar/entries", payload);
       return data;
     },
+    onError: (err) => {
+      // eslint-disable-next-line no-alert
+      window.alert(errMsg(err));
+    },
     onSuccess: async (data) => {
-      const assigned = (data as { assignedEditorIds?: string[] })?.assignedEditorIds?.length ?? 0;
+      const summary = (data as { assignedEditors?: { name: string; email: string; taskCount: number }[] })
+        ?.assignedEditors;
       if (hasEditorPicks) {
+        const lines =
+          summary && summary.length > 0
+            ? summary.map((e) => `• ${e.name} (${e.email}) — ${e.taskCount} task(s)`).join("\n")
+            : null;
         // eslint-disable-next-line no-alert
         window.alert(
-          assigned > 0
-            ? `Saved. ${assigned} editor assignment(s) are live — crew dashboards update now.`
-            : "Saved, but no editor assignments reached the server. Check deliverable timeline is on and Render backend is redeployed.",
+          lines
+            ? `Saved. Assignments are live:\n\n${lines}\n\nCrew dashboards refresh within a few seconds.`
+            : "Saved, but no tasks were linked to editors. Redeploy the Render API and ensure deliverable timeline is active.",
         );
       }
       setDialogOpen(false);

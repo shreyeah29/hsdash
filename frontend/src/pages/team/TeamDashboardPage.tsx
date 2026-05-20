@@ -51,7 +51,13 @@ export function TeamDashboardPage() {
     },
   });
 
-  const { data, refetch: refetchTasks, isFetching } = useQuery({
+  const {
+    data,
+    refetch: refetchTasks,
+    isFetching,
+    isError: tasksError,
+    error: tasksQueryError,
+  } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: async () => {
       const { data } = await api.get<{ tasks: Task[] }>("/tasks");
@@ -145,6 +151,13 @@ export function TeamDashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {tasksError ? (
+        <GlassPanel className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          Could not load your tasks — check you are logged in as an editor and that the API URL is correct.{" "}
+          {(tasksQueryError as Error)?.message ? `(${String((tasksQueryError as Error).message)})` : null}
+        </GlassPanel>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <AnimatedStatCard label="Urgent horizon" value={stats.urgent} hint="≤ 24 hours" icon={Zap} accent="amber" delay={0} />

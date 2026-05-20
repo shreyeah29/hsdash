@@ -32,7 +32,15 @@ On **Render**, `prisma migrate deploy` runs on startup and applies `prisma/migra
 npm run dev
 ```
 
-API: `GET /health`
+API health check (use your **Render** URL, not Vercel):
+
+```text
+https://<your-backend>.onrender.com/health
+```
+
+Example (if your service is named `hsdash`): `https://hsdash.onrender.com/health` → should return JSON like `{"ok":true,...}`.
+
+`https://hsdash.vercel.app/health` will **not** work — that is the React UI only.
 
 #### Frontend
 

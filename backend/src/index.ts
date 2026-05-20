@@ -27,7 +27,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, features: { assignmentSyncV2: true, crewNotify: true } }),
+);
 
 app.use("/auth", authRouter);
 app.use("/events", eventsRouter);
