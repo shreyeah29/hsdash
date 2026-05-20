@@ -235,8 +235,16 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const selectedEntries = selectedKey ? entriesByDay.get(selectedKey) ?? [] : [];
   const selectedDues = selectedKey ? duesInMonth.get(selectedKey) ?? [] : [];
 
+  const hasEditorPicks = !!(
+    form.photoEditorId ||
+    form.cinematicEditorId ||
+    form.traditionalEditorId ||
+    form.albumEditorId
+  );
+
   const saveEntry = useMutation({
     mutationFn: async () => {
+      const createDeliverableTimeline = form.createDeliverableTimeline || hasEditorPicks;
       const payload = {
         day: form.day,
         clientName: form.clientName,
@@ -248,7 +256,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         photoTeam: form.photoTeam,
         videoTeam: form.videoTeam,
         addons: form.addons,
-        createDeliverableTimeline: form.createDeliverableTimeline,
+        createDeliverableTimeline,
         syncEditorAssignments: true,
         ...(form.photoEditorId ? { photoEditorId: form.photoEditorId } : {}),
         ...(form.cinematicEditorId ? { cinematicEditorId: form.cinematicEditorId } : {}),
@@ -259,13 +267,19 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
         return data;
       }
-      const { data } = await api.post("/production-calendar/entries", {
-        ...payload,
-        createDeliverableTimeline: form.createDeliverableTimeline,
-      });
+      const { data } = await api.post("/production-calendar/entries", payload);
       return data;
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      const assigned = (data as { assignedEditorIds?: string[] })?.assignedEditorIds?.length ?? 0;
+      if (hasEditorPicks) {
+        // eslint-disable-next-line no-alert
+        window.alert(
+          assigned > 0
+            ? `Saved. ${assigned} editor assignment(s) are live — crew dashboards update now.`
+            : "Saved, but no editor assignments reached the server. Check deliverable timeline is on and Render backend is redeployed.",
+        );
+      }
       setDialogOpen(false);
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });

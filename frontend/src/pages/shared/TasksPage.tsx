@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { crewLiveQueryOptions } from "@/hooks/useCrewLiveData";
 
 async function fetchTasks() {
   const { data } = await api.get<{ tasks: Task[] }>("/tasks");
@@ -40,8 +41,9 @@ export function TasksPage() {
   const [status, setStatus] = useState<string>("ALL");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["my-tasks"],
     queryFn: fetchTasks,
+    ...crewLiveQueryOptions,
   });
 
   const filtered = useMemo(() => {

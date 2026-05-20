@@ -183,7 +183,10 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
       let clientName = body.clientName;
       let firstTaskId: string | null = null;
 
-      if (body.createDeliverableTimeline) {
+      const shouldActivateDeliverables =
+        body.createDeliverableTimeline || hasEditorAssignmentFields(body);
+
+      if (shouldActivateDeliverables) {
         const eventDate = parseDayUtc(body.day);
         const ev = await tx.event.create({
           data: {
@@ -234,7 +237,7 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
         dayIso: body.day,
         venue: body.venue,
         eventName: body.eventName,
-        hasDeliverables: body.createDeliverableTimeline,
+        hasDeliverables: shouldActivateDeliverables,
         taskId: firstTaskId,
       });
 
@@ -243,7 +246,10 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
 
     pulseAfterAdminSave(crewIds, assigneeIds);
 
-    res.status(201).json({ entry });
+    res.status(201).json({
+      entry,
+      assignedEditorIds: [...assigneeIds],
+    });
   } catch (e) {
     next(e);
   }
@@ -269,7 +275,10 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
     const entry = await prisma.$transaction(async (tx) => {
       let eventId = existing.eventId;
 
-      if (body.createDeliverableTimeline === true && !eventId) {
+      const shouldActivateDeliverables =
+        !eventId && (body.createDeliverableTimeline === true || hasEditorAssignmentFields(body));
+
+      if (shouldActivateDeliverables) {
         const dayStr = shootDayKey(existing.day, body.day);
         const clientName = body.clientName ?? existing.clientName;
         const venue = body.venue ?? existing.venue;
@@ -360,7 +369,10 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
 
     if (crewIds.length > 0 || assigneeIds.size > 0) pulseAfterAdminSave(crewIds, assigneeIds);
 
-    res.json({ entry });
+    res.json({
+      entry,
+      assignedEditorIds: [...assigneeIds],
+    });
   } catch (e) {
     next(e);
   }

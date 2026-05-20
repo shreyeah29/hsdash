@@ -20,7 +20,16 @@ export function RealtimeSync() {
       auth: { token },
       transports: ["websocket", "polling"],
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 12,
     });
+
+    const bumpAssignments = () => {
+      bumpTasks();
+      bumpNotifications();
+    };
+
+    socket.on("connect", bumpAssignments);
 
     const bumpTasks = () => {
       void qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -41,10 +50,6 @@ export function RealtimeSync() {
 
     socket.on("task:updated", bumpAllProduction);
     socket.on("production:cleared", bumpAllProduction);
-    const bumpAssignments = () => {
-      bumpTasks();
-      bumpNotifications();
-    };
 
     socket.on("shoot:created", () => {
       bumpAllProduction();

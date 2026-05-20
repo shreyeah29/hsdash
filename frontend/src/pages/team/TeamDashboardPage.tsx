@@ -10,6 +10,7 @@ import { TaskStatus } from "@/types/domain";
 import { GlassPanel, AnimatedStatCard, PriorityShowcaseCard } from "@/components/premium";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { crewLiveQueryOptions } from "@/hooks/useCrewLiveData";
 
 function greeting(hour: number) {
   if (hour < 12) return "Good morning";
@@ -21,12 +22,13 @@ export function TeamDashboardPage() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], dataUpdatedAt: notificationsUpdatedAt } = useQuery({
     queryKey: ["my-notifications"],
     queryFn: async () => {
       const { data } = await api.get<{ notifications: UserNotification[] }>("/notifications");
       return data.notifications;
     },
+    ...crewLiveQueryOptions,
   });
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
@@ -49,12 +51,13 @@ export function TeamDashboardPage() {
     },
   });
 
-  const { data } = useQuery({
+  const { data, refetch: refetchTasks, isFetching } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: async () => {
       const { data } = await api.get<{ tasks: Task[] }>("/tasks");
       return data.tasks;
     },
+    ...crewLiveQueryOptions,
   });
 
   const now = new Date();
@@ -103,7 +106,7 @@ export function TeamDashboardPage() {
           <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-[2.1rem]">
             Your edit bay is tuned —{" "}
             <span className="font-semibold text-emerald-800">
-              {stats.open > 0 ? `${stats.open} cuts need your signature.` : "fresh canvas awaiting Emmanuel's next drop."}
+              {stats.open > 0 ? `${stats.open} cuts need your signature.` : "no assignments yet — admin routes work to you here."}
             </span>
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 md:text-[15px]">
@@ -128,6 +131,17 @@ export function TeamDashboardPage() {
             <Button variant="glass" className="rounded-xl" asChild>
               <Link to="/team/tasks">Update statuses</Link>
             </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              disabled={isFetching}
+              onClick={() => {
+                void refetchTasks();
+                void qc.invalidateQueries({ queryKey: ["my-notifications"] });
+              }}
+            >
+              {isFetching ? "Refreshing…" : "Refresh"}
+            </Button>
           </div>
         </div>
       </motion.div>
@@ -143,7 +157,14 @@ export function TeamDashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Signal inbox</h2>
-            <p className="text-sm text-zinc-600">Coordinator pings sync instantly — acknowledge when ready.</p>
+            <p className="text-sm text-zinc-600">
+              Admin assignments appear here automatically (refreshes every few seconds).
+              {notificationsUpdatedAt ? (
+                <span className="block text-[11px] text-zinc-500">
+                  Last sync {new Date(notificationsUpdatedAt).toLocaleTimeString()}
+                </span>
+              ) : null}
+            </p>
           </div>
           {unreadCount > 0 ? (
             <Button variant="glass" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
@@ -198,7 +219,7 @@ export function TeamDashboardPage() {
           ))}
           {stats.total === 0 ? (
             <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
-              Queue pristine — Emmanuel routes work here when shoots unlock.
+              No tasks assigned to you yet. If admin just saved your name on a shoot, wait a few seconds or tap Refresh below.
             </div>
           ) : null}
         </div>
