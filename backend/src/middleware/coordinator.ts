@@ -9,7 +9,7 @@ export function requireCoordinatorOrAdmin(req: Request, _res: Response, next: Ne
   return next(new HttpError(403, "Forbidden", "FORBIDDEN"));
 }
 
-/** Post-production assignment & roster — coordinator role only (not admin). */
+/** Legacy coordinator-only gate (status changes on behalf of editors, etc.). */
 export function requireCoordinator(req: Request, _res: Response, next: NextFunction) {
   if (!req.auth) return next(new HttpError(401, "Not authenticated", "UNAUTHENTICATED"));
   if (req.auth.role === Role.COORDINATOR) return next();

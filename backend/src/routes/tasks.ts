@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma/client";
 import { requireAuth } from "../middleware/auth";
-import { requireCoordinator } from "../middleware/coordinator";
+import { requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { Role, TaskPriority, TaskStatus, Team } from "@prisma/client";
 import { resolveTaskAssigneeTx } from "../services/taskAssignee";
 import { computeDelayedStatus, computePriority } from "../services/taskPriority";
@@ -116,7 +116,7 @@ const assigneeBodySchema = z.object({
   assignedToId: z.union([z.string().min(1), z.null()]),
 });
 
-tasksRouter.put("/:id/assignee", requireCoordinator, async (req, res, next) => {
+tasksRouter.put("/:id/assignee", requireCoordinatorOrAdmin, async (req, res, next) => {
   try {
     const id = z.string().min(1).parse(req.params.id);
     const body = assigneeBodySchema.parse(req.body);

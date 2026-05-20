@@ -418,43 +418,67 @@ productionCalendarRouter.delete("/entries/:id", requireRole(Role.ADMIN), async (
   }
 });
 
-productionCalendarRouter.post("/entries/:id/start-post-production", requireCoordinator, async (req, res, next) => {
-  try {
-    const id = z.string().min(1).parse(req.params.id);
-    const auth = req.auth!;
-
-    const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
-    if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
-    if (existing.eventId) throw new HttpError(400, "Post-production already started for this shoot", "BAD_REQUEST");
-
-    const entry = await prisma.$transaction(async (tx) => {
-      const eventDate = existing.day;
-      const ev = await tx.event.create({
-        data: {
-          clientName: existing.clientName,
-          eventDate,
-          venue: existing.venue,
-          shootTime: `${existing.startTime}–${existing.endTime}`,
-          notes: existing.addons,
-          postProductionStarted: true,
-          createdById: auth.userId,
-        },
-      });
-      await createEventTasksTx(tx, { eventId: ev.id, eventDate: ev.eventDate, createdById: auth.userId });
-      return tx.shootCalendarEntry.update({
-        where: { id },
-        data: { eventId: ev.id },
-        include: entryInclude,
-      });
-    });
-
-    emitTaskRefreshToOps();
-
-    res.status(201).json({ entry });
-  } catch (e) {
-    next(e);
-  }
+const startPostProductionBody = z.object({
+  photoEditorId: z.string().min(1).optional(),
+  cinematicEditorId: z.string().min(1).optional(),
+  traditionalEditorId: z.string().min(1).optional(),
+  albumEditorId: z.string().min(1).optional(),
 });
+
+productionCalendarRouter.post(
+  "/entries/:id/start-post-production",
+  requireCoordinatorOrAdmin,
+  async (req, res, next) => {
+    try {
+      const id = z.string().min(1).parse(req.params.id);
+      const body = startPostProductionBody.parse(req.body ?? {});
+      const auth = req.auth!;
+      const assignments = assignmentsFromBody(body);
+      const notifyUserIds = new Set<string>();
+
+      const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
+      if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
+      if (existing.eventId) throw new HttpError(400, "Post-production already started for this shoot", "BAD_REQUEST");
+
+      const entry = await prisma.$transaction(async (tx) => {
+        const eventDate = existing.day;
+        const ev = await tx.event.create({
+          data: {
+            clientName: existing.clientName,
+            eventDate,
+            venue: existing.venue,
+            shootTime: `${existing.startTime}–${existing.endTime}`,
+            notes: existing.addons,
+            postProductionStarted: true,
+            createdById: auth.userId,
+          },
+        });
+
+        const tasks = await createEventTasksTx(tx, {
+          eventId: ev.id,
+          eventDate: ev.eventDate,
+          createdById: auth.userId,
+          assignments,
+        });
+
+        await notifyNewAssignments(tx, tasks, ev.clientName);
+        for (const t of tasks) if (t.assignedToId) notifyUserIds.add(t.assignedToId);
+
+        return tx.shootCalendarEntry.update({
+          where: { id },
+          data: { eventId: ev.id },
+          include: entryInclude,
+        });
+      });
+
+      emitRefreshForEditors(notifyUserIds);
+
+      res.status(201).json({ entry });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 productionCalendarRouter.get("/team-members", requireCoordinatorOrAdmin, async (_req, res, next) => {
   try {

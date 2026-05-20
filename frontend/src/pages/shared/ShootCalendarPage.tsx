@@ -183,7 +183,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const { data: roster = [] } = useQuery({
     queryKey: ["production-calendar-roster"],
     queryFn: fetchRoster,
-    enabled: canMutate,
+    enabled: canMutate || coordinatorMode,
   });
 
   const rosterForTeam = useMemo(() => {
@@ -286,16 +286,42 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     },
   });
 
+  const [activateEntryId, setActivateEntryId] = useState<string | null>(null);
+  const [activateEditors, setActivateEditors] = useState({
+    photoEditorId: "",
+    cinematicEditorId: "",
+    traditionalEditorId: "",
+    albumEditorId: "",
+  });
+
   const startPostProduction = useMutation({
-    mutationFn: async (entryId: string) => {
+    mutationFn: async ({
+      entryId,
+      ...editors
+    }: {
+      entryId: string;
+      photoEditorId?: string;
+      cinematicEditorId?: string;
+      traditionalEditorId?: string;
+      albumEditorId?: string;
+    }) => {
       const { data } = await api.post<{ entry: ShootCalendarEntry }>(
         `/production-calendar/entries/${entryId}/start-post-production`,
+        {
+          ...(editors.photoEditorId ? { photoEditorId: editors.photoEditorId } : {}),
+          ...(editors.cinematicEditorId ? { cinematicEditorId: editors.cinematicEditorId } : {}),
+          ...(editors.traditionalEditorId ? { traditionalEditorId: editors.traditionalEditorId } : {}),
+          ...(editors.albumEditorId ? { albumEditorId: editors.albumEditorId } : {}),
+        },
       );
       return data.entry;
     },
     onSuccess: async () => {
+      setActivateEntryId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["my-tasks"] });
+      await qc.invalidateQueries({ queryKey: ["my-notifications"] });
     },
   });
 
@@ -345,7 +371,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     setDialogOpen(true);
   }
 
-  const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/team/tasks";
+  const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/admin/assignments";
 
   const surfaceMuted = coordinatorMode ? "text-zinc-600" : "text-zinc-600";
   const heading = "text-zinc-900";
@@ -362,9 +388,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             </>
           ) : (
             <>
-              Read-only logistics mirror what Admin captured. After the shoot, use{" "}
-              <span className="font-medium text-amber-700">Start post-production</span> on each completed row to spawn editing tasks, then assign editors in{" "}
-              <Link className="font-medium text-amber-700 underline" to={assignmentsLink}>
+              Logistics mirror what Admin captured. Use{" "}
+              <span className="font-medium text-amber-700">Activate & assign crew</span> on each row to spawn deliverables and notify editors, or fine-tune in{" "}
+              <Link className="skiper-link-accent font-medium text-amber-700" to={assignmentsLink}>
                 Assignments
               </Link>
               .
@@ -502,19 +528,32 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                             </span>
                           ) : (
                             <span className="rounded-lg border border-dashed border-zinc-300 px-2.5 py-1 text-xs text-zinc-600">
-                              Awaiting coordinator kickoff
+                              Deliverables not activated
                             </span>
                           )}
-                          {coordinatorMode && !e.eventId ? (
+                          {!e.eventId ? (
                             <Button
                               size="sm"
                               type="button"
                               variant="premium"
-                              className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-glow-amber hover:brightness-105"
+                              className={cn(
+                                "rounded-xl text-black shadow-glow-amber hover:brightness-105",
+                                coordinatorMode
+                                  ? "bg-gradient-to-r from-amber-400 to-orange-500"
+                                  : "bg-gradient-to-r from-violet-500 to-cyan-500 text-white",
+                              )}
                               disabled={startPostProduction.isPending}
-                              onClick={() => startPostProduction.mutate(e.id)}
+                              onClick={() => {
+                                setActivateEditors({
+                                  photoEditorId: "",
+                                  cinematicEditorId: "",
+                                  traditionalEditorId: "",
+                                  albumEditorId: "",
+                                });
+                                setActivateEntryId(e.id);
+                              }}
                             >
-                              Start post-production
+                              Activate & assign crew
                             </Button>
                           ) : null}
                           {canMutate ? (
@@ -573,6 +612,81 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           </GlassPanel>
         </motion.div>
       </div>
+
+      <Dialog open={!!activateEntryId} onOpenChange={(open) => !open && setActivateEntryId(null)}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Activate deliverables & assign crew</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-zinc-600">
+            Creates the standard deadline set and notifies each assigned editor immediately — same flow Emmanuel uses.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["Photo editor", "PHOTO_TEAM", "photoEditorId"] as const,
+                ["Cinematic editor", "CINEMATIC_TEAM", "cinematicEditorId"] as const,
+                ["Traditional editor", "TRADITIONAL_TEAM", "traditionalEditorId"] as const,
+                ["Album editor", "ALBUM_TEAM", "albumEditorId"] as const,
+              ] as const
+            ).map(([label, teamKey, field]) => {
+              const options = rosterForTeam(teamKey);
+              return (
+                <div key={teamKey} className="space-y-2 sm:col-span-2">
+                  <div className="text-xs font-medium text-zinc-700">{label}</div>
+                  <div className="space-y-1 rounded-xl border border-zinc-200 bg-zinc-50 p-2">
+                    {options.map((u) => (
+                      <label
+                        key={u.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-800 hover:bg-white"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600"
+                          checked={activateEditors[field] === u.id}
+                          onChange={() =>
+                            setActivateEditors((f) => ({
+                              ...f,
+                              [field]: f[field] === u.id ? "" : u.id,
+                            }))
+                          }
+                        />
+                        <span className="truncate">{u.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {startPostProduction.isError ? (
+            <p className="mt-2 text-sm text-rose-600">{errMsg(startPostProduction.error)}</p>
+          ) : null}
+          <div className="mt-6 flex justify-end gap-2 border-t border-zinc-100 pt-4">
+            <Button type="button" variant="glass" className="rounded-xl" onClick={() => setActivateEntryId(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="premium"
+              className="rounded-xl"
+              disabled={startPostProduction.isPending || !activateEntryId}
+              onClick={() =>
+                activateEntryId &&
+                startPostProduction.mutate({
+                  entryId: activateEntryId,
+                  ...(activateEditors.photoEditorId ? { photoEditorId: activateEditors.photoEditorId } : {}),
+                  ...(activateEditors.cinematicEditorId ? { cinematicEditorId: activateEditors.cinematicEditorId } : {}),
+                  ...(activateEditors.traditionalEditorId ? { traditionalEditorId: activateEditors.traditionalEditorId } : {}),
+                  ...(activateEditors.albumEditorId ? { albumEditorId: activateEditors.albumEditorId } : {}),
+                })
+              }
+            >
+              {startPostProduction.isPending ? "Activating…" : "Activate pipeline"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {canMutate ? (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -702,7 +816,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   })}
                 </div>
                 <p className="mt-3 text-xs text-zinc-600">
-                  Editors are notified when you press Save (not while ticking boxes). If you leave a lane unassigned, the coordinator can reassign later from the Assignments board.
+                  Editors are notified when you press Save (not while ticking boxes). You can also assign later from{" "}
+                  <Link to="/admin/assignments" className="skiper-link-accent font-medium text-violet-700">
+                    Assign crew
+                  </Link>
+                  .
                 </p>
               </div>
             </div>
