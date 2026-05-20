@@ -186,16 +186,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     enabled: canMutate,
   });
 
-  const rosterByTeam = useMemo(() => {
-    const by = new Map<string, User[]>();
-    for (const u of roster) {
-      const k = u.team ?? "UNASSIGNED_TEAM";
-      by.set(k, [...(by.get(k) ?? []), u]);
-    }
-    for (const [k, arr] of by.entries()) {
-      by.set(k, [...arr].sort((a, b) => a.name.localeCompare(b.name)));
-    }
-    return by;
+  const rosterForTeam = useMemo(() => {
+    const sorted = [...roster].sort((a, b) => a.name.localeCompare(b.name));
+    return (teamKey: string) => sorted.filter((u) => u.team === teamKey || u.team === null);
   }, [roster]);
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -661,7 +654,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                       ["Album editor", "ALBUM_TEAM", "albumEditorId"] as const,
                     ] as const
                   ).map(([label, teamKey, field]) => {
-                    const options = rosterByTeam.get(teamKey) ?? [];
+                    const options = rosterForTeam(teamKey);
                     return (
                       <div key={teamKey} className="space-y-2">
                         <div className="text-xs font-medium text-zinc-700">{label}</div>
@@ -676,7 +669,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                             <span>Unassigned</span>
                           </label>
                           {options.length === 0 ? (
-                            <div className="px-2 py-1.5 text-xs text-zinc-600">No editors listed for this team yet.</div>
+                            <div className="px-2 py-1.5 text-xs text-zinc-600">No editors listed yet.</div>
                           ) : (
                             options.map((u) => (
                               <label
@@ -689,7 +682,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                                   checked={form[field] === u.id}
                                   onChange={() => setForm((f) => ({ ...f, [field]: f[field] === u.id ? "" : u.id }))}
                                 />
-                                <span className="truncate">{u.name}</span>
+                                <span className="truncate">
+                                  {u.name}
+                                  {u.team === null ? <span className="text-xs text-zinc-500"> (no team set)</span> : null}
+                                </span>
                               </label>
                             ))
                           )}
