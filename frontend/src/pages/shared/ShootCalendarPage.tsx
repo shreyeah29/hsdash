@@ -269,6 +269,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["my-tasks"] });
+      await qc.invalidateQueries({ queryKey: ["my-notifications"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
   });
@@ -314,6 +316,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     setDialogOpen(true);
   }
 
+  function editorIdForTeam(entry: ShootCalendarEntry, team: string) {
+    const tasks = entry.event?.tasks ?? [];
+    return tasks.find((t) => t.assignedTeam === team && t.assignedToId)?.assignedToId ?? "";
+  }
+
   function openEdit(entry: ShootCalendarEntry) {
     if (!canMutate) return;
     setEditingId(entry.id);
@@ -330,10 +337,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       addons: entry.addons,
       // If timeline isn’t linked yet, default to creating it now.
       createDeliverableTimeline: !entry.eventId,
-      photoEditorId: "",
-      cinematicEditorId: "",
-      traditionalEditorId: "",
-      albumEditorId: "",
+      photoEditorId: editorIdForTeam(entry, "PHOTO_TEAM"),
+      cinematicEditorId: editorIdForTeam(entry, "CINEMATIC_TEAM"),
+      traditionalEditorId: editorIdForTeam(entry, "TRADITIONAL_TEAM"),
+      albumEditorId: editorIdForTeam(entry, "ALBUM_TEAM"),
     });
     setDialogOpen(true);
   }

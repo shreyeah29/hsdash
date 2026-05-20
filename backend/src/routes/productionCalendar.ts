@@ -1,14 +1,15 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { Role } from "@prisma/client";
+import { Role, Team } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { requireCoordinator, requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
-import { buildEventTasks } from "../services/eventTasks";
-import { emitTaskRefreshToOps } from "../realtime/socket";
+import { createEventTasksTx, type EventTaskAssignments } from "../services/eventTasks";
+import { resolveTaskAssigneeTx } from "../services/taskAssignee";
+import { emitNotificationRefresh, emitTaskRefreshToOps, emitToUser } from "../realtime/socket";
 
 export const productionCalendarRouter = Router();
 
@@ -27,6 +28,105 @@ const entryInclude = {
     },
   },
 } satisfies Prisma.ShootCalendarEntryInclude;
+
+function assignmentsFromBody(body: {
+  photoEditorId?: string;
+  cinematicEditorId?: string;
+  traditionalEditorId?: string;
+  albumEditorId?: string;
+}): EventTaskAssignments {
+  return {
+    [Team.PHOTO_TEAM]: body.photoEditorId?.trim() || null,
+    [Team.CINEMATIC_TEAM]: body.cinematicEditorId?.trim() || null,
+    [Team.TRADITIONAL_TEAM]: body.traditionalEditorId?.trim() || null,
+    [Team.ALBUM_TEAM]: body.albumEditorId?.trim() || null,
+  };
+}
+
+function hasEditorAssignmentFields(body: {
+  photoEditorId?: string;
+  cinematicEditorId?: string;
+  traditionalEditorId?: string;
+  albumEditorId?: string;
+}): boolean {
+  return !!(
+    body.photoEditorId?.trim() ||
+    body.cinematicEditorId?.trim() ||
+    body.traditionalEditorId?.trim() ||
+    body.albumEditorId?.trim()
+  );
+}
+
+async function notifyNewAssignments(
+  tx: Prisma.TransactionClient,
+  tasks: Array<{
+    id: string;
+    assignedToId: string | null;
+    taskType: string;
+    deadline: Date;
+    assignedTeam: Team;
+  }>,
+  clientName: string,
+  onlyUserIds?: Set<string>,
+) {
+  for (const t of tasks) {
+    if (!t.assignedToId) continue;
+    if (onlyUserIds && !onlyUserIds.has(t.assignedToId)) continue;
+    const due = t.deadline.toISOString().slice(0, 10);
+    const taskLabel = String(t.taskType).replaceAll("_", " ");
+    await tx.userNotification.create({
+      data: {
+        userId: t.assignedToId,
+        taskId: t.id,
+        title: "New wedding assigned",
+        body: `${clientName} — ${taskLabel}. Deadline: ${due}.`,
+      },
+    });
+  }
+}
+
+async function applyAssignmentsToExistingEvent(
+  tx: import("@prisma/client").Prisma.TransactionClient,
+  eventId: string,
+  clientName: string,
+  assignments: EventTaskAssignments,
+  assignedById: string,
+) {
+  const tasks = await tx.task.findMany({ where: { eventId } });
+  const newlyAssignedUserIds = new Set<string>();
+
+  for (const task of tasks) {
+    const nextAssignee = await resolveTaskAssigneeTx(tx, assignments[task.assignedTeam], task.assignedTeam);
+    if (!nextAssignee || nextAssignee === task.assignedToId) continue;
+
+    await tx.task.update({
+      where: { id: task.id },
+      data: { assignedToId: nextAssignee, assignedById: assignedById },
+    });
+
+    newlyAssignedUserIds.add(nextAssignee);
+    const due = task.deadline.toISOString().slice(0, 10);
+    const taskLabel = String(task.taskType).replaceAll("_", " ");
+    await tx.userNotification.create({
+      data: {
+        userId: nextAssignee,
+        taskId: task.id,
+        title: "New wedding assigned",
+        body: `${clientName} — ${taskLabel}. Deadline: ${due}.`,
+      },
+    });
+  }
+
+  return { tasks, newlyAssignedUserIds };
+}
+
+function emitRefreshForEditors(userIds: Iterable<string>) {
+  emitTaskRefreshToOps();
+  for (const userId of userIds) {
+    emitNotificationRefresh(userId);
+    emitToUser(userId, "task:updated");
+  }
+}
 
 productionCalendarRouter.use(requireAuth);
 
@@ -57,6 +157,56 @@ productionCalendarRouter.get("/entries", requireCoordinatorOrAdmin, async (req, 
   }
 });
 
+productionCalendarRouter.get("/entries/assigned", async (req, res, next) => {
+  try {
+    const auth = req.auth!;
+    if (auth.role !== Role.EDITOR) throw new HttpError(403, "Forbidden", "FORBIDDEN");
+
+    const q = z
+      .object({
+        from: isoDay,
+        to: isoDay,
+      })
+      .parse(req.query);
+
+    const from = parseDayUtc(q.from);
+    const to = parseDayUtc(q.to);
+    if (to.getTime() < from.getTime()) throw new HttpError(400, "Invalid range", "BAD_REQUEST");
+
+    const editorInclude = {
+      createdBy: { select: { id: true, name: true, email: true } },
+      event: {
+        include: {
+          tasks: {
+            where: { assignedToId: auth.userId },
+            orderBy: [{ deadline: "asc" as const }],
+            include: {
+              assignedTo: { select: { id: true, name: true, email: true, team: true } },
+            },
+          },
+        },
+      },
+    } satisfies Prisma.ShootCalendarEntryInclude;
+
+    const entries = await prisma.shootCalendarEntry.findMany({
+      where: {
+        day: { gte: from, lte: to },
+        event: {
+          tasks: {
+            some: { assignedToId: auth.userId },
+          },
+        },
+      },
+      orderBy: [{ day: "asc" }, { createdAt: "asc" }],
+      include: editorInclude,
+    });
+
+    res.json({ entries });
+  } catch (e) {
+    next(e);
+  }
+});
+
 const baseFields = z.object({
   day: isoDay,
   clientName: z.string().min(1),
@@ -69,15 +219,23 @@ const baseFields = z.object({
   videoTeam: z.string().max(4000).optional().default(""),
   addons: z.string().max(8000).optional().default(""),
   createDeliverableTimeline: z.boolean().optional().default(false),
+  photoEditorId: z.string().min(1).optional(),
+  cinematicEditorId: z.string().min(1).optional(),
+  traditionalEditorId: z.string().min(1).optional(),
+  albumEditorId: z.string().min(1).optional(),
 });
 
 productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, res, next) => {
   try {
     const body = baseFields.parse(req.body);
     const auth = req.auth!;
+    const assignments = assignmentsFromBody(body);
+    const notifyUserIds = new Set<string>();
 
     const entry = await prisma.$transaction(async (tx) => {
       let eventId: string | null = null;
+      let clientName = body.clientName;
+
       if (body.createDeliverableTimeline) {
         const eventDate = parseDayUtc(body.day);
         const ev = await tx.event.create({
@@ -92,10 +250,17 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
           },
         });
         eventId = ev.id;
-        const rows = buildEventTasks(ev.id, ev.eventDate);
-        for (const row of rows) {
-          await tx.task.create({ data: row });
-        }
+        clientName = ev.clientName;
+
+        const tasks = await createEventTasksTx(tx, {
+          eventId: ev.id,
+          eventDate: ev.eventDate,
+          createdById: auth.userId,
+          assignments,
+        });
+
+        await notifyNewAssignments(tx, tasks, clientName);
+        for (const t of tasks) if (t.assignedToId) notifyUserIds.add(t.assignedToId);
       }
 
       return tx.shootCalendarEntry.create({
@@ -117,7 +282,7 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
       });
     });
 
-    if (body.createDeliverableTimeline) emitTaskRefreshToOps();
+    if (body.createDeliverableTimeline) emitRefreshForEditors(notifyUserIds);
 
     res.status(201).json({ entry });
   } catch (e) {
@@ -133,6 +298,9 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
   try {
     const id = z.string().min(1).parse(req.params.id);
     const body = patchSchema.parse(req.body);
+    const auth = req.auth!;
+    const assignments = assignmentsFromBody(body);
+    const notifyUserIds = new Set<string>();
 
     const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
     if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
@@ -160,14 +328,30 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
             shootTime: `${startTime}–${endTime}`,
             notes: addons,
             postProductionStarted: true,
-            createdById: req.auth!.userId,
+            createdById: auth.userId,
           },
         });
         eventId = ev.id;
-        const rows = buildEventTasks(ev.id, ev.eventDate);
-        for (const row of rows) {
-          await tx.task.create({ data: row });
-        }
+
+        const tasks = await createEventTasksTx(tx, {
+          eventId: ev.id,
+          eventDate: ev.eventDate,
+          createdById: auth.userId,
+          assignments,
+        });
+
+        await notifyNewAssignments(tx, tasks, ev.clientName);
+        for (const t of tasks) if (t.assignedToId) notifyUserIds.add(t.assignedToId);
+      } else if (eventId && hasEditorAssignmentFields(body)) {
+        const clientName = body.clientName ?? existing.clientName;
+        const { newlyAssignedUserIds } = await applyAssignmentsToExistingEvent(
+          tx,
+          eventId,
+          clientName,
+          assignments,
+          auth.userId,
+        );
+        for (const uid of newlyAssignedUserIds) notifyUserIds.add(uid);
       }
 
       const nextDay = body.day ? parseDayUtc(body.day) : undefined;
@@ -205,7 +389,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
       });
     });
 
-    if (body.createDeliverableTimeline === true && !existing.eventId) emitTaskRefreshToOps();
+    if (notifyUserIds.size > 0 || body.createDeliverableTimeline) emitRefreshForEditors(notifyUserIds);
 
     res.json({ entry });
   } catch (e) {
@@ -256,10 +440,7 @@ productionCalendarRouter.post("/entries/:id/start-post-production", requireCoord
           createdById: auth.userId,
         },
       });
-      const rows = buildEventTasks(ev.id, ev.eventDate);
-      for (const row of rows) {
-        await tx.task.create({ data: row });
-      }
+      await createEventTasksTx(tx, { eventId: ev.id, eventDate: ev.eventDate, createdById: auth.userId });
       return tx.shootCalendarEntry.update({
         where: { id },
         data: { eventId: ev.id },
