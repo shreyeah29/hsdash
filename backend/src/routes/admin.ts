@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
+import { getSocketIo } from "../realtime/socket";
 
 export const adminRouter = Router();
 
@@ -88,6 +89,39 @@ adminRouter.delete("/calendar-notes/:id", async (req, res, next) => {
     const id = z.string().min(1).parse(req.params.id);
     await prisma.adminCalendarNote.delete({ where: { id } });
     res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+const clearProductionSchema = z.object({
+  confirm: z.literal("DELETE_ALL_SHOOTS"),
+});
+
+/** Wipe all shoot calendar rows, linked events, tasks, and related notifications (keeps users). */
+adminRouter.post("/clear-production-data", async (req, res, next) => {
+  try {
+    clearProductionSchema.parse(req.body);
+
+    const deleted = await prisma.$transaction(async (tx) => {
+      const notifications = await tx.userNotification.deleteMany();
+      const activities = await tx.taskActivity.deleteMany();
+      const tasks = await tx.task.deleteMany();
+      const entries = await tx.shootCalendarEntry.deleteMany();
+      const events = await tx.event.deleteMany();
+      return {
+        notifications: notifications.count,
+        activities: activities.count,
+        tasks: tasks.count,
+        entries: entries.count,
+        events: events.count,
+      };
+    });
+
+    getSocketIo()?.emit("task:updated");
+    getSocketIo()?.emit("production:cleared");
+
+    res.json({ ok: true, deleted });
   } catch (e) {
     next(e);
   }

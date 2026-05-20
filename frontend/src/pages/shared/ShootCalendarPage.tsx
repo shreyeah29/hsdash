@@ -275,6 +275,22 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     },
   });
 
+  const clearAllProduction = useMutation({
+    mutationFn: async () => {
+      await api.post("/admin/clear-production-data", { confirm: "DELETE_ALL_SHOOTS" });
+    },
+    onSuccess: async () => {
+      setClearDialogOpen(false);
+      setClearConfirmText("");
+      setSelectedKey(null);
+      await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["tasks"] });
+      await qc.invalidateQueries({ queryKey: ["my-tasks"] });
+      await qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
+    },
+  });
+
   const deleteEntry = useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/production-calendar/entries/${id}`);
@@ -285,6 +301,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
   });
+
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
 
   const [activateEntryId, setActivateEntryId] = useState<string | null>(null);
   const [activateEditors, setActivateEditors] = useState({
@@ -408,7 +427,18 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 {isLoading ? "Loading…" : canMutate ? "Select cells to orchestrate shoot logistics." : "Review admin-logged coverage."}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {canMutate ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  className="rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50"
+                  onClick={() => setClearDialogOpen(true)}
+                >
+                  Remove all shoots
+                </Button>
+              ) : null}
               <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => shiftMonth(-1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -612,6 +642,45 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           </GlassPanel>
         </motion.div>
       </div>
+
+      {canMutate ? (
+        <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Remove all shoots & deliverables?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-zinc-600">
+              This permanently deletes every shoot on the calendar, linked weddings, all deliverable tasks, and related notifications. Team accounts are kept.
+            </p>
+            <p className="text-sm text-zinc-700">
+              Type <span className="font-mono font-semibold text-rose-700">DELETE_ALL_SHOOTS</span> to confirm.
+            </p>
+            <Input
+              value={clearConfirmText}
+              onChange={(ev) => setClearConfirmText(ev.target.value)}
+              placeholder="DELETE_ALL_SHOOTS"
+              className="font-mono text-sm"
+            />
+            {clearAllProduction.isError ? (
+              <p className="text-sm text-rose-600">{errMsg(clearAllProduction.error)}</p>
+            ) : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="glass" className="rounded-xl" onClick={() => setClearDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
+                disabled={clearConfirmText !== "DELETE_ALL_SHOOTS" || clearAllProduction.isPending}
+                onClick={() => clearAllProduction.mutate()}
+              >
+                {clearAllProduction.isPending ? "Removing…" : "Remove everything"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <Dialog open={!!activateEntryId} onOpenChange={(open) => !open && setActivateEntryId(null)}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">

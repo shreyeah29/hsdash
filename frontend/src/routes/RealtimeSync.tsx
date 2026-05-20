@@ -29,7 +29,14 @@ export function RealtimeSync() {
       void qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
     };
 
-    socket.on("task:updated", bumpTasks);
+    const bumpAllProduction = () => {
+      bumpTasks();
+      void qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      void qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
+    };
+
+    socket.on("task:updated", bumpAllProduction);
+    socket.on("production:cleared", bumpAllProduction);
     socket.on("notification:new", () => {
       void qc.invalidateQueries({ queryKey: ["my-notifications"] });
     });
