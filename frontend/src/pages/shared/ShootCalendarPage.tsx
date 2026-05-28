@@ -526,39 +526,79 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                     {selectedEntries.map((e) => (
                       <div
                         key={e.id}
-                        className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 shadow-sm"
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
                       >
-                        <div className="font-semibold text-zinc-900">{e.clientName}</div>
-                        {e.eventName ? <div className="text-zinc-600">{e.eventName}</div> : null}
-                        <div className="mt-2 space-y-0.5 text-xs text-zinc-600">
-                          {e.clientType ? <div>Type: {e.clientType}</div> : null}
-                          {e.venue ? <div>Venue: {e.venue}</div> : null}
-                          {(e.startTime || e.endTime) && (
-                            <div>
-                              Time: {e.startTime || "—"} – {e.endTime || "—"}
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-zinc-900">{e.clientName}</div>
+                            {e.eventName ? <div className="mt-0.5 truncate text-xs text-zinc-600">{e.eventName}</div> : null}
+
+                            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-zinc-700">
+                              {e.clientType ? (
+                                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5">
+                                  Type: <span className="font-medium text-zinc-900">{e.clientType}</span>
+                                </span>
+                              ) : null}
+                              {e.venue ? (
+                                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5">
+                                  Venue: <span className="font-medium text-zinc-900">{e.venue}</span>
+                                </span>
+                              ) : null}
+                              {e.startTime || e.endTime ? (
+                                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5">
+                                  Time: <span className="font-medium text-zinc-900">{e.startTime || "—"}–{e.endTime || "—"}</span>
+                                </span>
+                              ) : null}
                             </div>
-                          )}
-                          {e.photoTeam ? <div className="whitespace-pre-wrap">Photo on-site: {e.photoTeam}</div> : null}
-                          {e.videoTeam ? <div className="whitespace-pre-wrap">Video on-site: {e.videoTeam}</div> : null}
-                          {e.addons ? <div className="whitespace-pre-wrap">Notes: {e.addons}</div> : null}
-                          <div className="text-[11px] text-zinc-600">Recorded by {e.createdBy.name}</div>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {e.eventId ? (
-                            countAssignedEditors(e) > 0 ? (
-                              <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                                Post-production active · {countAssignedEditors(e)} editor(s)
-                              </span>
+                          </div>
+
+                          <div className="shrink-0">
+                            {e.eventId ? (
+                              countAssignedEditors(e) > 0 ? (
+                                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+                                  Post-production active · {countAssignedEditors(e)} editor(s)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900">
+                                  Deadlines live — assign editors
+                                </span>
+                              )
                             ) : (
-                              <span className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
-                                Deadlines live — assign editors (Edit shoot)
+                              <span className="inline-flex items-center rounded-full border border-dashed border-zinc-300 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-700">
+                                Deliverables not activated
                               </span>
-                            )
-                          ) : (
-                            <span className="rounded-lg border border-dashed border-zinc-300 px-2.5 py-1 text-xs text-zinc-600">
-                              Deliverables not activated
-                            </span>
-                          )}
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Team · photo</div>
+                            <div className="mt-1 whitespace-pre-wrap text-xs text-zinc-800">{e.photoTeam || "—"}</div>
+                          </div>
+                          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Team · video</div>
+                            <div className="mt-1 whitespace-pre-wrap text-xs text-zinc-800">{e.videoTeam || "—"}</div>
+                          </div>
+                        </div>
+
+                        {e.addons ? (
+                          <div className="mt-3 rounded-xl border border-zinc-200 bg-white p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Notes</div>
+                            <div className="mt-1 whitespace-pre-wrap text-xs text-zinc-700">{e.addons}</div>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-[11px] text-zinc-600">Recorded by {e.createdBy.name}</div>
+
+                          <div className="flex flex-wrap gap-2">
+                          {e.eventId ? (
+                            <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => openEdit(e)}>
+                              Edit
+                            </Button>
+                          ) : null}
+
                           {!e.eventId ? (
                             <Button
                               size="sm"
@@ -586,9 +626,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           ) : null}
                           {canMutate ? (
                             <>
-                              <Button variant="glass" size="sm" type="button" className="rounded-xl" onClick={() => openEdit(e)}>
-                                Edit
-                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -601,6 +638,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                               </Button>
                             </>
                           ) : null}
+                          </div>
                         </div>
                         {startPostProduction.isError ? (
                           <p className="mt-2 text-xs text-rose-600">{errMsg(startPostProduction.error)}</p>
