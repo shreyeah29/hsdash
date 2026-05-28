@@ -254,12 +254,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       return data;
     },
     onError: (err) => {
-      // eslint-disable-next-line no-alert
-      window.alert(errMsg(err));
+      // eslint-disable-next-line no-console
+      console.info(errMsg(err));
     },
     onSuccess: async () => {
-      // eslint-disable-next-line no-alert
-      window.alert("Saved.");
       setDialogOpen(false);
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
@@ -332,12 +330,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     },
     onSuccess: async (entry) => {
       const assigned = countAssignedEditors(entry);
-      // eslint-disable-next-line no-alert
-      window.alert(
-        assigned > 0
-          ? `Pipeline active — ${assigned} editor(s) notified. Crew dashboards refresh within a few seconds.`
-          : "Pipeline active, but no editors were selected.\n\nEdit the shoot and assign editors (e.g. Laxman) so tasks appear on crew dashboards.",
-      );
+      // eslint-disable-next-line no-console
+      console.info(`Pipeline active. Editors assigned: ${assigned}`);
       setActivateEntryId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -752,8 +746,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   !!activateEditors.traditionalEditorId ||
                   !!activateEditors.albumEditorId;
                 if (!hasPick) {
-                  // eslint-disable-next-line no-alert
-                  window.alert("Select at least one editor (e.g. Laxman under Photo editor) so tasks appear on crew dashboards.");
                   return;
                 }
                 startPostProduction.mutate({

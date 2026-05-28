@@ -38,6 +38,12 @@ function errMsg(e: unknown): string {
   return "Something went wrong.";
 }
 
+function notifySilent(message: string) {
+  // Non-blocking UX: avoid disruptive popups in production.
+  // eslint-disable-next-line no-console
+  console.info(message);
+}
+
 async function fetchRoster() {
   const { data } = await api.get<{ users: User[] }>("/production-calendar/team-members");
   return data.users;
@@ -132,8 +138,7 @@ export function CreateDeliverableTasksDialog({
       return data;
     },
     onError: (err) => {
-      // eslint-disable-next-line no-alert
-      window.alert(errMsg(err));
+      notifySilent(errMsg(err));
     },
     onSuccess: async (data) => {
       const summary = (data as { assignedEditors?: { name: string; email: string; taskCount: number }[] })
@@ -148,11 +153,10 @@ export function CreateDeliverableTasksDialog({
           ? summary.map((e) => `• ${e.name} (${e.email}) — ${e.taskCount} task(s)`).join("\n")
           : null;
 
-      // eslint-disable-next-line no-alert
-      window.alert(
+      notifySilent(
         lines
-          ? `Created ${taskCount} deliverable task(s).\n\n${lines}\n\nCrew dashboards refresh within a few seconds.`
-          : `Created standard deliverable tasks (preview, photos, videos, album).\n\nAssign editors from the calendar or Assign crew if needed.`,
+          ? `Created ${taskCount} deliverable task(s):\n${lines}`
+          : `Created standard deliverable tasks (${taskCount}).`,
       );
 
       setClientName("");
