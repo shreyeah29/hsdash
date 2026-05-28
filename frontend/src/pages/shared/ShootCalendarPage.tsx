@@ -300,10 +300,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
   const [activateEntryId, setActivateEntryId] = useState<string | null>(null);
   const [activateEditors, setActivateEditors] = useState({
-    photoEditorId: "",
-    cinematicEditorId: "",
-    traditionalEditorId: "",
-    albumEditorId: "",
+    photoEditorIds: [] as string[],
+    cinematicEditorIds: [] as string[],
+    traditionalEditorIds: [] as string[],
+    albumEditorIds: [] as string[],
   });
 
   const startPostProduction = useMutation({
@@ -312,18 +312,18 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       ...editors
     }: {
       entryId: string;
-      photoEditorId?: string;
-      cinematicEditorId?: string;
-      traditionalEditorId?: string;
-      albumEditorId?: string;
+      photoEditorIds?: string[];
+      cinematicEditorIds?: string[];
+      traditionalEditorIds?: string[];
+      albumEditorIds?: string[];
     }) => {
       const { data } = await api.post<{ entry: ShootCalendarEntry }>(
         `/production-calendar/entries/${entryId}/start-post-production`,
         {
-          ...(editors.photoEditorId ? { photoEditorId: editors.photoEditorId } : {}),
-          ...(editors.cinematicEditorId ? { cinematicEditorId: editors.cinematicEditorId } : {}),
-          ...(editors.traditionalEditorId ? { traditionalEditorId: editors.traditionalEditorId } : {}),
-          ...(editors.albumEditorId ? { albumEditorId: editors.albumEditorId } : {}),
+          ...(editors.photoEditorIds?.length ? { photoEditorIds: editors.photoEditorIds } : {}),
+          ...(editors.cinematicEditorIds?.length ? { cinematicEditorIds: editors.cinematicEditorIds } : {}),
+          ...(editors.traditionalEditorIds?.length ? { traditionalEditorIds: editors.traditionalEditorIds } : {}),
+          ...(editors.albumEditorIds?.length ? { albumEditorIds: editors.albumEditorIds } : {}),
         },
       );
       return data.entry;
@@ -613,10 +613,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                               disabled={startPostProduction.isPending}
                               onClick={() => {
                                 setActivateEditors({
-                                  photoEditorId: "",
-                                  cinematicEditorId: "",
-                                  traditionalEditorId: "",
-                                  albumEditorId: "",
+                                  photoEditorIds: [],
+                                  cinematicEditorIds: [],
+                                  traditionalEditorIds: [],
+                                  albumEditorIds: [],
                                 });
                                 setActivateEntryId(e.id);
                               }}
@@ -729,10 +729,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {(
               [
-                ["Photo editor", "PHOTO_TEAM", "photoEditorId"] as const,
-                ["Cinematic editor", "CINEMATIC_TEAM", "cinematicEditorId"] as const,
-                ["Traditional editor", "TRADITIONAL_TEAM", "traditionalEditorId"] as const,
-                ["Album editor", "ALBUM_TEAM", "albumEditorId"] as const,
+                ["Photo editor", "PHOTO_TEAM", "photoEditorIds"] as const,
+                ["Cinematic editor", "CINEMATIC_TEAM", "cinematicEditorIds"] as const,
+                ["Traditional editor", "TRADITIONAL_TEAM", "traditionalEditorIds"] as const,
+                ["Album editor", "ALBUM_TEAM", "albumEditorIds"] as const,
               ] as const
             ).map(([label, teamKey, field]) => {
               const options = rosterForTeam(teamKey);
@@ -748,11 +748,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                         <input
                           type="checkbox"
                           className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600"
-                          checked={activateEditors[field] === u.id}
+                          checked={activateEditors[field].includes(u.id)}
                           onChange={() =>
                             setActivateEditors((f) => ({
                               ...f,
-                              [field]: f[field] === u.id ? "" : u.id,
+                              [field]: f[field].includes(u.id) ? f[field].filter((x) => x !== u.id) : [...f[field], u.id],
                             }))
                           }
                         />
@@ -779,19 +779,19 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               onClick={() => {
                 if (!activateEntryId) return;
                 const hasPick =
-                  !!activateEditors.photoEditorId ||
-                  !!activateEditors.cinematicEditorId ||
-                  !!activateEditors.traditionalEditorId ||
-                  !!activateEditors.albumEditorId;
+                  activateEditors.photoEditorIds.length > 0 ||
+                  activateEditors.cinematicEditorIds.length > 0 ||
+                  activateEditors.traditionalEditorIds.length > 0 ||
+                  activateEditors.albumEditorIds.length > 0;
                 if (!hasPick) {
                   return;
                 }
                 startPostProduction.mutate({
                   entryId: activateEntryId,
-                  photoEditorId: activateEditors.photoEditorId,
-                  cinematicEditorId: activateEditors.cinematicEditorId,
-                  traditionalEditorId: activateEditors.traditionalEditorId,
-                  albumEditorId: activateEditors.albumEditorId,
+                  photoEditorIds: activateEditors.photoEditorIds,
+                  cinematicEditorIds: activateEditors.cinematicEditorIds,
+                  traditionalEditorIds: activateEditors.traditionalEditorIds,
+                  albumEditorIds: activateEditors.albumEditorIds,
                 });
               }}
             >

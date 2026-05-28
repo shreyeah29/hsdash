@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { Role, Team } from "@prisma/client";
+import { Role, Team, TaskType } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { requireCoordinator, requireCoordinatorOrAdmin } from "../middleware/coordinator";
@@ -452,6 +452,10 @@ const startPostProductionBody = z.object({
   cinematicEditorId: z.string().optional(),
   traditionalEditorId: z.string().optional(),
   albumEditorId: z.string().optional(),
+  photoEditorIds: z.array(z.string().min(1)).optional(),
+  cinematicEditorIds: z.array(z.string().min(1)).optional(),
+  traditionalEditorIds: z.array(z.string().min(1)).optional(),
+  albumEditorIds: z.array(z.string().min(1)).optional(),
 });
 
 productionCalendarRouter.post(
@@ -463,6 +467,23 @@ productionCalendarRouter.post(
       const body = startPostProductionBody.parse(req.body ?? {});
       const auth = req.auth!;
       const assignments = assignmentsFromBody(body);
+      const photoIds = body.photoEditorIds ?? (body.photoEditorId ? [body.photoEditorId] : []);
+      const cinematicIds = body.cinematicEditorIds ?? (body.cinematicEditorId ? [body.cinematicEditorId] : []);
+      const traditionalIds = body.traditionalEditorIds ?? (body.traditionalEditorId ? [body.traditionalEditorId] : []);
+      const albumIds = body.albumEditorIds ?? (body.albumEditorId ? [body.albumEditorId] : []);
+
+      const taskAssignees = {
+        [TaskType.SNEAK_PEEK_PHOTOS]: photoIds[0] ?? null,
+        [TaskType.PREVIEW_PHOTOS]: photoIds[0] ?? null,
+        [TaskType.FULL_SET_PHOTOS]: photoIds[1] ?? photoIds[0] ?? null,
+        [TaskType.FULL_PHOTOS]: photoIds[1] ?? photoIds[0] ?? null,
+        [TaskType.CINEMATIC_VIDEO]: cinematicIds[0] ?? null,
+        [TaskType.CINEMATIC_HIGHLIGHT]: cinematicIds[1] ?? cinematicIds[0] ?? null,
+        [TaskType.TRADITIONAL_VIDEO]: traditionalIds[0] ?? null,
+        [TaskType.ALBUM_DESIGN]: albumIds[0] ?? null,
+        [TaskType.ALBUM_PRINT]: albumIds[1] ?? albumIds[0] ?? null,
+        [TaskType.DATA_COPY]: null,
+      } satisfies Partial<Record<TaskType, string | null>>;
       const assigneeIds = new Set<string>();
       let crewIds: string[] = [];
 
@@ -489,6 +510,7 @@ productionCalendarRouter.post(
           eventDate: ev.eventDate,
           createdById: auth.userId,
           assignments,
+          taskAssignees,
         });
 
         await notifyAllAssignedTasksTx(tx, tasks, ev.clientName);

@@ -49,15 +49,24 @@ export async function createEventTasksTx(
     eventDate: Date;
     createdById: string | null;
     assignments?: EventTaskAssignments;
+    /**
+     * Optional per-deliverable assignment. When provided, takes precedence over team-wide `assignments`.
+     * Useful when a team has multiple editors and tasks should be split across them.
+     */
+    taskAssignees?: Partial<Record<TaskType, string | null>>;
   },
 ) {
   const rows = buildEventTasks(args.eventId, args.eventDate);
   const created = [];
 
   for (const row of rows) {
-    const assignedToId = args.assignments
-      ? await resolveTaskAssigneeTx(tx, args.assignments[row.assignedTeam], row.assignedTeam)
-      : null;
+    const preferred =
+      args.taskAssignees && row.taskType in args.taskAssignees
+        ? args.taskAssignees[row.taskType]
+        : args.assignments
+          ? args.assignments[row.assignedTeam]
+          : null;
+    const assignedToId = await resolveTaskAssigneeTx(tx, preferred, row.assignedTeam);
 
     created.push(
       await tx.task.create({
