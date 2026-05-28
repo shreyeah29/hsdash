@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../prisma/client";
 import { Role, Team, TaskPriority, TaskStatus, TaskType } from "@prisma/client";
+import { DEFAULT_EVENT_TASKS } from "./eventTasks";
 
 /**
  * Seeds admin + coordinator + editors (and optional demo event) when the DB is empty,
@@ -119,48 +120,15 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
   };
 
   await prisma.task.createMany({
-    data: [
-      {
-        eventId: sampleEvent.id,
-        taskType: TaskType.PREVIEW_PHOTOS,
-        assignedTeam: Team.PHOTO_TEAM,
-        deadline: mkDeadline(7),
-        status: TaskStatus.PENDING,
-        priority: TaskPriority.MEDIUM,
-      },
-      {
-        eventId: sampleEvent.id,
-        taskType: TaskType.FULL_PHOTOS,
-        assignedTeam: Team.PHOTO_TEAM,
-        deadline: mkDeadline(20),
-        status: TaskStatus.PENDING,
-        priority: TaskPriority.LOW,
-      },
-      {
-        eventId: sampleEvent.id,
-        taskType: TaskType.CINEMATIC_VIDEO,
-        assignedTeam: Team.CINEMATIC_TEAM,
-        deadline: mkDeadline(30),
-        status: TaskStatus.PENDING,
-        priority: TaskPriority.LOW,
-      },
-      {
-        eventId: sampleEvent.id,
-        taskType: TaskType.TRADITIONAL_VIDEO,
-        assignedTeam: Team.TRADITIONAL_TEAM,
-        deadline: mkDeadline(45),
-        status: TaskStatus.PENDING,
-        priority: TaskPriority.LOW,
-      },
-      {
-        eventId: sampleEvent.id,
-        taskType: TaskType.ALBUM_DESIGN,
-        assignedTeam: Team.ALBUM_TEAM,
-        deadline: mkDeadline(45),
-        status: TaskStatus.PENDING,
-        priority: TaskPriority.LOW,
-      },
-    ],
+    data: DEFAULT_EVENT_TASKS.map((t) => ({
+      eventId: sampleEvent.id,
+      taskType: t.taskType,
+      assignedTeam: t.assignedTeam,
+      deadline: mkDeadline(t.daysAfterEvent),
+      status: TaskStatus.PENDING,
+      priority:
+        t.daysAfterEvent <= 7 ? TaskPriority.MEDIUM : t.daysAfterEvent <= 20 ? TaskPriority.LOW : TaskPriority.LOW,
+    })),
   });
 
   // eslint-disable-next-line no-console

@@ -10,11 +10,15 @@ export type AutoTaskTemplate = {
 };
 
 export const DEFAULT_EVENT_TASKS: AutoTaskTemplate[] = [
+  // Ops lane (sheet: DATA COPY)
+  { taskType: TaskType.DATA_COPY, assignedTeam: Team.COORDINATOR_TEAM, daysAfterEvent: 1 },
   { taskType: TaskType.PREVIEW_PHOTOS, assignedTeam: Team.PHOTO_TEAM, daysAfterEvent: 7 },
   { taskType: TaskType.FULL_PHOTOS, assignedTeam: Team.PHOTO_TEAM, daysAfterEvent: 20 },
+  { taskType: TaskType.CINEMATIC_HIGHLIGHT, assignedTeam: Team.CINEMATIC_TEAM, daysAfterEvent: 35 },
   { taskType: TaskType.CINEMATIC_VIDEO, assignedTeam: Team.CINEMATIC_TEAM, daysAfterEvent: 30 },
-  { taskType: TaskType.TRADITIONAL_VIDEO, assignedTeam: Team.TRADITIONAL_TEAM, daysAfterEvent: 45 },
   { taskType: TaskType.ALBUM_DESIGN, assignedTeam: Team.ALBUM_TEAM, daysAfterEvent: 45 },
+  { taskType: TaskType.TRADITIONAL_VIDEO, assignedTeam: Team.TRADITIONAL_TEAM, daysAfterEvent: 60 },
+  { taskType: TaskType.ALBUM_PRINT, assignedTeam: Team.ALBUM_TEAM, daysAfterEvent: 60 },
 ];
 
 export function buildEventTasks(eventId: string, eventDate: Date) {

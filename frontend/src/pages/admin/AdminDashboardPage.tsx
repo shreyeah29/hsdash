@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, Sparkles, PlusCircle } from "lucide-react";
+import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
+import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import type { Event, Task } from "@/types/domain";
+import type { Event, ShootCalendarEntry, Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
 import {
   GlassPanel,
@@ -14,14 +17,21 @@ import {
 } from "@/components/premium";
 
 async function fetchAdminData() {
-  const [eventsRes, tasksRes] = await Promise.all([
+  const now = new Date();
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  const from = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
+  const to = `${now.getFullYear()}-${pad2(now.getMonth() + 2)}-${pad2(0)}`; // last day of current month
+
+  const [eventsRes, tasksRes, calRes] = await Promise.all([
     api.get<{ events: Array<Event & { tasks: Task[] }> }>("/events"),
     api.get<{ tasks: Task[] }>("/tasks"),
+    api.get<{ entries: ShootCalendarEntry[] }>("/production-calendar/entries", { params: { from, to } }),
   ]);
-  return { events: eventsRes.data.events, tasks: tasksRes.data.tasks };
+  return { events: eventsRes.data.events, tasks: tasksRes.data.tasks, entries: calRes.data.entries };
 }
 
 export function AdminDashboardPage() {
+  const [createTasksOpen, setCreateTasksOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: fetchAdminData,
@@ -39,6 +49,28 @@ export function AdminDashboardPage() {
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
 
     return { dueToday, overdue, completed, pending, weddings: (data?.events ?? []).length, completionRate, total };
+  }, [data]);
+
+  const upcomingShoots = useMemo(() => {
+    const entries = data?.entries ?? [];
+    const today = new Date();
+    const upcoming = entries.filter((e) => new Date(e.day).getTime() >= new Date(today.toDateString()).getTime());
+
+    function progress(e: ShootCalendarEntry) {
+      const tasks = e.event?.tasks ?? [];
+      const total = tasks.length;
+      const done = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
+      const nextDue =
+        [...tasks]
+          .filter((t) => t.status !== TaskStatus.COMPLETED)
+          .sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline))[0]?.deadline ?? null;
+      return { total, done, nextDue };
+    }
+
+    return upcoming
+      .map((e) => ({ entry: e, ...progress(e) }))
+      .sort((a, b) => +new Date(a.entry.day) - +new Date(b.entry.day))
+      .slice(0, 8);
   }, [data]);
 
   const priorityQueue = useMemo(() => {
@@ -79,17 +111,30 @@ export function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-5 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
-          <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Delivery health</p>
-            <p className="mt-1 text-2xl font-semibold text-zinc-900">{isLoading ? "—" : `${stats.completionRate}%`}</p>
-            <p className="text-xs text-zinc-600">
-              {stats.completed} sealed · {stats.total - stats.completed} in motion
-            </p>
+        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            variant="premium"
+            className="rounded-xl px-5 py-6 shadow-glow"
+            onClick={() => setCreateTasksOpen(true)}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create deliverable tasks
+          </Button>
+          <div className="flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
+            <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Delivery health</p>
+              <p className="mt-1 text-2xl font-semibold text-zinc-900">{isLoading ? "—" : `${stats.completionRate}%`}</p>
+              <p className="text-xs text-zinc-600">
+                {stats.completed} sealed · {stats.total - stats.completed} in motion
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>
+
+      <CreateDeliverableTasksDialog open={createTasksOpen} onOpenChange={setCreateTasksOpen} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AnimatedStatCard
@@ -134,6 +179,60 @@ export function AdminDashboardPage() {
         />
       </div>
 
+      <GlassPanel shine className="p-6 md:p-8">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900">Upcoming shoots · logistics & progress</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              When editors update deliverables, this view refreshes automatically.
+            </p>
+          </div>
+          <Button variant="glass" className="rounded-xl" asChild>
+            <Link to="/admin/production-calendar">Open calendar</Link>
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          {upcomingShoots.map(({ entry, total, done, nextDue }) => (
+            <div key={entry.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-zinc-900">{entry.clientName}</div>
+                  <div className="mt-1 text-xs text-zinc-600">
+                    {new Date(entry.day).toLocaleDateString()} · {entry.venue || "Venue —"}
+                  </div>
+                  <div className="mt-2 grid gap-1 text-xs text-zinc-600 sm:grid-cols-2">
+                    <div className="truncate">Team (photo): {entry.photoTeam || "—"}</div>
+                    <div className="truncate">Team (video): {entry.videoTeam || "—"}</div>
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Deliverables</div>
+                  <div className="mt-1 text-sm font-semibold text-zinc-900">
+                    {total > 0 ? (
+                      <>
+                        {done}/{total} done
+                      </>
+                    ) : (
+                      "Not activated"
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-zinc-600">
+                    {nextDue ? `Next due: ${new Date(nextDue).toLocaleDateString()}` : total > 0 ? "All delivered" : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {upcomingShoots.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
+              No upcoming shoots in this range yet.
+            </div>
+          ) : null}
+        </div>
+      </GlassPanel>
+
       <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <GlassPanel shine className="p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -151,7 +250,15 @@ export function AdminDashboardPage() {
             ))}
             {!isLoading && priorityQueue.length === 0 ? (
               <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-600">
-                Nothing in flight yet — add shoots from the calendar to ignite the pipeline.
+                Nothing in flight yet —{" "}
+                <button type="button" className="font-medium text-violet-700 underline" onClick={() => setCreateTasksOpen(true)}>
+                  create deliverable tasks
+                </button>{" "}
+                or{" "}
+                <Link to="/admin/production-calendar" className="font-medium text-violet-700 underline">
+                  open the shoot calendar
+                </Link>
+                .
               </div>
             ) : null}
           </div>

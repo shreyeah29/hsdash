@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 
 type TimeParts = { hour: number; minute: number; ampm: "AM" | "PM" };
 
@@ -106,6 +107,12 @@ function monthRangeIso(y: number, monthIndex: number) {
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+function countAssignedEditors(entry: ShootCalendarEntry) {
+  const tasks = entry.event?.tasks ?? [];
+  const ids = new Set(tasks.map((t) => t.assignedToId).filter(Boolean));
+  return ids.size;
+}
+
 function errMsg(e: unknown): string {
   if (axios.isAxiosError(e)) {
     const msg = (e.response?.data as { message?: string })?.message;
@@ -156,7 +163,7 @@ const emptyForm = (day: string): FormState => ({
   photoTeam: "",
   videoTeam: "",
   addons: "",
-  // New workflow: saving an event activates the pipeline immediately.
+  // Default workflow: create tasks when shoot is logged; coordinator/admin assigns after.
   createDeliverableTimeline: true,
   photoEditorId: "",
   cinematicEditorId: "",
@@ -192,6 +199,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   }, [roster]);
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [createTasksOpen, setCreateTasksOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm(localDayKey(now.getFullYear(), now.getMonth(), now.getDate())));
@@ -286,8 +294,16 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         window.alert(
           lines
             ? `Saved. Assignments are live:\n\n${lines}\n\nCrew dashboards refresh within a few seconds.`
-            : "Saved, but no tasks were linked to editors. Redeploy the Render API and ensure deliverable timeline is active.",
+            : "Saved, but no editor is linked to tasks yet.\n\nOpen this shoot → Assign editors → check names (e.g. Laxman) → Save again.\n\nOn-site “Photo team” text does not assign dashboard tasks.",
         );
+      } else {
+        const entry = (data as { entry?: ShootCalendarEntry })?.entry;
+        if (entry?.eventId && countAssignedEditors(entry) === 0) {
+          // eslint-disable-next-line no-alert
+          window.alert(
+            "Shoot saved with deliverable deadlines, but no editors are assigned yet.\n\nEdit this shoot, check editors under “Assign editors”, then Save so crew dashboards update.",
+          );
+        }
       }
       setDialogOpen(false);
       setEditingId(null);
@@ -359,7 +375,14 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       );
       return data.entry;
     },
-    onSuccess: async () => {
+    onSuccess: async (entry) => {
+      const assigned = countAssignedEditors(entry);
+      // eslint-disable-next-line no-alert
+      window.alert(
+        assigned > 0
+          ? `Pipeline active — ${assigned} editor(s) notified. Crew dashboards refresh within a few seconds.`
+          : "Pipeline active, but no editors were selected.\n\nEdit the shoot and assign editors (e.g. Laxman) so tasks appear on crew dashboards.",
+      );
       setActivateEntryId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -547,9 +570,19 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             ) : (
               <>
                 {canMutate ? (
-                  <Button type="button" variant="premium" className="w-full rounded-xl py-6" onClick={openNew}>
-                    Add shoot / event details
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="premium"
+                      className="w-full rounded-xl py-6"
+                      onClick={() => setCreateTasksOpen(true)}
+                    >
+                      Create deliverable tasks
+                    </Button>
+                    <Button type="button" variant="glass" className="w-full rounded-xl" onClick={openNew}>
+                      Add shoot logistics (optional)
+                    </Button>
+                  </div>
                 ) : null}
 
                 <div>
@@ -577,9 +610,15 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {e.eventId ? (
-                            <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                              Post-production active
-                            </span>
+                            countAssignedEditors(e) > 0 ? (
+                              <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
+                                Post-production active · {countAssignedEditors(e)} editor(s)
+                              </span>
+                            ) : (
+                              <span className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
+                                Deadlines live — assign editors (Edit shoot)
+                              </span>
+                            )
                           ) : (
                             <span className="rounded-lg border border-dashed border-zinc-300 px-2.5 py-1 text-xs text-zinc-600">
                               Deliverables not activated
@@ -764,16 +803,26 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               variant="premium"
               className="rounded-xl"
               disabled={startPostProduction.isPending || !activateEntryId}
-              onClick={() =>
-                activateEntryId &&
+              onClick={() => {
+                if (!activateEntryId) return;
+                const hasPick =
+                  !!activateEditors.photoEditorId ||
+                  !!activateEditors.cinematicEditorId ||
+                  !!activateEditors.traditionalEditorId ||
+                  !!activateEditors.albumEditorId;
+                if (!hasPick) {
+                  // eslint-disable-next-line no-alert
+                  window.alert("Select at least one editor (e.g. Laxman under Photo editor) so tasks appear on crew dashboards.");
+                  return;
+                }
                 startPostProduction.mutate({
                   entryId: activateEntryId,
-                  ...(activateEditors.photoEditorId ? { photoEditorId: activateEditors.photoEditorId } : {}),
-                  ...(activateEditors.cinematicEditorId ? { cinematicEditorId: activateEditors.cinematicEditorId } : {}),
-                  ...(activateEditors.traditionalEditorId ? { traditionalEditorId: activateEditors.traditionalEditorId } : {}),
-                  ...(activateEditors.albumEditorId ? { albumEditorId: activateEditors.albumEditorId } : {}),
-                })
-              }
+                  photoEditorId: activateEditors.photoEditorId,
+                  cinematicEditorId: activateEditors.cinematicEditorId,
+                  traditionalEditorId: activateEditors.traditionalEditorId,
+                  albumEditorId: activateEditors.albumEditorId,
+                });
+              }}
             >
               {startPostProduction.isPending ? "Activating…" : "Activate pipeline"}
             </Button>
@@ -934,6 +983,14 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             </div>
           </DialogContent>
         </Dialog>
+      ) : null}
+
+      {canMutate ? (
+        <CreateDeliverableTasksDialog
+          open={createTasksOpen}
+          onOpenChange={setCreateTasksOpen}
+          calendarDay={selectedKey}
+        />
       ) : null}
     </div>
   );
