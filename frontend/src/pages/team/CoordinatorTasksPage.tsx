@@ -1,5 +1,5 @@
-import { AssignmentsBoardPage } from "@/pages/shared/AssignmentsBoardPage";
+import { CoordinatorDeliverablesGridPage } from "@/pages/team/CoordinatorDeliverablesGridPage";
 
 export function CoordinatorTasksPage() {
-  return <AssignmentsBoardPage mode="coordinator" />;
+  return <CoordinatorDeliverablesGridPage />;
 }

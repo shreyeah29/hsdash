@@ -8,12 +8,17 @@ export async function resolveTaskAssigneeTx(
   team: Team,
 ): Promise<string | null> {
   if (!assigneeId) return null;
+  const allowedRoles = team === Team.COORDINATOR_TEAM ? [Role.EDITOR, Role.COORDINATOR] : [Role.EDITOR];
   const u = await tx.user.findFirst({
-    where: { id: assigneeId, isActive: true, role: Role.EDITOR },
+    where: { id: assigneeId, isActive: true, role: { in: allowedRoles } },
     select: { id: true, team: true },
   });
   if (!u) {
-    throw new HttpError(400, "Assignee must be an active editor", "BAD_ASSIGNMENT");
+    throw new HttpError(
+      400,
+      team === Team.COORDINATOR_TEAM ? "Assignee must be an active editor or coordinator" : "Assignee must be an active editor",
+      "BAD_ASSIGNMENT",
+    );
   }
   // If teams are configured, enforce match; allow null team so new users still show up in UI.
   if (u.team && u.team !== team) {
