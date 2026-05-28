@@ -145,11 +145,6 @@ type FormState = {
   photoTeam: string;
   videoTeam: string;
   addons: string;
-  createDeliverableTimeline: boolean;
-  photoEditorId: string;
-  cinematicEditorId: string;
-  traditionalEditorId: string;
-  albumEditorId: string;
 };
 
 const emptyForm = (day: string): FormState => ({
@@ -163,12 +158,6 @@ const emptyForm = (day: string): FormState => ({
   photoTeam: "",
   videoTeam: "",
   addons: "",
-  // Default workflow: create tasks when shoot is logged; coordinator/admin assigns after.
-  createDeliverableTimeline: true,
-  photoEditorId: "",
-  cinematicEditorId: "",
-  traditionalEditorId: "",
-  albumEditorId: "",
 });
 
 export type ShootCalendarMode = "admin" | "coordinator";
@@ -243,16 +232,8 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const selectedEntries = selectedKey ? entriesByDay.get(selectedKey) ?? [] : [];
   const selectedDues = selectedKey ? duesInMonth.get(selectedKey) ?? [] : [];
 
-  const hasEditorPicks = !!(
-    form.photoEditorId ||
-    form.cinematicEditorId ||
-    form.traditionalEditorId ||
-    form.albumEditorId
-  );
-
   const saveEntry = useMutation({
     mutationFn: async () => {
-      const createDeliverableTimeline = form.createDeliverableTimeline || hasEditorPicks;
       const payload = {
         day: form.day,
         clientName: form.clientName,
@@ -264,12 +245,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         photoTeam: form.photoTeam,
         videoTeam: form.videoTeam,
         addons: form.addons,
-        createDeliverableTimeline,
-        syncEditorAssignments: true,
-        photoEditorId: form.photoEditorId,
-        cinematicEditorId: form.cinematicEditorId,
-        traditionalEditorId: form.traditionalEditorId,
-        albumEditorId: form.albumEditorId,
       };
       if (editingId && editingId !== "new") {
         const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
@@ -282,29 +257,9 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       // eslint-disable-next-line no-alert
       window.alert(errMsg(err));
     },
-    onSuccess: async (data) => {
-      const summary = (data as { assignedEditors?: { name: string; email: string; taskCount: number }[] })
-        ?.assignedEditors;
-      if (hasEditorPicks) {
-        const lines =
-          summary && summary.length > 0
-            ? summary.map((e) => `• ${e.name} (${e.email}) — ${e.taskCount} task(s)`).join("\n")
-            : null;
-        // eslint-disable-next-line no-alert
-        window.alert(
-          lines
-            ? `Saved. Assignments are live:\n\n${lines}\n\nCrew dashboards refresh within a few seconds.`
-            : "Saved, but no editor is linked to tasks yet.\n\nOpen this shoot → Assign editors → check names (e.g. Laxman) → Save again.\n\nOn-site “Photo team” text does not assign dashboard tasks.",
-        );
-      } else {
-        const entry = (data as { entry?: ShootCalendarEntry })?.entry;
-        if (entry?.eventId && countAssignedEditors(entry) === 0) {
-          // eslint-disable-next-line no-alert
-          window.alert(
-            "Shoot saved with deliverable deadlines, but no editors are assigned yet.\n\nEdit this shoot, check editors under “Assign editors”, then Save so crew dashboards update.",
-          );
-        }
-      }
+    onSuccess: async () => {
+      // eslint-disable-next-line no-alert
+      window.alert("Saved.");
       setDialogOpen(false);
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
@@ -398,19 +353,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     setCursor({ y: d.getFullYear(), m: d.getMonth() });
   }
 
-  const timelineAlreadyLinked =
-    editingId && editingId !== "new" ? entries.some((x) => x.id === editingId && !!x.eventId) : false;
-
   function openNew() {
     if (!canMutate || !selectedKey) return;
     setEditingId("new");
     setForm(emptyForm(selectedKey));
     setDialogOpen(true);
-  }
-
-  function editorIdForTeam(entry: ShootCalendarEntry, team: string) {
-    const tasks = entry.event?.tasks ?? [];
-    return tasks.find((t) => t.assignedTeam === team && t.assignedToId)?.assignedToId ?? "";
   }
 
   function openEdit(entry: ShootCalendarEntry) {
@@ -427,12 +374,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       photoTeam: entry.photoTeam,
       videoTeam: entry.videoTeam,
       addons: entry.addons,
-      // If timeline isn’t linked yet, default to creating it now.
-      createDeliverableTimeline: !entry.eventId,
-      photoEditorId: editorIdForTeam(entry, "PHOTO_TEAM"),
-      cinematicEditorId: editorIdForTeam(entry, "CINEMATIC_TEAM"),
-      traditionalEditorId: editorIdForTeam(entry, "TRADITIONAL_TEAM"),
-      albumEditorId: editorIdForTeam(entry, "ALBUM_TEAM"),
     });
     setDialogOpen(true);
   }
@@ -580,7 +521,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                       Create deliverable tasks
                     </Button>
                     <Button type="button" variant="glass" className="w-full rounded-xl" onClick={openNew}>
-                      Add shoot logistics (optional)
+                      Add shoot details
                     </Button>
                   </div>
                 ) : null}
@@ -889,81 +830,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                   onChange={(ev) => setForm((f) => ({ ...f, addons: ev.target.value }))}
                   placeholder="Anything extra to remember"
                 />
-              </div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 sm:col-span-2">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
-                  checked={timelineAlreadyLinked ? false : form.createDeliverableTimeline}
-                  disabled={timelineAlreadyLinked}
-                  onChange={(ev) => setForm((f) => ({ ...f, createDeliverableTimeline: ev.target.checked }))}
-                />
-                <span className="text-sm leading-snug text-zinc-700">
-                  Generate the standard deliverable deadlines now (preview +7d, full photos +20d, videos +30/+45d, album +45d) and notify assigned editors immediately.
-                  {timelineAlreadyLinked ? (
-                    <span className="mt-1 block text-xs text-zinc-600">This row already has a linked timeline.</span>
-                  ) : null}
-                </span>
-              </label>
-
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:col-span-2">
-                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Assign editors (instant tasks)</div>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                  {(
-                    [
-                      ["Photo editor", "PHOTO_TEAM", "photoEditorId"] as const,
-                      ["Cinematic editor", "CINEMATIC_TEAM", "cinematicEditorId"] as const,
-                      ["Traditional editor", "TRADITIONAL_TEAM", "traditionalEditorId"] as const,
-                      ["Album editor", "ALBUM_TEAM", "albumEditorId"] as const,
-                    ] as const
-                  ).map(([label, teamKey, field]) => {
-                    const options = rosterForTeam(teamKey);
-                    return (
-                      <div key={teamKey} className="space-y-2">
-                        <div className="text-xs font-medium text-zinc-700">{label}</div>
-                        <div className="space-y-1 rounded-xl border border-zinc-200 bg-zinc-50 p-2">
-                          <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-800 hover:bg-white">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
-                              checked={!form[field]}
-                              onChange={() => setForm((f) => ({ ...f, [field]: "" }))}
-                            />
-                            <span>Unassigned</span>
-                          </label>
-                          {options.length === 0 ? (
-                            <div className="px-2 py-1.5 text-xs text-zinc-600">No editors listed yet.</div>
-                          ) : (
-                            options.map((u) => (
-                              <label
-                                key={u.id}
-                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-800 hover:bg-white"
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded border-zinc-300 bg-white text-violet-600 focus:ring-violet-500/40"
-                                  checked={form[field] === u.id}
-                                  onChange={() => setForm((f) => ({ ...f, [field]: f[field] === u.id ? "" : u.id }))}
-                                />
-                                <span className="truncate">
-                                  {u.name}
-                                  {u.team === null ? <span className="text-xs text-zinc-500"> (no team set)</span> : null}
-                                </span>
-                              </label>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="mt-3 text-xs text-zinc-600">
-                  When you press Save, each checked editor gets their tasks on their dashboard right away (e.g. Laxman sees photo deliverables). All crew also get a shoot alert. Reassign anytime from{" "}
-                  <Link to="/admin/assignments" className="skiper-link-accent font-medium text-violet-700">
-                    Assign crew
-                  </Link>
-                  .
-                </p>
               </div>
             </div>
             {saveEntry.isError ? <p className="mt-2 text-sm text-rose-600">{errMsg(saveEntry.error)}</p> : null}
