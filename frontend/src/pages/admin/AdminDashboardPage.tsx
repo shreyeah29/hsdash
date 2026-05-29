@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass } from "lucide-react";
 import { AdminOverviewHero } from "@/components/admin/AdminOverviewHero";
+import { WeddingPriorityPanel } from "@/components/admin/WeddingPriorityPanel";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
@@ -12,7 +13,6 @@ import { TaskStatus } from "@/types/domain";
 import {
   GlassPanel,
   AnimatedStatCard,
-  PriorityShowcaseCard,
   WorkloadBar,
 } from "@/components/premium";
 
@@ -96,14 +96,6 @@ export function AdminDashboardPage() {
       .slice(0, 8);
   }, [data]);
 
-  const priorityQueue = useMemo(() => {
-    const tasks = data?.tasks ?? [];
-    const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
-    return [...tasks]
-      .sort((a, b) => order[a.priority] - order[b.priority] || +new Date(a.deadline) - +new Date(b.deadline))
-      .slice(0, 8);
-  }, [data]);
-
   const workload = useMemo(() => {
     const tasks = (data?.tasks ?? []).filter((t) => t.status !== TaskStatus.COMPLETED);
     const map = new Map<string, number>();
@@ -113,6 +105,7 @@ export function AdminDashboardPage() {
 
   const workloadMax = workload[0]?.[1] ?? 1;
   const monthLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const allTasks = data?.tasks ?? [];
 
   return (
     <div className="space-y-10">
@@ -150,6 +143,8 @@ export function AdminDashboardPage() {
       {isFetching && !isLoading ? (
         <p className="text-center text-xs text-zinc-500">Refreshing numbers…</p>
       ) : null}
+
+      <WeddingPriorityPanel tasks={allTasks} isLoading={isLoading} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AnimatedStatCard
@@ -194,86 +189,38 @@ export function AdminDashboardPage() {
         />
       </div>
 
-      <GlassPanel shine className="p-6 md:p-8">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Upcoming shoots · logistics & progress</h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              When editors update deliverables, this view refreshes automatically.
-            </p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <GlassPanel shine className="p-6 md:p-8">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900">Upcoming shoots</h2>
+              <p className="mt-1 text-sm text-zinc-600">Logistics on the calendar.</p>
+            </div>
+            <Button variant="glass" className="rounded-xl" asChild>
+              <Link to="/admin/production-calendar">Open calendar</Link>
+            </Button>
           </div>
-          <Button variant="glass" className="rounded-xl" asChild>
-            <Link to="/admin/production-calendar">Open calendar</Link>
-          </Button>
-        </div>
 
-        <div className="space-y-3">
-          {upcomingShoots.map(({ entry, total, done, nextDue }) => (
-            <div key={entry.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-zinc-900">{entry.clientName}</div>
-                  <div className="mt-1 text-xs text-zinc-600">
-                    {new Date(entry.day).toLocaleDateString()} · {entry.venue || "Venue —"}
+          <div className="space-y-3">
+            {upcomingShoots.map(({ entry, total, done, nextDue }) => (
+              <div key={entry.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-zinc-900">{entry.clientName}</div>
+                    <div className="mt-1 text-xs text-zinc-600">
+                      {new Date(entry.day).toLocaleDateString()} · {entry.venue || "Venue —"}
+                    </div>
                   </div>
-                  <div className="mt-2 grid gap-1 text-xs text-zinc-600 sm:grid-cols-2">
-                    <div className="truncate">Team (photo): {entry.photoTeam || "—"}</div>
-                    <div className="truncate">Team (video): {entry.videoTeam || "—"}</div>
-                  </div>
-                </div>
-
-                <div className="shrink-0 text-right">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Deliverables</div>
-                  <div className="mt-1 text-sm font-semibold text-zinc-900">
-                    {total > 0 ? (
-                      <>
-                        {done}/{total} done
-                      </>
-                    ) : (
-                      "Not activated"
-                    )}
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-600">
-                    {nextDue ? `Next due: ${new Date(nextDue).toLocaleDateString()}` : total > 0 ? "All delivered" : "—"}
+                  <div className="shrink-0 text-right text-xs text-zinc-600">
+                    {total > 0 ? `${done}/${total} done` : "Not activated"}
+                    {nextDue ? ` · Next ${new Date(nextDue).toLocaleDateString()}` : ""}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {upcomingShoots.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
-              No upcoming shoots in this range yet.
-            </div>
-          ) : null}
-        </div>
-      </GlassPanel>
-
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-        <GlassPanel shine className="p-6 md:p-8">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Top priorities</h2>
-              <p className="mt-1 text-sm text-zinc-600">By urgency and deadline.</p>
-            </div>
-            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
-              Showing {priorityQueue.length}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {priorityQueue.map((t, i) => (
-              <PriorityShowcaseCard key={t.id} task={t} index={i} />
             ))}
-            {!isLoading && priorityQueue.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-14 text-center text-sm text-zinc-600">
-                Nothing in flight yet —{" "}
-                <button type="button" className="font-medium text-violet-700 underline" onClick={() => setCreateTasksOpen(true)}>
-                  create deliverable tasks
-                </button>{" "}
-                or{" "}
-                <Link to="/admin/production-calendar" className="font-medium text-violet-700 underline">
-                  open the shoot calendar
-                </Link>
-                .
+            {upcomingShoots.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-10 text-center text-sm text-zinc-600">
+                No upcoming shoots in this range.
               </div>
             ) : null}
           </div>
