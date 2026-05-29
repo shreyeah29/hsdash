@@ -1,7 +1,7 @@
 import type { Task } from "@/types/domain";
-import { TaskStatus } from "@/types/domain";
+import { TaskStatus, Team } from "@/types/domain";
 
-/** Sheet row task types (matches production spreadsheet columns). */
+/** Sheet task types (matches production spreadsheet). */
 export const SHEET_TASK_TYPES = [
   "DATA_COPY",
   "SNEAK_PEEK_PHOTOS",
@@ -14,26 +14,21 @@ export const SHEET_TASK_TYPES = [
 
 export type SheetTaskType = (typeof SHEET_TASK_TYPES)[number];
 
-export type SheetColumnDef =
-  | { id: string; kind: "assignee"; taskType: SheetTaskType; label: string }
-  | { id: string; kind: "status"; taskType: SheetTaskType; label: string };
+export type DeliverableGroupDef = {
+  taskType: SheetTaskType;
+  title: string;
+  team: Team;
+};
 
-/** Column order matches the studio spreadsheet. */
-export const WEDDING_DELIVERABLES_SHEET_COLUMNS: SheetColumnDef[] = [
-  { id: "data-copy-status", kind: "status", taskType: "DATA_COPY", label: "DATA COPY" },
-  { id: "data-copy-spoc", kind: "assignee", taskType: "DATA_COPY", label: "DATA COPY SPOC" },
-  { id: "sneak-assignee", kind: "assignee", taskType: "SNEAK_PEEK_PHOTOS", label: "SNEAK PEAK PHOTOS" },
-  { id: "sneak-status", kind: "status", taskType: "SNEAK_PEEK_PHOTOS", label: "SNEAK PHOTOS STATUS" },
-  { id: "fullset-assignee", kind: "assignee", taskType: "FULL_SET_PHOTOS", label: "FULL SET PHOTOS" },
-  { id: "fullset-status", kind: "status", taskType: "FULL_SET_PHOTOS", label: "FULL SET PHOTOS STATUS" },
-  { id: "highlight-assignee", kind: "assignee", taskType: "CINEMATIC_HIGHLIGHT", label: "CINEMATIC HIGHLIGHT" },
-  { id: "highlight-status", kind: "status", taskType: "CINEMATIC_HIGHLIGHT", label: "CINEMATIC HIGHLIGHT STATUS" },
-  { id: "album-assignee", kind: "assignee", taskType: "ALBUM_DESIGN", label: "ALBUM DESIGN" },
-  { id: "album-status", kind: "status", taskType: "ALBUM_DESIGN", label: "ALBUM DESIGN STATUS" },
-  { id: "traditional-assignee", kind: "assignee", taskType: "TRADITIONAL_VIDEO", label: "TRADITIONAL VIDEO" },
-  { id: "traditional-status", kind: "status", taskType: "TRADITIONAL_VIDEO", label: "TRADITIONAL VIDEO STATUS" },
-  { id: "print-assignee", kind: "assignee", taskType: "ALBUM_PRINT", label: "ALBUM PRINT" },
-  { id: "print-status", kind: "status", taskType: "ALBUM_PRINT", label: "ALBUM PRINT STATUS" },
+/** One block per deliverable — assignee + status shown together (no wide table). */
+export const DELIVERABLE_GROUPS: DeliverableGroupDef[] = [
+  { taskType: "DATA_COPY", title: "Data copy", team: Team.COORDINATOR_TEAM },
+  { taskType: "SNEAK_PEEK_PHOTOS", title: "Sneak peak photos", team: Team.PHOTO_TEAM },
+  { taskType: "FULL_SET_PHOTOS", title: "Full set photos", team: Team.PHOTO_TEAM },
+  { taskType: "CINEMATIC_HIGHLIGHT", title: "Cinematic highlight", team: Team.CINEMATIC_TEAM },
+  { taskType: "ALBUM_DESIGN", title: "Album design", team: Team.ALBUM_TEAM },
+  { taskType: "TRADITIONAL_VIDEO", title: "Traditional video", team: Team.TRADITIONAL_TEAM },
+  { taskType: "ALBUM_PRINT", title: "Album print", team: Team.ALBUM_TEAM },
 ];
 
 export type WeddingSheetRow = {
@@ -54,6 +49,23 @@ export function sheetStatusLabel(status: TaskStatus) {
       return "Delayed";
     default:
       return "Pending";
+  }
+}
+
+export function teamAccent(team: Team) {
+  switch (team) {
+    case Team.PHOTO_TEAM:
+      return { ring: "ring-violet-200", bg: "bg-violet-50", dot: "bg-violet-500", text: "text-violet-900" };
+    case Team.CINEMATIC_TEAM:
+      return { ring: "ring-cyan-200", bg: "bg-cyan-50", dot: "bg-cyan-500", text: "text-cyan-900" };
+    case Team.TRADITIONAL_TEAM:
+      return { ring: "ring-amber-200", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-900" };
+    case Team.ALBUM_TEAM:
+      return { ring: "ring-fuchsia-200", bg: "bg-fuchsia-50", dot: "bg-fuchsia-500", text: "text-fuchsia-900" };
+    case Team.COORDINATOR_TEAM:
+      return { ring: "ring-orange-200", bg: "bg-orange-50", dot: "bg-orange-500", text: "text-orange-900" };
+    default:
+      return { ring: "ring-zinc-200", bg: "bg-zinc-50", dot: "bg-zinc-400", text: "text-zinc-800" };
   }
 }
 
@@ -89,4 +101,13 @@ export function filterWeddingSheetRows(rows: WeddingSheetRow[], needle: string) 
     }
     return false;
   });
+}
+
+export function rowProgress(row: WeddingSheetRow) {
+  const total = DELIVERABLE_GROUPS.filter((g) => row.tasksByType.has(g.taskType)).length;
+  const done = DELIVERABLE_GROUPS.filter((g) => {
+    const t = row.tasksByType.get(g.taskType);
+    return t?.status === TaskStatus.COMPLETED;
+  }).length;
+  return { done, total };
 }

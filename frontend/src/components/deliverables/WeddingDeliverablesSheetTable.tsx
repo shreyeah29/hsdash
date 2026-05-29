@@ -1,12 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Heart } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task, Team, User } from "@/types/domain";
 import {
-  WEDDING_DELIVERABLES_SHEET_COLUMNS,
+  DELIVERABLE_GROUPS,
   buildWeddingSheetRows,
   filterWeddingSheetRows,
+  rowProgress,
   sheetStatusLabel,
+  teamAccent,
+  type WeddingSheetRow,
 } from "@/lib/deliverablesSheet";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Select, SelectItem } from "@/components/ui/select";
@@ -27,6 +32,171 @@ function assigneesForTeam(roster: User[], team: Team) {
   return roster.filter((u) => u.team === team || u.team === null);
 }
 
+function DeliverableTile({
+  task,
+  title,
+  team,
+  canAssign,
+  roster,
+  onAssign,
+}: {
+  task: Task | undefined;
+  title: string;
+  team: Team;
+  canAssign: boolean;
+  roster: User[];
+  onAssign: (id: string, assignedToId: string | null) => void;
+}) {
+  const accent = teamAccent(team);
+
+  if (!task) {
+    return (
+      <div className={cn("rounded-xl border border-dashed border-zinc-200 bg-zinc-50/80 px-3 py-3", accent.ring)}>
+        <p className="text-xs font-semibold text-zinc-700">{title}</p>
+        <p className="mt-1 text-[11px] text-zinc-500">Not on timeline</p>
+      </div>
+    );
+  }
+
+  const assigneeId = (task.assignedToId ?? task.assignedTo?.id) ?? "__none__";
+
+  return (
+    <div className={cn("rounded-xl border bg-white px-3 py-3 shadow-sm ring-1", accent.ring)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", accent.dot)} aria-hidden />
+          <p className={cn("truncate text-xs font-semibold", accent.text)}>{title}</p>
+        </div>
+        <StatusBadge status={task.status} />
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-600">
+        <span className="font-medium text-zinc-500">Status</span>
+        <span className="font-semibold text-zinc-800">{sheetStatusLabel(task.status)}</span>
+        <span className="text-zinc-300">·</span>
+        <span className="font-medium text-zinc-500">Due</span>
+        <span>{new Date(task.deadline).toLocaleDateString()}</span>
+      </div>
+
+      <div className="mt-2.5">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+          {task.taskType === "DATA_COPY" ? "SPOC" : "Editor"}
+        </p>
+        {canAssign ? (
+          <Select
+            value={assigneeId}
+            onValueChange={(v) => onAssign(task.id, v === "__none__" ? null : v)}
+          >
+            <SelectItem value="__none__">Unassigned</SelectItem>
+            {assigneesForTeam(roster, task.assignedTeam).map((u) => (
+              <SelectItem key={u.id} value={u.id}>
+                {u.name}
+              </SelectItem>
+            ))}
+          </Select>
+        ) : (
+          <p className="truncate text-sm font-medium text-zinc-900">{task.assignedTo?.name ?? "Unassigned"}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WeddingAccordionCard({
+  row,
+  expanded,
+  onToggle,
+  mode,
+  roster,
+  onAssign,
+}: {
+  row: WeddingSheetRow;
+  expanded: boolean;
+  onToggle: () => void;
+  mode: Mode;
+  roster: User[];
+  onAssign: (id: string, assignedToId: string | null) => void;
+}) {
+  const canAssign = mode === "coordinator";
+  const { done, total } = rowProgress(row);
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-zinc-50/80 sm:px-5"
+      >
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-cyan-50 text-violet-800 ring-1 ring-violet-100",
+          )}
+        >
+          <Heart className="h-4 w-4" aria-hidden />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-base font-semibold text-zinc-900">{row.clientName}</p>
+          <p className="mt-0.5 text-xs text-zinc-600">
+            Event {row.eventDate ? new Date(row.eventDate).toLocaleDateString() : "—"}
+          </p>
+        </div>
+
+        <div className="hidden shrink-0 text-right sm:block">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Progress</p>
+          <p className="text-sm font-semibold tabular-nums text-zinc-900">
+            {done}/{total || "—"} done
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="flex h-9 min-w-[3rem] items-center justify-center rounded-full bg-violet-50 px-2 text-xs font-bold tabular-nums text-violet-800 ring-1 ring-violet-100">
+            {pct}%
+          </div>
+          <ChevronDown
+            className={cn("h-5 w-5 text-zinc-500 transition-transform duration-300", expanded && "rotate-180")}
+            aria-hidden
+          />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {expanded ? (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-zinc-100 bg-gradient-to-b from-zinc-50/80 to-white px-4 pb-5 pt-4 sm:px-5">
+              <div className="mb-3 flex items-center justify-between sm:hidden">
+                <span className="text-xs text-zinc-600">
+                  {done}/{total} deliverables done
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {DELIVERABLE_GROUPS.map((group) => (
+                  <DeliverableTile
+                    key={group.taskType}
+                    task={row.tasksByType.get(group.taskType)}
+                    title={group.title}
+                    team={group.team}
+                    canAssign={canAssign}
+                    roster={roster}
+                    onAssign={onAssign}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function WeddingDeliverablesSheetTable({
   mode,
   tasks,
@@ -36,7 +206,22 @@ export function WeddingDeliverablesSheetTable({
   dataUpdatedAt,
 }: Props) {
   const qc = useQueryClient();
-  const canAssign = mode === "coordinator";
+  const rows = useMemo(() => filterWeddingSheetRows(buildWeddingSheetRows(tasks), searchQuery), [tasks, searchQuery]);
+
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (rows.length === 0) return;
+    setOpen((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      if (rows[0] && next[rows[0].key] === undefined) {
+        next[rows[0].key] = true;
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [rows]);
 
   const assign = useMutation({
     mutationFn: async ({ id, assignedToId }: { id: string; assignedToId: string | null }) => {
@@ -54,10 +239,12 @@ export function WeddingDeliverablesSheetTable({
     },
   });
 
-  const rows = useMemo(() => filterWeddingSheetRows(buildWeddingSheetRows(tasks), searchQuery), [tasks, searchQuery]);
-
   if (isLoading) {
-    return <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm text-zinc-600">Loading sheet…</div>;
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm text-zinc-600">
+        Loading weddings…
+      </div>
+    );
   }
 
   if (rows.length === 0) {
@@ -69,107 +256,24 @@ export function WeddingDeliverablesSheetTable({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {dataUpdatedAt ? (
         <p className="text-right text-[11px] text-zinc-500">
-          Last updated {new Date(dataUpdatedAt).toLocaleTimeString()} · editors update status on their dashboards
+          Updated {new Date(dataUpdatedAt).toLocaleTimeString()} · status changes when editors save on their login
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50">
-                <th className="sticky left-0 z-20 min-w-[200px] border-r border-zinc-200 bg-zinc-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600">
-                  Wedding
-                </th>
-                <th className="min-w-[108px] px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600">
-                  Event date
-                </th>
-                {WEDDING_DELIVERABLES_SHEET_COLUMNS.map((col) => (
-                  <th
-                    key={col.id}
-                    className={cn(
-                      "min-w-[132px] px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-600",
-                      col.kind === "status" && "min-w-[118px]",
-                    )}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rowIdx) => (
-                <tr
-                  key={row.key}
-                  className={cn("border-b border-zinc-100", rowIdx % 2 === 0 ? "bg-white" : "bg-zinc-50/40")}
-                >
-                  <td className="sticky left-0 z-10 border-r border-zinc-100 bg-inherit px-4 py-3 font-semibold text-zinc-900">
-                    {row.clientName}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-zinc-700">
-                    {row.eventDate ? new Date(row.eventDate).toLocaleDateString() : "—"}
-                  </td>
-                  {WEDDING_DELIVERABLES_SHEET_COLUMNS.map((col) => {
-                    const task = row.tasksByType.get(col.taskType);
-                    if (!task) {
-                      return (
-                        <td key={col.id} className="px-3 py-3 text-center text-zinc-400">
-                          —
-                        </td>
-                      );
-                    }
-
-                    if (col.kind === "status") {
-                      return (
-                        <td key={col.id} className="px-3 py-3">
-                          <div className="flex flex-col gap-1">
-                            <StatusBadge status={task.status} />
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-                              {sheetStatusLabel(task.status)}
-                            </span>
-                          </div>
-                        </td>
-                      );
-                    }
-
-                    const assigneeId = (task.assignedToId ?? task.assignedTo?.id) ?? "__none__";
-                    const name = task.assignedTo?.name;
-
-                    if (canAssign) {
-                      return (
-                        <td key={col.id} className="px-3 py-3">
-                          <Select
-                            value={assigneeId}
-                            onValueChange={(v) =>
-                              assign.mutate({ id: task.id, assignedToId: v === "__none__" ? null : v })
-                            }
-                          >
-                            <SelectItem value="__none__">Unassigned</SelectItem>
-                            {assigneesForTeam(roster, task.assignedTeam).map((u) => (
-                              <SelectItem key={u.id} value={u.id}>
-                                {u.name}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                        </td>
-                      );
-                    }
-
-                    return (
-                      <td key={col.id} className="px-3 py-3 font-medium text-zinc-800">
-                        {name ?? <span className="text-zinc-400">Unassigned</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {rows.map((row) => (
+        <WeddingAccordionCard
+          key={row.key}
+          row={row}
+          expanded={Boolean(open[row.key])}
+          onToggle={() => setOpen((s) => ({ ...s, [row.key]: !s[row.key] }))}
+          mode={mode}
+          roster={roster}
+          onAssign={(id, assignedToId) => assign.mutate({ id, assignedToId })}
+        />
+      ))}
     </div>
   );
 }
