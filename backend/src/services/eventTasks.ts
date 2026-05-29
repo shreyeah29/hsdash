@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { Team, TaskPriority, TaskStatus, TaskType } from "@prisma/client";
 import { computePriority } from "./taskPriority";
 import { resolveTaskAssigneeTx } from "./taskAssignee";
+import { findDataCopySpocUserIdTx } from "./dataCopySpoc";
 
 export type AutoTaskTemplate = {
   taskType: TaskType;
@@ -60,13 +61,18 @@ export async function createEventTasksTx(
   const created = [];
 
   for (const row of rows) {
-    const preferred =
+    let preferred: string | null | undefined =
       args.taskAssignees && row.taskType in args.taskAssignees
         ? args.taskAssignees[row.taskType]
         : args.assignments
           ? args.assignments[row.assignedTeam]
           : null;
-    const assignedToId = await resolveTaskAssigneeTx(tx, preferred, row.assignedTeam);
+
+    if (row.taskType === TaskType.DATA_COPY) {
+      preferred = (await findDataCopySpocUserIdTx(tx)) ?? preferred;
+    }
+
+    const assignedToId = await resolveTaskAssigneeTx(tx, preferred ?? null, row.assignedTeam);
 
     created.push(
       await tx.task.create({

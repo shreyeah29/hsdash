@@ -82,7 +82,7 @@ function DeliverableTile({
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
           {task.taskType === "DATA_COPY" ? "SPOC" : "Editor"}
         </p>
-        {canAssign ? (
+        {canAssign && task.taskType !== "DATA_COPY" ? (
           <Select
             value={assigneeId}
             onValueChange={(v) => onAssign(task.id, v === "__none__" ? null : v)}
@@ -95,7 +95,9 @@ function DeliverableTile({
             ))}
           </Select>
         ) : (
-          <p className="truncate text-sm font-medium text-zinc-900">{task.assignedTo?.name ?? "Unassigned"}</p>
+          <p className="truncate text-sm font-medium text-zinc-900">
+            {task.assignedTo?.name ?? (task.taskType === "DATA_COPY" ? "Coordinator" : "Unassigned")}
+          </p>
         )}
       </div>
     </div>

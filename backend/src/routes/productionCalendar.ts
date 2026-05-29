@@ -497,7 +497,6 @@ productionCalendarRouter.post(
         [TaskType.TRADITIONAL_VIDEO]: traditionalIds[0] ?? null,
         [TaskType.ALBUM_DESIGN]: albumIds[0] ?? null,
         [TaskType.ALBUM_PRINT]: albumIds[1] ?? albumIds[0] ?? null,
-        [TaskType.DATA_COPY]: null,
       } satisfies Partial<Record<TaskType, string | null>>;
       const assigneeIds = new Set<string>();
       let crewIds: string[] = [];

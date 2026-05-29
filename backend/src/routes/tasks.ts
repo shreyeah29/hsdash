@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../prisma/client";
 import { requireAuth } from "../middleware/auth";
 import { requireCoordinatorOrAdmin } from "../middleware/coordinator";
-import { Role, TaskPriority, TaskStatus, Team } from "@prisma/client";
+import { Role, TaskPriority, TaskStatus, TaskType, Team } from "@prisma/client";
 import { resolveTaskAssigneeTx } from "../services/taskAssignee";
 import { computeDelayedStatus, computePriority } from "../services/taskPriority";
 import { recordTaskStatusChange } from "../services/taskActivity";
@@ -123,6 +123,10 @@ tasksRouter.put("/:id/assignee", requireCoordinatorOrAdmin, async (req, res, nex
       include: { event: true },
     });
     if (!task) throw new HttpError(404, "Task not found", "NOT_FOUND");
+
+    if (task.taskType === TaskType.DATA_COPY) {
+      throw new HttpError(400, "Data copy is always assigned to the coordinator (Emmanuel)", "DATA_COPY_FIXED");
+    }
 
     const previousAssigneeId = task.assignedToId;
 

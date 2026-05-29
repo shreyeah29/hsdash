@@ -14,6 +14,7 @@ import { notificationsRouter } from "./routes/notifications";
 import { attachSocket } from "./realtime/socket";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
+import { ensureDataCopySpocAssignments } from "./services/dataCopySpoc";
 
 const app = express();
 
@@ -46,6 +47,7 @@ attachSocket(server);
 
 async function start() {
   await runInitialSeed({ wipeExisting: false });
+  await ensureDataCopySpocAssignments();
   server.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`API listening on :${env.PORT}`);

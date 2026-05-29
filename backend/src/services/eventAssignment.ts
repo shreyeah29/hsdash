@@ -1,7 +1,9 @@
 import type { Prisma } from "@prisma/client";
+import { TaskType } from "@prisma/client";
 import { createEventTasksTx, type EventTaskAssignments } from "./eventTasks";
 import { notifyAllAssignedTasksTx, notifyAssignedTaskTx } from "./assignmentNotify";
 import { resolveTaskAssigneeTx } from "./taskAssignee";
+import { findDataCopySpocUserIdTx } from "./dataCopySpoc";
 
 type Tx = Prisma.TransactionClient;
 
@@ -35,6 +37,18 @@ export async function syncEventAssignmentsTx(
   }
 
   for (const task of tasks) {
+    if (task.taskType === TaskType.DATA_COPY) {
+      const spocId = await findDataCopySpocUserIdTx(tx);
+      if (spocId && task.assignedToId !== spocId) {
+        await tx.task.update({
+          where: { id: task.id },
+          data: { assignedToId: spocId, assignedById: args.assignedById },
+        });
+        assigneeIds.add(spocId);
+      }
+      continue;
+    }
+
     if (args.onlyListedTeams && args.assignments[task.assignedTeam] === undefined) {
       continue;
     }
