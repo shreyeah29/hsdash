@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, PlusCircle } from "lucide-react";
+import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass } from "lucide-react";
+import { AdminOverviewHero } from "@/components/admin/AdminOverviewHero";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
@@ -11,7 +11,6 @@ import { TaskStatus } from "@/types/domain";
 import {
   GlassPanel,
   AnimatedStatCard,
-  ProgressRing,
   PriorityShowcaseCard,
   WorkloadBar,
 } from "@/components/premium";
@@ -91,41 +90,23 @@ export function AdminDashboardPage() {
   }, [data]);
 
   const workloadMax = workload[0]?.[1] ?? 1;
+  const openTasks = stats.total - stats.completed;
+  const monthLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-10">
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
-      >
-        <div className="max-w-2xl">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Overview</h1>
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <Button
-            type="button"
-            variant="premium"
-            className="rounded-xl px-5 py-6 shadow-glow"
-            onClick={() => setCreateTasksOpen(true)}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create deliverable tasks
-          </Button>
-          <div className="flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
-            <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Completion rate</p>
-              <p className="mt-1 text-2xl font-semibold text-zinc-900">{isLoading ? "—" : `${stats.completionRate}%`}</p>
-              <p className="text-xs text-zinc-600">
-                {stats.completed} done · {stats.total - stats.completed} open
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <AdminOverviewHero
+        monthLabel={monthLabel}
+        isLoading={isLoading}
+        weddings={stats.weddings}
+        dueToday={stats.dueToday}
+        overdue={stats.overdue}
+        open={openTasks}
+        completionRate={stats.completionRate}
+        completed={stats.completed}
+        total={stats.total}
+        onCreateTasks={() => setCreateTasksOpen(true)}
+      />
 
       <CreateDeliverableTasksDialog open={createTasksOpen} onOpenChange={setCreateTasksOpen} />
 

@@ -6,6 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Geist Variable", "system-ui", "sans-serif"],
+        display: ['"Fraunces"', "Georgia", "Times New Roman", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
