@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { AlertTriangle, CalendarDays, Heart, PlusCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
 import { ProgressRing } from "@/components/premium/ProgressRing";
 import { cn } from "@/lib/utils";
 import { HeroStickers } from "@/components/admin/HeroStickers";
@@ -104,9 +103,7 @@ export function AdminOverviewHero({
           </div>
 
           <div className="space-y-2">
-            <h1 className="font-display text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-zinc-900 md:text-6xl">
-              <GradientShimmerText className="italic">Overview</GradientShimmerText>
-            </h1>
+            <h1 className="font-sans text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Overview</h1>
             <p className="font-display text-lg italic text-violet-800/80 md:text-xl">
               {isLoading ? "Loading your month…" : `${open} open deliverables across the studio`}
             </p>
