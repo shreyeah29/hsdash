@@ -145,7 +145,6 @@ type FormState = {
   venue: string;
   startTime: string;
   endTime: string;
-  muhuruthamTime: string;
   photoTeam: string;
   videoTeam: string;
   addons: string;
@@ -161,7 +160,6 @@ const emptyForm = (day: string): FormState => ({
   venue: "",
   startTime: "",
   endTime: "",
-  muhuruthamTime: "",
   photoTeam: "",
   videoTeam: "",
   addons: "",
@@ -252,7 +250,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         venue: form.venue,
         startTime: form.startTime,
         endTime: form.endTime,
-        muhuruthamTime: form.muhuruthamTime,
         photoTeam: form.photoTeam,
         videoTeam: form.videoTeam,
         addons: form.addons,
@@ -378,7 +375,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       venue: entry.venue ?? "",
       startTime: entry.startTime,
       endTime: entry.endTime,
-      muhuruthamTime: entry.muhuruthamTime ?? "",
       photoTeam: entry.photoTeam,
       videoTeam: entry.videoTeam,
       addons: entry.addons,
@@ -885,9 +881,6 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               </div>
               <TimePicker label="Start time" value={form.startTime} onChange={(next) => setForm((f) => ({ ...f, startTime: next }))} />
               <TimePicker label="End time" value={form.endTime} onChange={(next) => setForm((f) => ({ ...f, endTime: next }))} />
-              <div className="space-y-1 sm:col-span-2">
-                <TimePicker label="Muhurutham time" value={form.muhuruthamTime} onChange={(next) => setForm((f) => ({ ...f, muhuruthamTime: next }))} />
-              </div>
               <div className="space-y-1 sm:col-span-2">
                 <div className="text-xs font-medium text-zinc-600">Photo team (on-site)</div>
                 <textarea
