@@ -1,46 +1,54 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutList } from "lucide-react";
+import { CheckCircle2, ListTodo } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
 import { GlassPanel } from "@/components/premium/GlassPanel";
-import { PriorityShowcaseCard } from "@/components/premium/PriorityShowcaseCard";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { crewLiveQueryOptions } from "@/hooks/useCrewLiveData";
+import { cn } from "@/lib/utils";
 
 async function fetchTasks() {
   const { data } = await api.get<{ tasks: Task[] }>("/tasks");
   return data.tasks;
 }
 
-const COLUMNS: { key: TaskStatus; label: string; blurb: string; tint: string }[] = [
-  { key: TaskStatus.PENDING, label: "Queued", blurb: "Ready to pick up", tint: "from-zinc-100 to-transparent" },
-  {
-    key: TaskStatus.IN_PROGRESS,
-    label: "In motion",
-    blurb: "Active craft time",
-    tint: "from-cyan-50 to-transparent",
-  },
-  { key: TaskStatus.DELAYED, label: "Needs air cover", blurb: "Unblock or reset", tint: "from-rose-50 to-transparent" },
-  {
-    key: TaskStatus.COMPLETED,
-    label: "Shipped",
-    blurb: "Delivered momentum",
-    tint: "from-emerald-50 to-transparent",
-  },
-];
+type FilterTab = "ALL" | "OPEN" | "DONE";
+
+function taskTitle(taskType: string) {
+  return taskType.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\w/g, (m) => m.toUpperCase());
+}
+
+function deadlineLabel(iso: string) {
+  const due = new Date(iso);
+  const now = new Date();
+  const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const date = due.toLocaleDateString();
+  if (days < 0) return { date, hint: `${Math.abs(days)}d overdue`, tone: "rose" as const };
+  if (days === 0) return { date, hint: "Due today", tone: "amber" as const };
+  if (days === 1) return { date, hint: "Due tomorrow", tone: "amber" as const };
+  return { date, hint: `In ${days} days`, tone: "zinc" as const };
+}
+
+function sortTasks(tasks: Task[]) {
+  return [...tasks].sort((a, b) => {
+    const aDone = a.status === TaskStatus.COMPLETED ? 1 : 0;
+    const bDone = b.status === TaskStatus.COMPLETED ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return +new Date(a.deadline) - +new Date(b.deadline);
+  });
+}
 
 export function TasksPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("ALL");
+  const [tab, setTab] = useState<FilterTab>("OPEN");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: fetchTasks,
     ...crewLiveQueryOptions,
@@ -48,28 +56,30 @@ export function TasksPage() {
 
   const filtered = useMemo(() => {
     const tasks = data ?? [];
-    return tasks.filter((t) => {
-      const matchesQ =
-        !q ||
-        t.taskType.toLowerCase().includes(q.toLowerCase()) ||
-        t.event?.clientName?.toLowerCase().includes(q.toLowerCase());
-      const matchesStatus = status === "ALL" ? true : t.status === status;
-      return matchesQ && matchesStatus;
-    });
-  }, [data, q, status]);
+    const needle = q.trim().toLowerCase();
+    return sortTasks(
+      tasks.filter((t) => {
+        const matchesQ =
+          !needle ||
+          t.taskType.toLowerCase().includes(needle) ||
+          t.event?.clientName?.toLowerCase().includes(needle);
+        const matchesTab =
+          tab === "ALL" ||
+          (tab === "OPEN" && t.status !== TaskStatus.COMPLETED) ||
+          (tab === "DONE" && t.status === TaskStatus.COMPLETED);
+        return matchesQ && matchesTab;
+      }),
+    );
+  }, [data, q, tab]);
 
-  const grouped = useMemo(() => {
-    const buckets: Record<TaskStatus, Task[]> = {
-      [TaskStatus.PENDING]: [],
-      [TaskStatus.IN_PROGRESS]: [],
-      [TaskStatus.COMPLETED]: [],
-      [TaskStatus.DELAYED]: [],
+  const counts = useMemo(() => {
+    const tasks = data ?? [];
+    return {
+      all: tasks.length,
+      open: tasks.filter((t) => t.status !== TaskStatus.COMPLETED).length,
+      done: tasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
     };
-    for (const t of filtered) {
-      buckets[t.status].push(t);
-    }
-    return buckets;
-  }, [filtered]);
+  }, [data]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, next }: { id: string; next: TaskStatus }) => {
@@ -81,41 +91,49 @@ export function TasksPage() {
       await qc.invalidateQueries({ queryKey: ["tasks", "admin-monitor"] });
       await qc.invalidateQueries({ queryKey: ["my-tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
+      await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
   });
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Workflow</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900">Your queue</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
-            Assignments routed to you — move cards forward as you progress. Everything stays cinematic, nothing feels like a spreadsheet.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">My tasks</h1>
+          <p className="mt-1 text-sm text-zinc-600">Your assigned deliverables — update status when you start or finish.</p>
         </div>
-        <GlassPanel className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4" shine>
-          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-            <Input placeholder="Search client or deliverable…" value={q} onChange={(e) => setQ(e.target.value)} className="min-w-[200px]" />
-            <Select value={status} onValueChange={setStatus}>
-              <SelectItem value="ALL">All statuses</SelectItem>
-              <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
-              <SelectItem value={TaskStatus.IN_PROGRESS}>In progress</SelectItem>
-              <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
-              <SelectItem value={TaskStatus.DELAYED}>Delayed</SelectItem>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
-            <LayoutList className="h-4 w-4 text-violet-600" />
-            <span>
-              <span className="font-semibold text-zinc-900">{filtered.length}</span> visible
-            </span>
+        <GlassPanel className="flex flex-wrap items-center gap-3 p-3" shine>
+          <Input placeholder="Search wedding…" value={q} onChange={(e) => setQ(e.target.value)} className="min-w-[200px]" />
+          <div className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+            {(
+              [
+                ["OPEN", "Open", counts.open],
+                ["DONE", "Done", counts.done],
+                ["ALL", "All", counts.all],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  tab === key ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900",
+                )}
+              >
+                {label} ({count})
+              </button>
+            ))}
           </div>
         </GlassPanel>
       </div>
 
+      {dataUpdatedAt ? (
+        <p className="text-right text-[11px] text-zinc-500">Updated {new Date(dataUpdatedAt).toLocaleTimeString()}</p>
+      ) : null}
+
       {isLoading ? (
-        <GlassPanel className="p-10 text-center text-sm text-zinc-600">Loading your board…</GlassPanel>
+        <GlassPanel className="p-10 text-center text-sm text-zinc-600">Loading your tasks…</GlassPanel>
       ) : null}
       {error ? (
         <GlassPanel className="border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">Failed to load tasks.</GlassPanel>
@@ -123,79 +141,95 @@ export function TasksPage() {
 
       {!isLoading && filtered.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
-          <p className="text-sm font-medium text-zinc-900">You&apos;re clear</p>
-          <p className="mt-2 text-sm text-zinc-600">No tasks match these filters — check back after coordinators route new work.</p>
+          <ListTodo className="mx-auto h-8 w-8 text-zinc-400" />
+          <p className="mt-3 text-sm font-medium text-zinc-900">Nothing here</p>
+          <p className="mt-1 text-sm text-zinc-600">
+            {tab === "OPEN" ? "No open tasks — check Done or wait for new assignments." : "No tasks match this filter."}
+          </p>
         </GlassPanel>
       ) : null}
 
       {!isLoading && filtered.length > 0 ? (
-      <div className="grid gap-5 xl:grid-cols-4">
-        {COLUMNS.map((col, colIdx) => {
-          const list = grouped[col.key];
-          return (
-            <motion.div
-              key={col.key}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-              className="flex min-h-[280px] flex-col rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/80 p-4 shadow-sm"
-            >
-              <div className={`mb-4 rounded-xl bg-gradient-to-r px-3 py-3 ${col.tint}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="text-[13px] font-semibold text-zinc-900">{col.label}</div>
-                    <div className="text-[11px] text-zinc-600">{col.blurb}</div>
-                  </div>
-                  <span className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-700">
-                    {list.length}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-1 flex-col gap-3">
-                {list.map((t, rowIdx) => (
-                    <PriorityShowcaseCard
+        <GlassPanel className="overflow-hidden p-0" shine>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600">
+                  <th className="px-4 py-3">Wedding</th>
+                  <th className="px-4 py-3">Deliverable</th>
+                  <th className="px-4 py-3">Deadline</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Update</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((t, i) => {
+                  const done = t.status === TaskStatus.COMPLETED;
+                  const due = deadlineLabel(t.deadline);
+                  const inProgress = t.status === TaskStatus.IN_PROGRESS || t.status === TaskStatus.DELAYED;
+
+                  return (
+                    <tr
                       key={t.id}
-                      task={t}
-                      index={colIdx * 24 + rowIdx}
-                      topTrailing={<StatusBadge status={t.status} />}
-                      footer={
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="glass"
-                            className="rounded-xl"
-                            disabled={updateStatus.isPending || t.status === TaskStatus.PENDING}
-                            onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.PENDING })}
-                          >
-                            Queue
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="glass"
-                            className="rounded-xl"
-                            disabled={updateStatus.isPending}
-                            onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.IN_PROGRESS })}
-                          >
-                            In progress
-                          </Button>
+                      className={cn(
+                        "border-b border-zinc-100 last:border-0",
+                        i % 2 === 0 ? "bg-white" : "bg-zinc-50/50",
+                        done && "opacity-75",
+                      )}
+                    >
+                      <td className="px-4 py-3.5 font-medium text-zinc-900">{t.event?.clientName ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-zinc-800">{taskTitle(t.taskType)}</td>
+                      <td className="px-4 py-3.5">
+                        <div className="tabular-nums text-zinc-900">{due.date}</div>
+                        <div
+                          className={cn(
+                            "text-[11px] font-medium",
+                            due.tone === "rose" && "text-rose-700",
+                            due.tone === "amber" && "text-amber-700",
+                            due.tone === "zinc" && "text-zinc-500",
+                          )}
+                        >
+                          {due.hint}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <StatusBadge status={t.status} />
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {done ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" aria-hidden />
+                            Completed
+                          </span>
+                        ) : inProgress ? (
                           <Button
                             size="sm"
                             variant="premium"
-                            className="rounded-xl"
+                            className="h-8 rounded-lg px-4 text-xs"
                             disabled={updateStatus.isPending}
                             onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.COMPLETED })}
                           >
-                            Complete
+                            Mark done
                           </Button>
-                        </div>
-                      }
-                    />
-                ))}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 rounded-lg px-4 text-xs"
+                            disabled={updateStatus.isPending}
+                            onClick={() => updateStatus.mutate({ id: t.id, next: TaskStatus.IN_PROGRESS })}
+                          >
+                            Start
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </GlassPanel>
       ) : null}
     </motion.div>
   );
