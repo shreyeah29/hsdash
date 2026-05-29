@@ -1,15 +1,75 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
 import { getSocketIo } from "../realtime/socket";
+import { taskListInclude, calendarTaskProgressSelect } from "../services/prismaSelects";
+import {
+  computeTaskDashboardStats,
+  localDayKey,
+  upcomingShootRangeKeys,
+  utcStoredDayKey,
+} from "../services/dashboardStats";
 
 export const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireRole(Role.ADMIN));
+
+const entryDashboardInclude = {
+  createdBy: { select: { id: true, name: true, email: true } },
+  event: {
+    include: {
+      tasks: {
+        orderBy: [{ deadline: "asc" as const }],
+        select: calendarTaskProgressSelect,
+      },
+    },
+  },
+} satisfies Prisma.ShootCalendarEntryInclude;
+
+adminRouter.get("/overview", async (_req, res, next) => {
+  try {
+    const { from, to } = upcomingShootRangeKeys();
+    const fromDay = parseDayUtc(from);
+    const toDay = parseDayUtc(to);
+    const todayKey = localDayKey(new Date());
+
+    const [eventCount, shootCount, tasks, entries] = await Promise.all([
+      prisma.event.count(),
+      prisma.shootCalendarEntry.count(),
+      prisma.task.findMany({
+        orderBy: [{ deadline: "asc" }, { createdAt: "desc" }],
+        include: taskListInclude,
+      }),
+      prisma.shootCalendarEntry.findMany({
+        where: { day: { gte: fromDay, lte: toDay } },
+        orderBy: [{ day: "asc" }, { createdAt: "asc" }],
+        include: entryDashboardInclude,
+      }),
+    ]);
+
+    const taskStats = computeTaskDashboardStats(tasks);
+    const weddings = eventCount > 0 ? eventCount : shootCount;
+    const upcomingEntries = entries.filter((e) => utcStoredDayKey(e.day) >= todayKey);
+
+    res.json({
+      stats: {
+        ...taskStats,
+        weddings,
+        eventCount,
+        shootCount,
+      },
+      tasks,
+      entries: upcomingEntries,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 

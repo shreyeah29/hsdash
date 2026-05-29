@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { Link } from "react-router-dom";
 import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass } from "lucide-react";
 import { AdminOverviewHero } from "@/components/admin/AdminOverviewHero";
@@ -15,47 +16,68 @@ import {
   WorkloadBar,
 } from "@/components/premium";
 
-async function fetchAdminData() {
-  const now = new Date();
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const from = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
-  const to = `${now.getFullYear()}-${pad2(now.getMonth() + 2)}-${pad2(0)}`; // last day of current month
+type AdminOverviewResponse = {
+  stats: {
+    weddings: number;
+    eventCount: number;
+    shootCount: number;
+    dueToday: number;
+    overdue: number;
+    completed: number;
+    pending: number;
+    total: number;
+    open: number;
+    completionRate: number;
+  };
+  tasks: Task[];
+  entries: ShootCalendarEntry[];
+};
 
-  const [countRes, tasksRes, calRes] = await Promise.all([
-    api.get<{ count: number }>("/events/count"),
-    api.get<{ tasks: Task[] }>("/tasks"),
-    api.get<{ entries: ShootCalendarEntry[] }>("/production-calendar/entries", {
-      params: { from, to, summary: "1" },
-    }),
-  ]);
-  return { weddingCount: countRes.data.count, tasks: tasksRes.data.tasks, entries: calRes.data.entries };
+async function fetchAdminData() {
+  const { data } = await api.get<AdminOverviewResponse>("/admin/overview");
+  return data;
+}
+
+function overviewLoadError(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    if (error.response?.status === 404) {
+      return "Overview API not found — redeploy the backend on Render, then refresh.";
+    }
+    if (!error.response) {
+      return "Could not reach the API — check VITE_API_URL on Vercel.";
+    }
+    const msg = (error.response.data as { message?: string })?.message;
+    if (typeof msg === "string") return msg;
+  }
+  return "Could not load dashboard data. Try refreshing.";
 }
 
 export function AdminDashboardPage() {
   const [createTasksOpen, setCreateTasksOpen] = useState(false);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: fetchAdminData,
+    refetchOnWindowFocus: true,
   });
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const tasks = data?.tasks ?? [];
-    const dueToday = tasks.filter((t) => new Date(t.deadline).toDateString() === now.toDateString()).length;
-    const overdue = tasks.filter((t) => new Date(t.deadline).getTime() < now.getTime() && t.status !== TaskStatus.COMPLETED)
-      .length;
-    const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
-    const pending = tasks.filter((t) => t.status === TaskStatus.PENDING).length;
-    const total = tasks.length;
-    const completionRate = total ? Math.round((completed / total) * 100) : 0;
-
-    return { dueToday, overdue, completed, pending, weddings: data?.weddingCount ?? 0, completionRate, total };
+    const s = data?.stats;
+    return {
+      dueToday: s?.dueToday ?? 0,
+      overdue: s?.overdue ?? 0,
+      completed: s?.completed ?? 0,
+      pending: s?.pending ?? 0,
+      weddings: s?.weddings ?? 0,
+      completionRate: s?.completionRate ?? 0,
+      total: s?.total ?? 0,
+      open: s?.open ?? 0,
+      eventCount: s?.eventCount ?? 0,
+      shootCount: s?.shootCount ?? 0,
+    };
   }, [data]);
 
   const upcomingShoots = useMemo(() => {
     const entries = data?.entries ?? [];
-    const today = new Date();
-    const upcoming = entries.filter((e) => new Date(e.day).getTime() >= new Date(today.toDateString()).getTime());
 
     function progress(e: ShootCalendarEntry) {
       const tasks = e.event?.tasks ?? [];
@@ -68,7 +90,7 @@ export function AdminDashboardPage() {
       return { total, done, nextDue };
     }
 
-    return upcoming
+    return entries
       .map((e) => ({ entry: e, ...progress(e) }))
       .sort((a, b) => +new Date(a.entry.day) - +new Date(b.entry.day))
       .slice(0, 8);
@@ -90,31 +112,50 @@ export function AdminDashboardPage() {
   }, [data]);
 
   const workloadMax = workload[0]?.[1] ?? 1;
-  const openTasks = stats.total - stats.completed;
   const monthLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-10">
+      {isError ? (
+        <GlassPanel className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+          {overviewLoadError(error)}{" "}
+          <button type="button" className="font-semibold underline" onClick={() => void refetch()}>
+            Retry
+          </button>
+        </GlassPanel>
+      ) : null}
+
       <AdminOverviewHero
         monthLabel={monthLabel}
         isLoading={isLoading}
         weddings={stats.weddings}
         dueToday={stats.dueToday}
         overdue={stats.overdue}
-        open={openTasks}
+        open={stats.open}
         completionRate={stats.completionRate}
         completed={stats.completed}
         total={stats.total}
         onCreateTasks={() => setCreateTasksOpen(true)}
       />
 
+      {!isLoading && !isError && stats.eventCount === 0 && stats.shootCount > 0 ? (
+        <p className="text-sm text-violet-800">
+          {stats.shootCount} shoot{stats.shootCount === 1 ? "" : "s"} on the calendar — activate deliverable tasks to
+          track completion here.
+        </p>
+      ) : null}
+
       <CreateDeliverableTasksDialog open={createTasksOpen} onOpenChange={setCreateTasksOpen} />
+
+      {isFetching && !isLoading ? (
+        <p className="text-center text-xs text-zinc-500">Refreshing numbers…</p>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AnimatedStatCard
           label="Active weddings"
           value={isLoading ? "—" : stats.weddings}
-          hint="Weddings in system"
+          hint={stats.eventCount > 0 ? "With deliverables" : stats.shootCount > 0 ? "Shoots logged" : "None yet"}
           icon={Heart}
           accent="violet"
           delay={0}
