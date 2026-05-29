@@ -27,6 +27,11 @@ const createEventSchema = z.object({
   albumEditorId: z.string().min(1).optional(),
 });
 
+eventsRouter.get("/count", async (_req, res) => {
+  const count = await prisma.event.count();
+  res.json({ count });
+});
+
 eventsRouter.get("/", async (_req, res) => {
   const events = await prisma.event.findMany({
     orderBy: { createdAt: "desc" },

@@ -7,7 +7,15 @@ import "lenis/dist/lenis.css";
 import "./index.css";
 import App from "./App.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 10 * 60_000,
+      retry: 1,
+    },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

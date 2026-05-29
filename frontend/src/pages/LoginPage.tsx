@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
-import { Role } from "@/types/domain";
+import { Role, type User } from "@/types/domain";
 import { AppBackground } from "@/components/premium/AppBackground";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { BorderBeam } from "@/components/premium/BorderBeam";
@@ -26,7 +26,7 @@ export type LoginKind = "admin" | "team";
 
 export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   const navigate = useNavigate();
-  const refreshMe = useAuthStore((s) => s.refreshMe);
+  const acceptSession = useAuthStore((s) => s.acceptSession);
   const logout = useAuthStore((s) => s.logout);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,10 +47,13 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
-      const { data } = await api.post<{ user?: unknown; accessToken?: string }>("/auth/login", values);
+      const { data } = await api.post<{ user: User; accessToken?: string }>(
+        "/auth/login",
+        values,
+      );
       if (data.accessToken) setAccessToken(data.accessToken);
-      await refreshMe();
-      const user = useAuthStore.getState().user;
+      acceptSession(data.user);
+      const user = data.user;
 
       if (!user) {
         setError("Could not load session. Try again.");

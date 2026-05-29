@@ -9,6 +9,7 @@ import { computeDelayedStatus, computePriority } from "../services/taskPriority"
 import { recordTaskStatusChange } from "../services/taskActivity";
 import { HttpError } from "../utils/httpError";
 import { notifyAssignedTaskTx, pulseAssigneesImmediate } from "../services/assignmentNotify";
+import { taskListInclude } from "../services/prismaSelects";
 
 export const tasksRouter = Router();
 
@@ -43,11 +44,7 @@ tasksRouter.get("/", async (req, res, next) => {
     const tasks = await prisma.task.findMany({
       where,
       orderBy: [{ deadline: "asc" }, { createdAt: "desc" }],
-      include: {
-        event: true,
-        assignedTo: { select: { id: true, name: true, email: true, team: true } },
-        assignedBy: { select: { id: true, name: true, email: true } },
-      },
+      include: taskListInclude,
     });
 
     res.json({ tasks });

@@ -171,7 +171,7 @@ export function TeamDashboardPage() {
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Signal inbox</h2>
             <p className="text-sm text-zinc-600">
-              Admin assignments appear here automatically (refreshes every few seconds).
+              Admin assignments appear here automatically when you&apos;re assigned.
               {notificationsUpdatedAt ? (
                 <span className="block text-[11px] text-zinc-500">
                   Last sync {new Date(notificationsUpdatedAt).toLocaleTimeString()}

@@ -29,8 +29,6 @@ export function RealtimeSync() {
       bumpNotifications();
     };
 
-    socket.on("connect", bumpAssignments);
-
     const bumpTasks = () => {
       void qc.invalidateQueries({ queryKey: ["tasks"] });
       void qc.invalidateQueries({ queryKey: ["my-tasks"] });

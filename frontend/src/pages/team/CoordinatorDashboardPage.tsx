@@ -48,11 +48,13 @@ export function CoordinatorDashboardPage() {
   const { data: entries = [], isLoading: loadingCal } = useQuery({
     queryKey: ["production-calendar-entries", from, to],
     queryFn: () => fetchEntries(from, to),
+    staleTime: 60_000,
   });
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ["tasks"],
     queryFn: fetchTasks,
+    staleTime: 60_000,
   });
 
   const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;

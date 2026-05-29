@@ -1,7 +1,9 @@
-/** Keep crew dashboards fresh even if realtime sockets drop on production. */
+/** Crew dashboards: cache briefly; sockets + manual refresh handle urgent updates. */
 export const crewLiveQueryOptions = {
-  refetchInterval: 8_000,
+  staleTime: 45_000,
+  gcTime: 5 * 60_000,
+  refetchInterval: 45_000,
   refetchOnWindowFocus: true,
-  refetchOnMount: "always" as const,
-  staleTime: 0,
+  refetchOnMount: true,
+  refetchOnReconnect: true,
 };

@@ -12,6 +12,7 @@ import { syncEventAssignmentsTx } from "../services/eventAssignment";
 import { notifyAllAssignedTasksTx, pulseAssigneesImmediate } from "../services/assignmentNotify";
 import { emitInstantCrewPulse, notifyAllCrewNewShoot } from "../services/crewNotify";
 import { emitTaskRefreshToOps } from "../realtime/socket";
+import { calendarTaskProgressSelect } from "../services/prismaSelects";
 
 export const productionCalendarRouter = Router();
 
@@ -26,6 +27,19 @@ const entryInclude = {
         include: {
           assignedTo: { select: { id: true, name: true, email: true, team: true } },
         },
+      },
+    },
+  },
+} satisfies Prisma.ShootCalendarEntryInclude;
+
+/** Lighter payload for dashboard widgets (status + deadlines only). */
+const entryDashboardInclude = {
+  createdBy: { select: { id: true, name: true, email: true } },
+  event: {
+    include: {
+      tasks: {
+        orderBy: [{ deadline: "asc" as const }],
+        select: calendarTaskProgressSelect,
       },
     },
   },
@@ -126,6 +140,7 @@ productionCalendarRouter.get("/entries", requireCoordinatorOrAdmin, async (req, 
       .object({
         from: isoDay,
         to: isoDay,
+        summary: z.enum(["1", "0"]).optional(),
       })
       .parse(req.query);
 
@@ -138,7 +153,7 @@ productionCalendarRouter.get("/entries", requireCoordinatorOrAdmin, async (req, 
         day: { gte: from, lte: to },
       },
       orderBy: [{ day: "asc" }, { createdAt: "asc" }],
-      include: entryInclude,
+      include: q.summary === "1" ? entryDashboardInclude : entryInclude,
     });
 
     res.json({ entries });

@@ -9,10 +9,9 @@ import { ShellLayout } from "@/layouts/ShellLayout";
 export function AdminLayout() {
   return (
     <ShellLayout
-      title="Studio command"
-      subtitle="Company-wide production overview"
+      title="Admin"
       links={[
-        { to: "/admin", label: "Mission overview", icon: LayoutDashboard },
+        { to: "/admin", label: "Overview", icon: LayoutDashboard },
         { to: "/admin/production-calendar", label: "Shoot calendar", icon: CalendarDays },
         { to: "/admin/deliverables-status", label: "Deliverables radar", icon: ListTodo },
         { to: "/admin/team", label: "People & access", icon: Users },

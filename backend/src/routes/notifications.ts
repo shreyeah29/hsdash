@@ -15,13 +15,14 @@ notificationsRouter.get("/", async (req, res, next) => {
       where: { userId: auth.userId },
       orderBy: { createdAt: "desc" },
       take: 80,
-      include: {
-        task: {
-          include: {
-            event: true,
-            assignedTo: { select: { id: true, name: true, email: true, team: true } },
-          },
-        },
+      select: {
+        id: true,
+        userId: true,
+        taskId: true,
+        title: true,
+        body: true,
+        read: true,
+        createdAt: true,
       },
     });
     res.json({ notifications });

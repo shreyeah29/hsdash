@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, Sparkles, PlusCircle } from "lucide-react";
+import { Heart, CalendarClock, AlertTriangle, CircleCheck, Hourglass, PlusCircle } from "lucide-react";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import type { Event, ShootCalendarEntry, Task } from "@/types/domain";
+import type { ShootCalendarEntry, Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
 import {
   GlassPanel,
@@ -22,12 +22,14 @@ async function fetchAdminData() {
   const from = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
   const to = `${now.getFullYear()}-${pad2(now.getMonth() + 2)}-${pad2(0)}`; // last day of current month
 
-  const [eventsRes, tasksRes, calRes] = await Promise.all([
-    api.get<{ events: Array<Event & { tasks: Task[] }> }>("/events"),
+  const [countRes, tasksRes, calRes] = await Promise.all([
+    api.get<{ count: number }>("/events/count"),
     api.get<{ tasks: Task[] }>("/tasks"),
-    api.get<{ entries: ShootCalendarEntry[] }>("/production-calendar/entries", { params: { from, to } }),
+    api.get<{ entries: ShootCalendarEntry[] }>("/production-calendar/entries", {
+      params: { from, to, summary: "1" },
+    }),
   ]);
-  return { events: eventsRes.data.events, tasks: tasksRes.data.tasks, entries: calRes.data.entries };
+  return { weddingCount: countRes.data.count, tasks: tasksRes.data.tasks, entries: calRes.data.entries };
 }
 
 export function AdminDashboardPage() {
@@ -48,7 +50,7 @@ export function AdminDashboardPage() {
     const total = tasks.length;
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
 
-    return { dueToday, overdue, completed, pending, weddings: (data?.events ?? []).length, completionRate, total };
+    return { dueToday, overdue, completed, pending, weddings: data?.weddingCount ?? 0, completionRate, total };
   }, [data]);
 
   const upcomingShoots = useMemo(() => {
@@ -98,17 +100,8 @@ export function AdminDashboardPage() {
         transition={{ duration: 0.45 }}
         className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
       >
-        <div className="max-w-2xl space-y-3">
-          <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-600">
-            <Sparkles className="h-3.5 w-3.5 text-violet-600" />
-            Wedding production OS
-          </p>
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-            Mission control for every celebration you&apos;re crafting.
-          </h1>
-          <p className="text-sm leading-relaxed text-zinc-600 md:text-base">
-            Live snapshot of commitments, risk, and throughput — tuned for calm mornings and decisive afternoons.
-          </p>
+        <div className="max-w-2xl">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Overview</h1>
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
@@ -124,10 +117,10 @@ export function AdminDashboardPage() {
           <div className="flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
             <ProgressRing value={isLoading ? 0 : stats.completionRate} size={92} stroke={7} />
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Delivery health</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Completion rate</p>
               <p className="mt-1 text-2xl font-semibold text-zinc-900">{isLoading ? "—" : `${stats.completionRate}%`}</p>
               <p className="text-xs text-zinc-600">
-                {stats.completed} sealed · {stats.total - stats.completed} in motion
+                {stats.completed} done · {stats.total - stats.completed} open
               </p>
             </div>
           </div>
@@ -140,7 +133,7 @@ export function AdminDashboardPage() {
         <AnimatedStatCard
           label="Active weddings"
           value={isLoading ? "—" : stats.weddings}
-          hint="Events on record"
+          hint="Weddings in system"
           icon={Heart}
           accent="violet"
           delay={0}
@@ -148,7 +141,7 @@ export function AdminDashboardPage() {
         <AnimatedStatCard
           label="Due today"
           value={isLoading ? "—" : stats.dueToday}
-          hint="Calendar-critical handoffs"
+          hint="Deadlines today"
           icon={CalendarClock}
           accent="cyan"
           delay={0.05}
@@ -156,7 +149,7 @@ export function AdminDashboardPage() {
         <AnimatedStatCard
           label="Overdue"
           value={isLoading ? "—" : stats.overdue}
-          hint="Needs coordinator heat"
+          hint="Past deadline"
           icon={AlertTriangle}
           accent="rose"
           delay={0.1}
@@ -164,7 +157,7 @@ export function AdminDashboardPage() {
         <AnimatedStatCard
           label="Completed"
           value={isLoading ? "—" : stats.completed}
-          hint="Momentum vault"
+          hint="Marked complete"
           icon={CircleCheck}
           accent="emerald"
           delay={0.15}
@@ -172,7 +165,7 @@ export function AdminDashboardPage() {
         <AnimatedStatCard
           label="Pending kickoff"
           value={isLoading ? "—" : stats.pending}
-          hint="Awaiting movement"
+          hint="Not started yet"
           icon={Hourglass}
           accent="amber"
           delay={0.2}
@@ -237,11 +230,11 @@ export function AdminDashboardPage() {
         <GlassPanel shine className="p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Priority runway</h2>
-              <p className="mt-1 text-sm text-zinc-600">Highest leverage deliverables across every crew.</p>
+              <h2 className="text-lg font-semibold text-zinc-900">Top priorities</h2>
+              <p className="mt-1 text-sm text-zinc-600">By urgency and deadline.</p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
-              Live queue · top {priorityQueue.length}
+              Showing {priorityQueue.length}
             </span>
           </div>
           <div className="space-y-3">
@@ -266,8 +259,7 @@ export function AdminDashboardPage() {
 
         <GlassPanel className="flex flex-col p-6 md:p-8">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-zinc-900">Team workload</h2>
-            <p className="mt-1 text-sm text-zinc-600">Open tasks per crew — where attention compounds.</p>
+            <h2 className="text-lg font-semibold text-zinc-900">Open tasks by team</h2>
           </div>
           <div className="flex flex-1 flex-col justify-center gap-6">
             {workload.map(([team, count], i) => (
@@ -280,7 +272,7 @@ export function AdminDashboardPage() {
               />
             ))}
             {!isLoading && workload.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-600">Workload charts populate once tasks spin up.</p>
+              <p className="py-10 text-center text-sm text-zinc-600">No open tasks yet.</p>
             ) : null}
           </div>
         </GlassPanel>

@@ -7,7 +7,6 @@ import { api } from "@/services/api";
 import { AnimatedStatCard } from "@/components/premium/AnimatedStatCard";
 import { BorderBeam } from "@/components/premium/BorderBeam";
 import { GlassPanel } from "@/components/premium/GlassPanel";
-import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
 import { Spotlight } from "@/components/premium/Spotlight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,14 +197,8 @@ export function TeamManagementPage() {
       <Spotlight className="rounded-3xl border border-zinc-200/80" glowColor="rgba(139, 92, 246, 0.08)">
         <div className="relative px-1 py-1 md:px-2 md:py-2">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">People & access</p>
-              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-                <GradientShimmerText>Roster command center</GradientShimmerText>
-              </h1>
-              <p className="text-sm leading-relaxed text-zinc-600">
-                Invite editors, seat coordinators, and curate studio defaults — crystal-clear roles without enterprise clutter.
-              </p>
+            <div className="max-w-2xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Team members</h1>
             </div>
             <Button variant="premium" className="rounded-xl px-6 py-6 text-[15px] shadow-glow" onClick={openCreate}>
               <UserPlus className="h-4 w-4" />
@@ -216,27 +209,27 @@ export function TeamManagementPage() {
       </Spotlight>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AnimatedStatCard label="Studio roster" value={stats.total} hint="Accounts provisioned" accent="violet" delay={0} icon={Users} />
+        <AnimatedStatCard label="Total members" value={stats.total} hint="All accounts" accent="violet" delay={0} icon={Users} />
         <AnimatedStatCard
-          label="Active seats"
+          label="Active"
           value={stats.active}
-          hint="Currently signing in"
+          hint="Can sign in"
           accent="emerald"
           delay={0.06}
           icon={Sparkles}
         />
-        <AnimatedStatCard label="Coordinators" value={stats.coordinators} hint="Routing specialists" accent="amber" delay={0.12} icon={Shield} />
-        <AnimatedStatCard label="Editors" value={stats.editors} hint="Creative throughput" accent="cyan" delay={0.18} icon={Mail} />
+        <AnimatedStatCard label="Coordinators" value={stats.coordinators} hint="Assignment leads" accent="amber" delay={0.12} icon={Shield} />
+        <AnimatedStatCard label="Editors" value={stats.editors} hint="Photo & video crew" accent="cyan" delay={0.18} icon={Mail} />
       </div>
 
       {isLoading ? (
-        <GlassPanel className="p-12 text-center text-sm text-zinc-600">Syncing roster…</GlassPanel>
+        <GlassPanel className="p-12 text-center text-sm text-zinc-600">Loading team…</GlassPanel>
       ) : null}
 
       {!isLoading && users.length === 0 ? (
         <GlassPanel className="p-14 text-center shine">
           <p className="font-medium text-zinc-900">No team members yet</p>
-          <p className="mt-2 text-sm text-zinc-600">Spin up your first editor or coordinator to unlock assignments.</p>
+          <p className="mt-2 text-sm text-zinc-600">Add an editor or coordinator to get started.</p>
           <Button variant="premium" className="mt-6 rounded-xl" onClick={openCreate}>
             Create first member
           </Button>
