@@ -31,6 +31,7 @@ enum TaskType {
   FULL_SET_PHOTOS
   CINEMATIC_VIDEO
   CINEMATIC_HIGHLIGHT
+  REELS
   TRADITIONAL_VIDEO
   ALBUM_DESIGN
   ALBUM_PRINT
@@ -99,10 +100,13 @@ model ShootCalendarEntry {
 
   clientName   String
   clientType   String   @default("")
+  clientContact String  @default("")
+  city         String   @default("")
   eventName    String   @default("")
   venue        String   @default("")
   startTime    String   @default("")
   endTime      String   @default("")
+  muhuruthamTime String @default("")
   photoTeam    String   @default("")
   videoTeam    String   @default("")
   addons       String   @default("")

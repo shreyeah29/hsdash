@@ -182,8 +182,8 @@ export function CreateDeliverableTasksDialog({
           <DialogTitle>Create deliverable tasks</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-zinc-600">
-          Spawns the standard deadline set (preview +7d, full photos +20d, videos +30/+45d, album +45d) and notifies
-          assigned editors immediately.
+          Spawns the standard deadline set from the event day — sneak peak +7d, full set +20d, cinematic & reels +20d,
+          traditional & album design +45d, album print +60d — and notifies assigned editors immediately.
           {calendarDay ? (
             <span className="mt-1 block font-medium text-violet-800">Also logs this shoot on {calendarDay}.</span>
           ) : null}

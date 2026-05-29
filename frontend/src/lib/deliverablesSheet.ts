@@ -6,9 +6,10 @@ export const SHEET_TASK_TYPES = [
   "DATA_COPY",
   "SNEAK_PEEK_PHOTOS",
   "FULL_SET_PHOTOS",
-  "CINEMATIC_HIGHLIGHT",
-  "ALBUM_DESIGN",
+  "CINEMATIC_VIDEO",
+  "REELS",
   "TRADITIONAL_VIDEO",
+  "ALBUM_DESIGN",
   "ALBUM_PRINT",
 ] as const;
 
@@ -23,11 +24,12 @@ export type DeliverableGroupDef = {
 /** One block per deliverable — assignee + status shown together (no wide table). */
 export const DELIVERABLE_GROUPS: DeliverableGroupDef[] = [
   { taskType: "DATA_COPY", title: "Data copy", team: Team.COORDINATOR_TEAM },
-  { taskType: "SNEAK_PEEK_PHOTOS", title: "Sneak peak photos", team: Team.PHOTO_TEAM },
+  { taskType: "SNEAK_PEEK_PHOTOS", title: "Sneak peak", team: Team.PHOTO_TEAM },
   { taskType: "FULL_SET_PHOTOS", title: "Full set photos", team: Team.PHOTO_TEAM },
-  { taskType: "CINEMATIC_HIGHLIGHT", title: "Cinematic highlight", team: Team.CINEMATIC_TEAM },
-  { taskType: "ALBUM_DESIGN", title: "Album design", team: Team.ALBUM_TEAM },
+  { taskType: "CINEMATIC_VIDEO", title: "Cinematic video", team: Team.CINEMATIC_TEAM },
+  { taskType: "REELS", title: "Reels", team: Team.CINEMATIC_TEAM },
   { taskType: "TRADITIONAL_VIDEO", title: "Traditional video", team: Team.TRADITIONAL_TEAM },
+  { taskType: "ALBUM_DESIGN", title: "Album design", team: Team.ALBUM_TEAM },
   { taskType: "ALBUM_PRINT", title: "Album print", team: Team.ALBUM_TEAM },
 ];
 

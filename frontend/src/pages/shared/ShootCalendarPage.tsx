@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
+import { ShootCalendarExportTab } from "@/components/admin/ShootCalendarExportTab";
 
 type TimeParts = { hour: number; minute: number; ampm: "AM" | "PM" };
 
@@ -138,10 +139,13 @@ type FormState = {
   day: string;
   clientName: string;
   clientType: string;
+  clientContact: string;
+  city: string;
   eventName: string;
   venue: string;
   startTime: string;
   endTime: string;
+  muhuruthamTime: string;
   photoTeam: string;
   videoTeam: string;
   addons: string;
@@ -151,10 +155,13 @@ const emptyForm = (day: string): FormState => ({
   day,
   clientName: "",
   clientType: "",
+  clientContact: "",
+  city: "",
   eventName: "",
   venue: "",
   startTime: "",
   endTime: "",
+  muhuruthamTime: "",
   photoTeam: "",
   videoTeam: "",
   addons: "",
@@ -188,6 +195,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   }, [roster]);
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"calendar" | "export">("calendar");
   const [createTasksOpen, setCreateTasksOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -238,10 +246,13 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         day: form.day,
         clientName: form.clientName,
         clientType: form.clientType,
+        clientContact: form.clientContact,
+        city: form.city,
         eventName: form.eventName,
         venue: form.venue,
         startTime: form.startTime,
         endTime: form.endTime,
+        muhuruthamTime: form.muhuruthamTime,
         photoTeam: form.photoTeam,
         videoTeam: form.videoTeam,
         addons: form.addons,
@@ -361,10 +372,13 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       day: calendarDayKeyFromIso(entry.day),
       clientName: entry.clientName,
       clientType: entry.clientType,
+      clientContact: entry.clientContact ?? "",
+      city: entry.city ?? "",
       eventName: entry.eventName,
       venue: entry.venue ?? "",
       startTime: entry.startTime,
       endTime: entry.endTime,
+      muhuruthamTime: entry.muhuruthamTime ?? "",
       photoTeam: entry.photoTeam,
       videoTeam: entry.videoTeam,
       addons: entry.addons,
@@ -400,6 +414,34 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         </p>
       </motion.div>
 
+      {canMutate ? (
+        <div className="flex gap-2 border-b border-zinc-200 pb-1">
+          {(
+            [
+              ["calendar", "Calendar"],
+              ["export", "Export report"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
+              className={cn(
+                "rounded-t-xl px-4 py-2 text-sm font-medium transition-colors",
+                activeTab === id
+                  ? "bg-white text-violet-800 shadow-sm ring-1 ring-zinc-200"
+                  : "text-zinc-600 hover:text-zinc-900",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {canMutate && activeTab === "export" ? <ShootCalendarExportTab /> : null}
+
+      {(!canMutate || activeTab === "calendar") ? (
       <div className="grid gap-6 xl:grid-cols-[1fr_minmax(320px,400px)]">
         <GlassPanel shine className="overflow-hidden p-6 md:p-8">
           <div className="mb-6 flex flex-row flex-wrap items-center justify-between gap-4">
@@ -678,6 +720,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           </GlassPanel>
         </motion.div>
       </div>
+      ) : null}
 
       {canMutate ? (
         <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
@@ -828,12 +871,23 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 <div className="text-xs font-medium text-zinc-600">Event name</div>
                 <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
               </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-zinc-600">Client contact</div>
+                <Input value={form.clientContact} onChange={(ev) => setForm((f) => ({ ...f, clientContact: ev.target.value }))} placeholder="Phone / email" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-zinc-600">City</div>
+                <Input value={form.city} onChange={(ev) => setForm((f) => ({ ...f, city: ev.target.value }))} placeholder="City" />
+              </div>
               <div className="space-y-1 sm:col-span-2">
                 <div className="text-xs font-medium text-zinc-600">Venue</div>
                 <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
               </div>
               <TimePicker label="Start time" value={form.startTime} onChange={(next) => setForm((f) => ({ ...f, startTime: next }))} />
               <TimePicker label="End time" value={form.endTime} onChange={(next) => setForm((f) => ({ ...f, endTime: next }))} />
+              <div className="space-y-1 sm:col-span-2">
+                <TimePicker label="Muhurutham time" value={form.muhuruthamTime} onChange={(next) => setForm((f) => ({ ...f, muhuruthamTime: next }))} />
+              </div>
               <div className="space-y-1 sm:col-span-2">
                 <div className="text-xs font-medium text-zinc-600">Photo team (on-site)</div>
                 <textarea

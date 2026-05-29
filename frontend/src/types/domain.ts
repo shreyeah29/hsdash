@@ -98,10 +98,13 @@ export type ShootCalendarEntry = {
   day: string;
   clientName: string;
   clientType: string;
+  clientContact: string;
+  city: string;
   eventName: string;
   venue: string;
   startTime: string;
   endTime: string;
+  muhuruthamTime: string;
   photoTeam: string;
   videoTeam: string;
   addons: string;
