@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/core/api_client.dart';
 import 'package:hsdash_mobile/core/app_repository.dart';
+import 'package:hsdash_mobile/data/repositories/admin_repository.dart';
+import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/notification.dart';
-import 'package:hsdash_mobile/models/task.dart';
+import 'package:hsdash_mobile/models/task_activity.dart';
+import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
 final appRepositoryProvider = Provider<AppRepository>((ref) => AppRepository());
+
+final adminRepositoryProvider = Provider<AdminRepository>((ref) => AdminRepository());
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -46,10 +51,23 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {UserRole? expectedRole, bool teamPortal = false}) async {
     state = state.copyWith(clearError: true);
     try {
       final user = await _repo.login(email: email, password: password);
+      if (expectedRole != null && user.role != expectedRole) {
+        await _repo.logout();
+        final msg = expectedRole == UserRole.admin
+            ? 'This account is not an admin. Use Team login instead.'
+            : 'Use the correct login portal for this account.';
+        state = AuthState(status: AuthStatus.unauthenticated, error: msg);
+        return false;
+      }
+      if (teamPortal && user.role == UserRole.admin) {
+        await _repo.logout();
+        state = const AuthState(status: AuthStatus.unauthenticated, error: 'Admin accounts must use Admin login.');
+        return false;
+      }
       state = AuthState(status: AuthStatus.authenticated, user: user);
       return true;
     } on ApiException catch (e) {
@@ -69,12 +87,12 @@ class AuthController extends Notifier<AuthState> {
 
 final authControllerProvider = NotifierProvider<AuthController, AuthState>(AuthController.new);
 
-final adminOverviewProvider = FutureProvider.autoDispose<({OverviewStats stats, List<Task> tasks})>((ref) async {
-  return ref.read(appRepositoryProvider).fetchAdminOverview();
+final adminOverviewProvider = FutureProvider.autoDispose<AdminOverview>((ref) async {
+  return ref.read(adminRepositoryProvider).fetchOverview();
 });
 
-final tasksProvider = FutureProvider.autoDispose<List<Task>>((ref) async {
-  return ref.read(appRepositoryProvider).fetchTasks();
+final adminTaskActivityProvider = FutureProvider.autoDispose<List<TaskActivity>>((ref) async {
+  return ref.read(adminRepositoryProvider).fetchTaskActivity(limit: 200);
 });
 
 final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>((ref) async {
@@ -88,28 +106,7 @@ final unreadCountProvider = Provider.autoDispose<int>((ref) {
       );
 });
 
-enum TaskFilter { open, done, all }
+final teamMembersProvider = productionTeamMembersProvider;
 
-class TaskFilterNotifier extends Notifier<TaskFilter> {
-  @override
-  TaskFilter build() => TaskFilter.open;
-
-  void setFilter(TaskFilter value) => state = value;
-}
-
-final taskFilterProvider = NotifierProvider<TaskFilterNotifier, TaskFilter>(TaskFilterNotifier.new);
-
-final filteredTasksProvider = Provider.autoDispose<AsyncValue<List<Task>>>((ref) {
-  final filter = ref.watch(taskFilterProvider);
-  final tasks = ref.watch(tasksProvider);
-  return tasks.whenData((list) {
-    switch (filter) {
-      case TaskFilter.open:
-        return list.where((t) => t.status != 'COMPLETED').toList();
-      case TaskFilter.done:
-        return list.where((t) => t.status == 'COMPLETED').toList();
-      case TaskFilter.all:
-        return list;
-    }
-  });
-});
+/// @deprecated Use [productionCalendarEntriesProvider].
+final calendarEntriesProvider = productionCalendarEntriesProvider;

@@ -75,6 +75,14 @@ class ApiClient {
     }
   }
 
+  Future<void> deleteJson(String path) async {
+    try {
+      await _dio.delete(path);
+    } on DioException catch (e) {
+      throw _wrap(e);
+    }
+  }
+
   ApiException _wrap(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['message'] is String) {

@@ -395,7 +395,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
         <p className={cn("text-sm leading-relaxed md:text-[15px]", surfaceMuted)}>
           {canMutate ? (
             <>
-              Create the shoot and assign editors when you can. The moment you save, every crew member gets a notification instantly; assigned editors also receive their deliverable tasks right away — no need to wait for Emmanuel.
+              Create the shoot on the calendar first. Editors are notified only when you or Emmanuel assign them to deliverables — not when the shoot row is saved.
             </>
           ) : (
             <>

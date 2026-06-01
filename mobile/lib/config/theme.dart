@@ -10,6 +10,8 @@ class AppColors {
   static const textPrimary = Color(0xFF18181B);
   static const textMuted = Color(0xFF71717A);
   static const rose = Color(0xFFE11D48);
+  static const amber = Color(0xFFD97706);
+  static const orange = Color(0xFFEA580C);
   static const emerald = Color(0xFF059669);
 }
 

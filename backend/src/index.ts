@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/health", (_req, res) =>
-  res.json({ ok: true, features: { assignmentSyncV2: true, crewNotify: true } }),
+  res.json({ ok: true, features: { assignmentSyncV2: true, crewNotify: false } }),
 );
 
 app.use("/auth", authRouter);

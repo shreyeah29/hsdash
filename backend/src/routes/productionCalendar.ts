@@ -10,7 +10,6 @@ import { parseDayUtc } from "../utils/calendarDay";
 import { createEventTasksTx, type EventTaskAssignments } from "../services/eventTasks";
 import { syncEventAssignmentsTx } from "../services/eventAssignment";
 import { notifyAllAssignedTasksTx, pulseAssigneesImmediate } from "../services/assignmentNotify";
-import { emitInstantCrewPulse, notifyAllCrewNewShoot } from "../services/crewNotify";
 import { emitTaskRefreshToOps } from "../realtime/socket";
 import { calendarTaskProgressSelect } from "../services/prismaSelects";
 
@@ -124,12 +123,11 @@ async function buildAssignmentSummary(assigneeIds: Iterable<string>) {
   }));
 }
 
-function pulseAfterAdminSave(crewIds: Iterable<string>, assigneeIds: Iterable<string>) {
-  const assigneeSet = new Set(assigneeIds);
-  if (assigneeSet.size > 0) pulseAssigneesImmediate(assigneeSet);
-  const crewOnly: string[] = [];
-  for (const id of crewIds) if (!assigneeSet.has(id)) crewOnly.push(id);
-  if (crewOnly.length > 0) emitInstantCrewPulse(crewOnly);
+/** Editors get notified only via task assignment — not on shoot calendar saves. */
+function pulseAfterCalendarSave(assigneeIds: Iterable<string>) {
+  emitTaskRefreshToOps();
+  const ids = [...new Set(assigneeIds)];
+  if (ids.length > 0) pulseAssigneesImmediate(ids);
 }
 
 productionCalendarRouter.use(requireAuth);
@@ -239,12 +237,10 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
     const auth = req.auth!;
     const assignments = assignmentsFromBody(body);
     const assigneeIds = new Set<string>();
-    let crewIds: string[] = [];
 
     const entry = await prisma.$transaction(async (tx) => {
       let eventId: string | null = null;
       let clientName = body.clientName;
-      let firstTaskId: string | null = null;
 
       const shouldActivateDeliverables =
         body.createDeliverableTimeline || hasEditorAssignmentFields(body);
@@ -274,7 +270,6 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
 
         await notifyAllAssignedTasksTx(tx, tasks, clientName);
         for (const t of tasks) if (t.assignedToId) assigneeIds.add(t.assignedToId);
-        firstTaskId = tasks[0]?.id ?? null;
       }
 
       const created = await tx.shootCalendarEntry.create({
@@ -298,19 +293,10 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
         include: entryInclude,
       });
 
-      crewIds = await notifyAllCrewNewShoot(tx, {
-        clientName: body.clientName,
-        dayIso: body.day,
-        venue: body.venue,
-        eventName: body.eventName,
-        hasDeliverables: shouldActivateDeliverables,
-        taskId: firstTaskId,
-      });
-
       return created;
     });
 
-    pulseAfterAdminSave(crewIds, assigneeIds);
+    pulseAfterCalendarSave(assigneeIds);
 
     res.status(201).json({
       entry,
@@ -334,7 +320,6 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
     const auth = req.auth!;
     const explicitAssignments = explicitAssignmentsFromBody(body);
     const assigneeIds = new Set<string>();
-    let crewIds: string[] = [];
 
     const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
     if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
@@ -375,15 +360,6 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
 
         await notifyAllAssignedTasksTx(tx, tasks, ev.clientName);
         for (const t of tasks) if (t.assignedToId) assigneeIds.add(t.assignedToId);
-
-        crewIds = await notifyAllCrewNewShoot(tx, {
-          clientName: ev.clientName,
-          dayIso: dayStr,
-          venue: body.venue ?? existing.venue,
-          eventName: body.eventName ?? existing.eventName,
-          hasDeliverables: true,
-          taskId: tasks[0]?.id ?? null,
-        });
       } else if (eventId && (body.syncEditorAssignments === true || hasEditorAssignmentFields(body))) {
         const clientName = body.clientName ?? existing.clientName;
         const event = await tx.event.findUnique({ where: { id: eventId } });
@@ -438,7 +414,7 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
       });
     });
 
-    if (crewIds.length > 0 || assigneeIds.size > 0) pulseAfterAdminSave(crewIds, assigneeIds);
+    pulseAfterCalendarSave(assigneeIds);
 
     res.json({
       entry,
@@ -506,7 +482,6 @@ productionCalendarRouter.post(
         [TaskType.ALBUM_PRINT]: albumIds[1] ?? albumIds[0] ?? null,
       } satisfies Partial<Record<TaskType, string | null>>;
       const assigneeIds = new Set<string>();
-      let crewIds: string[] = [];
 
       const existing = await prisma.shootCalendarEntry.findUnique({ where: { id } });
       if (!existing) throw new HttpError(404, "Entry not found", "NOT_FOUND");
@@ -537,15 +512,6 @@ productionCalendarRouter.post(
         await notifyAllAssignedTasksTx(tx, tasks, ev.clientName);
         for (const t of tasks) if (t.assignedToId) assigneeIds.add(t.assignedToId);
 
-        crewIds = await notifyAllCrewNewShoot(tx, {
-          clientName: ev.clientName,
-          dayIso: shootDayKey(existing.day),
-          venue: existing.venue,
-          eventName: existing.eventName,
-          hasDeliverables: true,
-          taskId: tasks[0]?.id ?? null,
-        });
-
         return tx.shootCalendarEntry.update({
           where: { id },
           data: { eventId: ev.id },
@@ -553,7 +519,7 @@ productionCalendarRouter.post(
         });
       });
 
-      pulseAfterAdminSave(crewIds, assigneeIds);
+      pulseAfterCalendarSave(assigneeIds);
 
       res.status(201).json({ entry });
     } catch (e) {

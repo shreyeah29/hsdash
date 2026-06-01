@@ -3,10 +3,16 @@ String pad2(int n) => n.toString().padLeft(2, '0');
 String localDayKey(DateTime date) =>
     '${date.year}-${pad2(date.month)}-${pad2(date.day)}';
 
-String calendarDayKeyFromIso(String iso) {
-  final d = DateTime.parse(iso).toUtc();
+/// Stable `YYYY-MM-DD` for calendar grouping (matches backend `parseDayUtc`).
+String shootDayKey(String value) {
+  final s = value.trim();
+  if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(s)) return s;
+  final d = DateTime.parse(s).toUtc();
   return '${d.year}-${pad2(d.month)}-${pad2(d.day)}';
 }
+
+/// UTC calendar day from an ISO timestamp (task deadlines, etc.).
+String calendarDayKeyFromIso(String iso) => shootDayKey(iso);
 
 String formatFriendlyDay(String isoOrKey, {bool includeYear = false}) {
   final key = isoOrKey.contains('T') ? calendarDayKeyFromIso(isoOrKey) : isoOrKey;

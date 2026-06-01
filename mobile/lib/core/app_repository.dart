@@ -1,16 +1,39 @@
 import 'package:hsdash_mobile/core/api_client.dart';
 import 'package:hsdash_mobile/core/token_storage.dart';
+import 'package:hsdash_mobile/data/repositories/admin_repository.dart';
+import 'package:hsdash_mobile/data/repositories/production_calendar_repository.dart';
+import 'package:hsdash_mobile/data/repositories/tasks_repository.dart';
+import 'package:hsdash_mobile/data/repositories/users_repository.dart';
+import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/notification.dart';
 import 'package:hsdash_mobile/models/task.dart';
+import 'package:hsdash_mobile/models/task_activity.dart';
+import 'package:hsdash_mobile/models/tasks_query.dart';
+import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
+import 'package:hsdash_mobile/models/team_member.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
 class AppRepository {
-  AppRepository({ApiClient? api, TokenStorage? tokenStorage})
-      : _api = api ?? ApiClient(),
-        _tokenStorage = tokenStorage ?? TokenStorage();
+  AppRepository({
+    ApiClient? api,
+    TokenStorage? tokenStorage,
+    AdminRepository? admin,
+    TasksRepository? tasks,
+    ProductionCalendarRepository? productionCalendar,
+    UsersRepository? users,
+  })  : _api = api ?? ApiClient(),
+        _tokenStorage = tokenStorage ?? TokenStorage(),
+        _admin = admin ?? AdminRepository(api: api),
+        _tasks = tasks ?? TasksRepository(api: api),
+        _productionCalendar = productionCalendar ?? ProductionCalendarRepository(api: api),
+        _users = users ?? UsersRepository(api: api);
 
   final ApiClient _api;
   final TokenStorage _tokenStorage;
+  final AdminRepository _admin;
+  final TasksRepository _tasks;
+  final ProductionCalendarRepository _productionCalendar;
+  final UsersRepository _users;
 
   Future<User> login({required String email, required String password}) async {
     final data = await _api.postJson('/auth/login', body: {
@@ -47,28 +70,16 @@ class AppRepository {
     await _tokenStorage.clear();
   }
 
-  Future<({OverviewStats stats, List<Task> tasks})> fetchAdminOverview() async {
-    final data = await _api.getJson('/admin/overview');
-    final statsJson = data['stats'] as Map<String, dynamic>? ?? {};
-    final tasksJson = data['tasks'] as List<dynamic>? ?? [];
-    return (
-      stats: OverviewStats.fromJson(statsJson),
-      tasks: tasksJson.map((e) => Task.fromJson(e as Map<String, dynamic>)).toList(),
-    );
-  }
+  Future<AdminOverview> fetchAdminOverview() => _admin.fetchOverview();
 
-  Future<List<Task>> fetchTasks() async {
-    final data = await _api.getJson('/tasks');
-    final list = data['tasks'] as List<dynamic>? ?? [];
-    return list.map((e) => Task.fromJson(e as Map<String, dynamic>)).toList();
-  }
+  Future<List<TaskActivity>> fetchAdminTaskActivity({int limit = 100}) =>
+      _admin.fetchTaskActivity(limit: limit);
 
-  Future<Task> updateTaskStatus(String id, String status) async {
-    final data = await _api.putJson('/tasks/$id/status', body: {'status': status});
-    final taskJson = data['task'] as Map<String, dynamic>?;
-    if (taskJson == null) throw ApiException('Missing task in response');
-    return Task.fromJson(taskJson);
-  }
+  Future<void> clearProductionData() => _admin.clearProductionData();
+
+  Future<List<Task>> fetchTasks({TasksQuery? query}) => _tasks.fetchTasks(query: query);
+
+  Future<Task> updateTaskStatus(String id, String status) => _tasks.updateStatus(id, status);
 
   Future<List<AppNotification>> fetchNotifications() async {
     final data = await _api.getJson('/notifications');
@@ -83,4 +94,14 @@ class AppRepository {
   Future<void> markAllNotificationsRead() async {
     await _api.postJson('/notifications/read-all');
   }
+
+  Future<List<TeamMember>> fetchTeamMembers() => _productionCalendar.fetchTeamMembers();
+
+  Future<List<ShootCalendarEntry>> fetchCalendarEntries({required String from, required String to}) =>
+      _productionCalendar.fetchEntries(from: from, to: to);
+
+  Future<List<User>> fetchUsers() => _users.fetchUsers();
+
+  Future<Task> updateTaskAssignee(String id, String? assignedToId) =>
+      _tasks.updateAssignee(id, assignedToId);
 }

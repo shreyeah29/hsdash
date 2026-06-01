@@ -15,9 +15,13 @@ export async function activeCrewUserIds(tx?: Tx): Promise<string[]> {
   return users.map((u) => u.id);
 }
 
+/**
+ * @deprecated Shoot calendar saves no longer broadcast to all crew.
+ * Editors are notified only when a deliverable task is assigned to them.
+ */
 export async function notifyAllCrewNewShoot(
-  tx: Tx,
-  args: {
+  _tx: Tx,
+  _args: {
     clientName: string;
     dayIso: string;
     venue?: string;
@@ -26,30 +30,10 @@ export async function notifyAllCrewNewShoot(
     taskId?: string | null;
   },
 ): Promise<string[]> {
-  const crewIds = await activeCrewUserIds(tx);
-  const venueBit = args.venue?.trim() ? ` · ${args.venue.trim()}` : "";
-  const eventBit = args.eventName?.trim() ? ` (${args.eventName.trim()})` : "";
-  const pipelineBit = args.hasDeliverables
-    ? " Deliverable deadlines are live — check your tasks when assigned."
-    : " Post-production timeline not started yet.";
-
-  const body = `${args.clientName}${eventBit} on ${args.dayIso}${venueBit}.${pipelineBit}`;
-
-  for (const userId of crewIds) {
-    await tx.userNotification.create({
-      data: {
-        userId,
-        taskId: args.taskId ?? null,
-        title: "New shoot on the calendar",
-        body,
-      },
-    });
-  }
-
-  return crewIds;
+  return [];
 }
 
-/** Push socket + notification refresh to crew (and ops rooms). */
+/** @deprecated Use assignment-only pulses (`pulseAssigneesImmediate`). */
 export function emitInstantCrewPulse(userIds: Iterable<string>) {
   emitTaskRefreshToOps();
   const seen = new Set<string>();
@@ -59,6 +43,5 @@ export function emitInstantCrewPulse(userIds: Iterable<string>) {
     emitNotificationRefresh(userId);
     emitToUser(userId, "notification:new");
     emitToUser(userId, "task:updated");
-    emitToUser(userId, "shoot:created");
   }
 }

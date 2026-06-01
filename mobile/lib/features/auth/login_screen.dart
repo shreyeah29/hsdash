@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/config/env.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/models/user.dart';
+
+enum LoginPortal { admin, team }
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, required this.portal});
+
+  final LoginPortal portal;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -17,6 +23,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _password = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+
+  bool get _isAdmin => widget.portal == LoginPortal.admin;
 
   @override
   void dispose() {
@@ -31,6 +39,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await ref.read(authControllerProvider.notifier).login(
           _email.text.trim(),
           _password.text,
+          expectedRole: _isAdmin ? UserRole.admin : null,
+          teamPortal: !_isAdmin,
         );
     if (mounted) setState(() => _loading = false);
   }
@@ -40,6 +50,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final error = ref.watch(authControllerProvider.select((s) => s.error));
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/login')),
+        title: Text(_isAdmin ? 'Admin login' : 'Team login'),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -55,38 +69,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'HS DASH',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                letterSpacing: 3,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textMuted,
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: (_isAdmin ? AppColors.violet : AppColors.emerald).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _isAdmin ? 'ADMIN PORTAL' : 'TEAM PORTAL',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                              color: _isAdmin ? AppColors.violet : AppColors.emerald,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
                           'Sign in',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Wedding production — same account as the web app.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textMuted,
-                              ),
+                          _isAdmin
+                              ? 'Studio overview, deliverables & team access.'
+                              : 'Coordinators assign work; editors update task status.',
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 28),
                         TextFormField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           autocorrect: false,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'you@studio.com',
-                          ),
+                          decoration: const InputDecoration(labelText: 'Email', hintText: 'you@studio.com'),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) return 'Email required';
                             if (!v.contains('@')) return 'Enter a valid email';
@@ -104,10 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: () => setState(() => _obscure = !_obscure),
                             ),
                           ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Password required';
-                            return null;
-                          },
+                          validator: (v) => v == null || v.isEmpty ? 'Password required' : null,
                           onFieldSubmitted: (_) => _submit(),
                         ),
                         if (error != null) ...[
@@ -117,23 +130,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _loading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isAdmin ? AppColors.violet : AppColors.emerald,
+                          ),
                           child: _loading
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
+                              ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Text('Enter dashboard'),
                         ),
                         const SizedBox(height: 20),
-                        Text(
-                          'API: $apiBaseUrl',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textMuted,
-                                fontSize: 11,
-                              ),
-                        ),
+                        Text('API: $apiBaseUrl', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                       ],
                     ),
                   ),
