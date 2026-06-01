@@ -30,7 +30,6 @@ class RealtimeClient {
 
     listen('task:updated');
     listen('production:cleared');
-    listen('shoot:created');
     listen('assignment:updated');
     listen('notification:new');
 

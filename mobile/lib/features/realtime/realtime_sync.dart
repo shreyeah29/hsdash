@@ -23,9 +23,6 @@ void handleRealtimeEvent(WidgetRef ref, String event) {
         ref.invalidate(usersProvider);
         ref.invalidate(productionTeamMembersProvider);
       }
-    case 'shoot:created':
-      _bumpAllProduction(ref);
-      ref.invalidate(notificationsProvider);
     case 'assignment:updated':
       _bumpAssignments(ref);
     case 'notification:new':

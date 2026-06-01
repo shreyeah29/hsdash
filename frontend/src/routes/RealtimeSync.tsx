@@ -48,11 +48,6 @@ export function RealtimeSync() {
 
     socket.on("task:updated", bumpAllProduction);
     socket.on("production:cleared", bumpAllProduction);
-
-    socket.on("shoot:created", () => {
-      bumpAllProduction();
-      bumpNotifications();
-    });
     socket.on("assignment:updated", bumpAssignments);
     socket.on("notification:new", bumpNotifications);
 
