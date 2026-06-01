@@ -4,6 +4,7 @@ import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/task_utils.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_data_copy_tab.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_providers.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
@@ -11,7 +12,6 @@ import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/shoot_calendar_panel.dart';
-import 'package:hsdash_mobile/features/coordinator/coordinator_pipeline_tab.dart';
 import 'package:hsdash_mobile/widgets/wedding_deliverables.dart';
 
 class CoordinatorShell extends ConsumerStatefulWidget {
@@ -34,17 +34,17 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.amber,
       onLogout: () => ref.read(authControllerProvider.notifier).logout(),
-      titles: const ['Home', 'Shoots', 'Pipeline', 'Data copy'],
+      titles: const ['Home', 'Shoots', 'Activity', 'Data copy'],
       destinations: const [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
-        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Pipeline'),
+        NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
         NavigationDestination(icon: Icon(Icons.sd_storage_outlined), selectedIcon: Icon(Icons.sd_storage), label: 'Data copy'),
       ],
       children: const [
         _HomeTab(),
         ShootCalendarPanel(mode: ShootCalendarMode.coordinator),
-        CoordinatorPipelineTab(),
+        AdminActivityTab(),
         CoordinatorDataCopyTab(),
       ],
     );
@@ -69,7 +69,7 @@ class _HomeTab extends ConsumerWidget {
           const DashboardHero(
             badge: 'Coordinator runway',
             title: 'Orchestrate shoots',
-            subtitle: 'Activate shoots from the calendar, assign editors there, then track progress on Pipeline.',
+            subtitle: 'Activate shoots from the calendar, assign editors there, then track team work on Activity.',
             accent: AppColors.amber,
             background: Color(0xFFFFFBEB),
           ),

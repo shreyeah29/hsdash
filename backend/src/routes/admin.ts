@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
+import { requireCoordinatorOrAdmin } from "../middleware/coordinator";
 import { Role } from "@prisma/client";
 import { HttpError } from "../utils/httpError";
 import { parseDayUtc } from "../utils/calendarDay";
@@ -17,7 +18,35 @@ import {
 
 export const adminRouter = Router();
 
-adminRouter.use(requireAuth, requireRole(Role.ADMIN));
+adminRouter.use(requireAuth);
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/** Ops visibility — admin and coordinator (Emmanuel) see the same team activity feed. */
+adminRouter.get("/task-activity", requireCoordinatorOrAdmin, async (req, res, next) => {
+  try {
+    const q = z
+      .object({
+        limit: z.coerce.number().min(1).max(200).optional().default(80),
+      })
+      .parse(req.query);
+
+    const rows = await prisma.taskActivity.findMany({
+      take: q.limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        task: { include: { event: true } },
+        actor: { select: { id: true, name: true, email: true, team: true } },
+      },
+    });
+
+    res.json({ activities: rows });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.use(requireRole(Role.ADMIN));
 
 const entryDashboardInclude = {
   createdBy: { select: { id: true, name: true, email: true } },
@@ -66,31 +95,6 @@ adminRouter.get("/overview", async (_req, res, next) => {
       tasks,
       entries: upcomingEntries,
     });
-  } catch (e) {
-    next(e);
-  }
-});
-
-const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-
-adminRouter.get("/task-activity", async (req, res, next) => {
-  try {
-    const q = z
-      .object({
-        limit: z.coerce.number().min(1).max(200).optional().default(80),
-      })
-      .parse(req.query);
-
-    const rows = await prisma.taskActivity.findMany({
-      take: q.limit,
-      orderBy: { createdAt: "desc" },
-      include: {
-        task: { include: { event: true } },
-        actor: { select: { id: true, name: true, email: true, team: true } },
-      },
-    });
-
-    res.json({ activities: rows });
   } catch (e) {
     next(e);
   }
