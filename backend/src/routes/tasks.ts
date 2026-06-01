@@ -71,15 +71,28 @@ tasksRouter.put("/:id/status", async (req, res, next) => {
     }
 
     const coordinatorActing = auth.role === Role.COORDINATOR;
-    if (!coordinatorActing) {
-      if (auth.role !== Role.EDITOR || task.assignedToId !== auth.userId) {
-        throw new HttpError(403, "Forbidden", "FORBIDDEN");
+    if (coordinatorActing) {
+      if (task.taskType !== TaskType.DATA_COPY) {
+        throw new HttpError(
+          403,
+          "Coordinators only update data copy status; assign editors on other deliverables",
+          "FORBIDDEN",
+        );
       }
+      if (task.assignedToId !== auth.userId) {
+        throw new HttpError(403, "This data copy task is not assigned to you", "FORBIDDEN");
+      }
+    } else if (auth.role !== Role.EDITOR || task.assignedToId !== auth.userId) {
+      throw new HttpError(403, "Forbidden", "FORBIDDEN");
     }
 
     const now = new Date();
     const nextStatus = TaskStatus[body.status as keyof typeof TaskStatus];
-    const status = computeDelayedStatus(nextStatus, task.deadline, now);
+    // Honor explicit Start / Mark done — do not downgrade IN_PROGRESS to DELAYED when overdue.
+    const status =
+      nextStatus === TaskStatus.IN_PROGRESS || nextStatus === TaskStatus.COMPLETED
+        ? nextStatus
+        : computeDelayedStatus(nextStatus, task.deadline, now);
     const priority = computePriority(task.deadline, now);
     const previousStatus = task.status;
 
