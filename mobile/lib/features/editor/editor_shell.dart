@@ -26,6 +26,7 @@ class _EditorShellState extends ConsumerState<EditorShell> {
     final unread = ref.watch(unreadCountProvider);
 
     return DashboardShell(
+      showHeader: true,
       user: widget.user,
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),

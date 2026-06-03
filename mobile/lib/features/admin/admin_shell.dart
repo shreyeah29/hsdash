@@ -31,12 +31,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   @override
   Widget build(BuildContext context) {
     return DashboardShell(
-      user: widget.user,
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.violet,
-      onLogout: () => ref.read(authControllerProvider.notifier).logout(),
-      titles: const ['Overview', 'Deadlines', 'Shoots', 'Activity', 'Team'],
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Overview'),
         NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
@@ -76,7 +73,6 @@ class _OverviewTab extends ConsumerWidget {
           DashboardHero(
             badge: 'Admin dashboard',
             title: greeting,
-            subtitle: 'Deliverables and upcoming shoots from GET /admin/overview.',
             leading: profile != null
                 ? WorkspaceProfileMenuButton(
                     profile: profile,
@@ -128,11 +124,11 @@ class _OverviewBody extends StatelessWidget {
           childAspectRatio: 1.42,
           children: [
             DashboardStatCard(label: 'Weddings', value: '${data.stats.weddings}'),
-            DashboardStatCard(label: 'Shoots', value: '${data.stats.shootCount}', hint: '${data.stats.eventCount} events', accent: AppColors.cyan),
+            DashboardStatCard(label: 'Shoots', value: '${data.stats.shootCount}', accent: AppColors.cyan),
             DashboardStatCard(label: 'Due today', value: '${data.stats.dueToday}', accent: AppColors.cyan),
             DashboardStatCard(label: 'Overdue', value: '${data.stats.overdue}', accent: AppColors.rose),
-            DashboardStatCard(label: 'Open', value: '${data.stats.open}', hint: '${data.stats.pending} pending'),
-            DashboardStatCard(label: 'Completion', value: '${data.stats.completionRate}%', hint: '${data.stats.completed} done', accent: AppColors.emerald),
+            DashboardStatCard(label: 'Open', value: '${data.stats.open}'),
+            DashboardStatCard(label: 'Completion', value: '${data.stats.completionRate}%', accent: AppColors.emerald),
           ],
         ),
         if (upcomingShoots.isNotEmpty) ...[

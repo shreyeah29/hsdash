@@ -7,53 +7,61 @@ import 'package:hsdash_mobile/models/user.dart';
 class DashboardShell extends StatelessWidget {
   const DashboardShell({
     super.key,
-    required this.user,
     required this.tabIndex,
     required this.onTabChanged,
     required this.destinations,
-    required this.titles,
     required this.accent,
-    required this.onLogout,
     required this.children,
+    this.user,
+    this.titles,
+    this.onLogout,
+    this.showHeader = false,
   });
 
-  final User user;
   final int tabIndex;
   final ValueChanged<int> onTabChanged;
   final List<NavigationDestination> destinations;
-  final List<String> titles;
   final Color accent;
-  final VoidCallback onLogout;
   final List<Widget> children;
+  final User? user;
+  final List<String>? titles;
+  final VoidCallback? onLogout;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: appLightChromeOverlayStyle,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          centerTitle: false,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titles[tabIndex], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              Text(
-                '${user.roleLabel} · ${user.name}',
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w400),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(icon: const Icon(Icons.logout), onPressed: onLogout),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(3),
-            child: Container(height: 3, color: accent.withValues(alpha: 0.85)),
-          ),
+        backgroundColor: AppColors.surface,
+        appBar: showHeader && user != null && titles != null && onLogout != null
+            ? AppBar(
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                centerTitle: false,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titles![tabIndex], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(
+                      '${user!.roleLabel} · ${user!.name}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w400),
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(icon: const Icon(Icons.logout), onPressed: onLogout),
+                ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(3),
+                  child: Container(height: 3, color: accent.withValues(alpha: 0.85)),
+                ),
+              )
+            : null,
+        body: SafeArea(
+          bottom: false,
+          child: IndexedStack(index: tabIndex, children: children),
         ),
-        body: IndexedStack(index: tabIndex, children: children),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tabIndex,
           onDestinationSelected: onTabChanged,
@@ -69,7 +77,7 @@ class DashboardHero extends StatelessWidget {
     super.key,
     required this.badge,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     this.accent = AppColors.violet,
     this.background = AppColors.violetLight,
     this.leading,
@@ -77,7 +85,7 @@ class DashboardHero extends StatelessWidget {
 
   final String badge;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final Color accent;
   final Color background;
   final Widget? leading;
@@ -108,8 +116,10 @@ class DashboardHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 6),
-                Text(subtitle, style: const TextStyle(color: AppColors.textMuted, height: 1.4)),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(subtitle!, style: const TextStyle(color: AppColors.textMuted, height: 1.4)),
+                ],
               ],
             ),
           ),

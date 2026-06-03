@@ -29,6 +29,7 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
   @override
   Widget build(BuildContext context) {
     return DashboardShell(
+      showHeader: true,
       user: widget.user,
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),

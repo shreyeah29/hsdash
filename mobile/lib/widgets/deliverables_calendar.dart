@@ -143,11 +143,6 @@ class _DeliverablesCalendarState extends State<DeliverablesCalendar> {
               subtitle: t.assigneeName ?? 'Unassigned',
             ),
           ),
-        const SizedBox(height: 12),
-        Text(
-          deliverableDeadlineRules.map((e) => '${e.$1} +${e.$2}d').join(' · '),
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-        ),
       ],
     );
   }
