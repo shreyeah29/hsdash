@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
 import 'package:hsdash_mobile/features/admin/team_management_tab.dart';
+import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/features/auth/workspace_profile_menu_button.dart';
 import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
@@ -58,8 +61,12 @@ class _OverviewTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overview = ref.watch(adminOverviewProvider);
+    final profile = ref.watch(adminWorkspaceProvider);
     final todayKey = localDayKey(DateTime.now());
     final friendlyToday = formatFriendlyDay(todayKey);
+    final greeting = profile != null
+        ? 'Hey ${profile.label}, today is $friendlyToday'
+        : 'Hey, today is $friendlyToday';
 
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(adminOverviewProvider),
@@ -68,8 +75,18 @@ class _OverviewTab extends ConsumerWidget {
         children: [
           DashboardHero(
             badge: 'Admin dashboard',
-            title: 'Hey, today is $friendlyToday',
+            title: greeting,
             subtitle: 'Deliverables and upcoming shoots from GET /admin/overview.',
+            leading: profile != null
+                ? WorkspaceProfileMenuButton(
+                    profile: profile,
+                    onSwitchProfile: () async {
+                      await ref.read(adminWorkspaceProvider.notifier).clear();
+                      if (context.mounted) context.go('/admin/profiles');
+                    },
+                    onLogout: () => ref.read(authControllerProvider.notifier).logout(),
+                  )
+                : null,
           ),
           const SizedBox(height: 20),
           overview.when(

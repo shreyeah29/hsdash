@@ -16,6 +16,7 @@ class ShootCalendarEntry {
     this.endTime,
     this.photoTeam,
     this.videoTeam,
+    this.muhuruthamTime,
     this.addons,
     this.tasks = const [],
   });
@@ -33,6 +34,7 @@ class ShootCalendarEntry {
   final String? endTime;
   final String? photoTeam;
   final String? videoTeam;
+  final String? muhuruthamTime;
   final String? addons;
   final List<Task> tasks;
 
@@ -63,6 +65,7 @@ class ShootCalendarEntry {
       endTime: json['endTime'] as String?,
       photoTeam: json['photoTeam'] as String?,
       videoTeam: json['videoTeam'] as String?,
+      muhuruthamTime: json['muhuruthamTime'] as String?,
       addons: json['addons'] as String?,
       tasks: tasksJson.map((e) => Task.fromJson(e as Map<String, dynamic>)).toList(),
     );

@@ -72,6 +72,7 @@ class DashboardHero extends StatelessWidget {
     required this.subtitle,
     this.accent = AppColors.violet,
     this.background = AppColors.violetLight,
+    this.leading,
   });
 
   final String badge;
@@ -79,6 +80,7 @@ class DashboardHero extends StatelessWidget {
   final String subtitle;
   final Color accent;
   final Color background;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -89,17 +91,28 @@ class DashboardHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            badge.toUpperCase(),
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: accent),
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 14),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  badge.toUpperCase(),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: accent),
+                ),
+                const SizedBox(height: 8),
+                Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(subtitle, style: const TextStyle(color: AppColors.textMuted, height: 1.4)),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text(subtitle, style: const TextStyle(color: AppColors.textMuted, height: 1.4)),
         ],
       ),
     );

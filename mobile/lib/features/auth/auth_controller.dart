@@ -5,6 +5,7 @@ import 'package:hsdash_mobile/data/repositories/admin_repository.dart';
 import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/notification.dart';
 import 'package:hsdash_mobile/models/task_activity.dart';
+import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
@@ -43,9 +44,14 @@ class AuthController extends Notifier<AuthState> {
   Future<void> bootstrap() async {
     try {
       final user = await _repo.restoreSession();
-      state = user != null
-          ? AuthState(status: AuthStatus.authenticated, user: user)
-          : const AuthState(status: AuthStatus.unauthenticated);
+      if (user != null) {
+        state = AuthState(status: AuthStatus.authenticated, user: user);
+        if (user.role == UserRole.admin) {
+          await ref.read(adminWorkspaceProvider.notifier).restore();
+        }
+      } else {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
     } catch (_) {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
@@ -81,6 +87,7 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _repo.logout();
+    await ref.read(adminWorkspaceProvider.notifier).clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

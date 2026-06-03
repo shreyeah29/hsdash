@@ -31,7 +31,13 @@ class _TeamManagementTabState extends ConsumerState<TeamManagementTab> {
       color: AppColors.violet,
       onRefresh: () async => invalidateUsersCaches(ref),
       child: users.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.violet)),
+        loading: () => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(height: MediaQuery.sizeOf(context).height * 0.32),
+            const Center(child: CircularProgressIndicator(color: AppColors.violet)),
+          ],
+        ),
         error: (e, _) => ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [

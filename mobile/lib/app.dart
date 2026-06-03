@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/admin_shell.dart';
+import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/auth/auth_routes.dart';
 import 'package:hsdash_mobile/features/auth/login_choice_screen.dart';
 import 'package:hsdash_mobile/features/auth/login_screen.dart';
+import 'package:hsdash_mobile/features/auth/profile_selection_screen.dart';
+import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_shell.dart';
 import 'package:hsdash_mobile/features/editor/editor_shell.dart';
 import 'package:hsdash_mobile/features/realtime/realtime_sync.dart';
@@ -21,9 +24,23 @@ final authRouterRefreshProvider = Provider<AuthRouterRefresh>((ref) {
 class AuthRouterRefresh extends ChangeNotifier {
   AuthRouterRefresh(this._ref) {
     _ref.listen(authControllerProvider, (_, __) => notifyListeners());
+    _ref.listen(adminWorkspaceProvider, (_, __) => notifyListeners());
   }
 
   final Ref _ref;
+}
+
+String? _adminPostAuthRedirect(Ref ref, String location) {
+  final user = ref.read(authControllerProvider).user;
+  if (user?.role != UserRole.admin) return null;
+  final hasProfile = ref.read(adminWorkspaceProvider) != null;
+  final onProfiles = location == '/admin/profiles';
+  final onAdmin = location.startsWith('/admin');
+  if (!hasProfile && !onProfiles) return '/admin/profiles';
+  if (hasProfile && onProfiles) return '/admin';
+  if (hasProfile && location == '/login') return '/admin';
+  if (!hasProfile && onAdmin && !onProfiles) return '/admin/profiles';
+  return null;
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -34,17 +51,39 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
-      final loggingIn = state.matchedLocation.startsWith('/login');
+      final location = state.matchedLocation;
+      final loggingIn = location.startsWith('/login');
       if (auth.status == AuthStatus.unknown) return null;
       if (auth.status == AuthStatus.unauthenticated) return loggingIn ? null : '/login';
-      if (loggingIn) return homeRouteFor(auth.user!);
+      if (auth.status == AuthStatus.authenticated) {
+        final adminRedirect = _adminPostAuthRedirect(ref, location);
+        if (adminRedirect != null) return adminRedirect;
+        if (loggingIn) return homeRouteFor(auth.user!);
+      }
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginChoiceScreen()),
       GoRoute(path: '/login/admin', builder: (_, __) => const LoginScreen(portal: LoginPortal.admin)),
       GoRoute(path: '/login/team', builder: (_, __) => const LoginScreen(portal: LoginPortal.team)),
-      GoRoute(path: '/admin', builder: (_, __) => const _AdminShellRoute()),
+      GoRoute(
+        path: '/admin/profiles',
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          child: const ProfileSelectionScreen(),
+          transitionsBuilder: (context, animation, _, child) =>
+              FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: child),
+        ),
+      ),
+      GoRoute(
+        path: '/admin',
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          child: const _AdminShellRoute(),
+          transitionsBuilder: (context, animation, _, child) =>
+              FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: child),
+        ),
+      ),
       GoRoute(path: '/coordinator', builder: (_, __) => const _CoordinatorShellRoute()),
       GoRoute(path: '/editor', builder: (_, __) => const _EditorShellRoute()),
     ],

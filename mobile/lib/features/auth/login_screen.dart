@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/config/theme.dart';
+import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/auth/auth_routes.dart';
+import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/features/auth/auth_screen_background.dart';
-import 'package:hsdash_mobile/models/user.dart';
 
 enum LoginPortal { admin, team }
 
@@ -54,7 +55,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _loading = false);
     if (ok) {
       final user = ref.read(authControllerProvider).user;
-      if (user != null) context.go(homeRouteFor(user));
+      if (user == null) return;
+      if (user.role == UserRole.admin) {
+        await ref.read(adminWorkspaceProvider.notifier).restore();
+        final profile = ref.read(adminWorkspaceProvider);
+        if (!mounted) return;
+        context.go(profile != null ? '/admin' : '/admin/profiles');
+      } else {
+        context.go(homeRouteFor(user));
+      }
     }
   }
 

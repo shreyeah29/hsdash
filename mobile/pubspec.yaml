@@ -67,6 +67,9 @@ flutter:
     - assets/images/login_hero.png
     - assets/images/login_admin_bg.jpg
     - assets/images/login_team_bg.jpg
+    - assets/images/profiles/damini.png
+    - assets/images/profiles/harish.png
+    - assets/images/profiles/shankar.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
