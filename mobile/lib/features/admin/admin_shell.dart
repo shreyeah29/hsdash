@@ -5,19 +5,14 @@ import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
 import 'package:hsdash_mobile/features/admin/team_management_tab.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
-import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
 import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
-import 'package:hsdash_mobile/models/tasks_query.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/deliverables_calendar.dart';
 import 'package:hsdash_mobile/widgets/shoot_calendar_panel.dart';
 import 'package:hsdash_mobile/widgets/task_widgets.dart';
-import 'package:hsdash_mobile/widgets/create_deliverable_tasks_sheet.dart';
-import 'package:hsdash_mobile/widgets/wedding_deliverables.dart';
-
 class AdminShell extends ConsumerStatefulWidget {
   const AdminShell({super.key, required this.user});
 
@@ -38,10 +33,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.violet,
       onLogout: () => ref.read(authControllerProvider.notifier).logout(),
-      titles: const ['Overview', 'Radar', 'Deadlines', 'Shoots', 'Activity', 'Team'],
+      titles: const ['Overview', 'Deadlines', 'Shoots', 'Activity', 'Team'],
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Overview'),
-        NavigationDestination(icon: Icon(Icons.radar_outlined), selectedIcon: Icon(Icons.radar), label: 'Radar'),
         NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
         NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
@@ -49,7 +43,6 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       ],
       children: const [
         _OverviewTab(),
-        _RadarTab(),
         _DeliverablesCalendarTab(),
         ShootCalendarPanel(mode: ShootCalendarMode.admin),
         AdminActivityTab(),
@@ -115,7 +108,7 @@ class _OverviewBody extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.42,
           children: [
             DashboardStatCard(label: 'Weddings', value: '${data.stats.weddings}'),
             DashboardStatCard(label: 'Shoots', value: '${data.stats.shootCount}', hint: '${data.stats.eventCount} events', accent: AppColors.cyan),
@@ -189,88 +182,6 @@ class _ShootCard extends StatelessWidget {
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: entry.hasPostProduction ? AppColors.emerald : AppColors.amber),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _RadarTab extends ConsumerWidget {
-  const _RadarTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(tasksProvider);
-
-    return RefreshIndicator(
-      onRefresh: () async => invalidateTaskCaches(ref),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(
-                child: DashboardHero(
-                  badge: 'Deliverables radar',
-                  title: 'Team status sheet',
-                  subtitle: 'GET /tasks — filter by team or status, then browse weddings.',
-                ),
-              ),
-              IconButton.filled(
-                style: IconButton.styleFrom(backgroundColor: AppColors.violet),
-                tooltip: 'Create deliverable tasks',
-                onPressed: () => showCreateDeliverableTasksSheet(context),
-                icon: const Icon(Icons.add_task, color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const _RadarFilters(),
-          const SizedBox(height: 12),
-          tasks.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
-            error: (e, _) => ErrorPanel(message: '$e', onRetry: () => invalidateTaskCaches(ref)),
-            data: (list) => WeddingDeliverablesList(tasks: list),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Server-side filters for admin radar (`GET /tasks?team=&status=`).
-class _RadarFilters extends ConsumerWidget {
-  const _RadarFilters();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final query = ref.watch(tasksQueryProvider);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          ...TaskTeam.values.map((v) => Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: FilterChip(
-                  label: Text(TaskTeam.labels[v]!, style: const TextStyle(fontSize: 12)),
-                  selected: query.team == v,
-                  onSelected: (sel) => ref.read(tasksQueryProvider.notifier).setTeam(sel ? v : null),
-                ),
-              )),
-          ...TaskStatusFilter.values.map((v) => Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: FilterChip(
-                  label: Text(TaskStatusFilter.labels[v]!, style: const TextStyle(fontSize: 12)),
-                  selected: query.status == v,
-                  onSelected: (sel) => ref.read(tasksQueryProvider.notifier).setStatus(sel ? v : null),
-                ),
-              )),
-          if (!query.isEmpty)
-            ActionChip(
-              label: const Text('Clear'),
-              onPressed: () => ref.read(tasksQueryProvider.notifier).clearAll(),
-            ),
-        ],
       ),
     );
   }

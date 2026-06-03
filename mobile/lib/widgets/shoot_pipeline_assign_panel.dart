@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
@@ -101,10 +102,9 @@ class ShootPipelineAssignPanel extends ConsumerWidget {
 
     final currentId = laneTasks.isNotEmpty ? laneTasks.first.assignedToId : null;
 
-    final picked = await showModalBottomSheet<_EditorPick>(
-      context: context,
+    final picked = await showAppBottomSheet<_EditorPick>(
+      context,
       backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (ctx) => _LanePickerSheet(
         label: label,
         tasks: laneTasks,

@@ -44,7 +44,7 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
       children: const [
         _HomeTab(),
         ShootCalendarPanel(mode: ShootCalendarMode.coordinator),
-        AdminActivityTab(),
+        AdminActivityTab(accent: AppColors.amber),
         CoordinatorDataCopyTab(),
       ],
     );
@@ -101,7 +101,7 @@ class _HomeTab extends ConsumerWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 1.5,
+                        childAspectRatio: 1.42,
                         children: [
                           DashboardStatCard(label: 'Pending pipeline', value: '$pendingPipeline', hint: 'Awaiting kickoff', accent: AppColors.amber),
                           DashboardStatCard(label: 'Open deliverables', value: '${open.length}', hint: '$unassigned unassigned', accent: AppColors.orange),

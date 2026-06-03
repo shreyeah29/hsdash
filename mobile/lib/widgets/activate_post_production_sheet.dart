@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/models/post_production_editors.dart';
@@ -12,12 +13,8 @@ Future<ShootCalendarEntry?> showActivatePostProductionSheet(
   required String entryId,
   required String clientName,
 }) {
-  return showModalBottomSheet<ShootCalendarEntry>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+  return showAppBottomSheet<ShootCalendarEntry>(
+    context,
     builder: (ctx) => _ActivatePostProductionSheet(entryId: entryId, clientName: clientName),
   );
 }

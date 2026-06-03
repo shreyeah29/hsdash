@@ -104,7 +104,7 @@ class _TodayTab extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1.5,
+                    childAspectRatio: 1.42,
                     children: [
                       DashboardStatCard(label: 'Urgent', value: '${stats.urgent}', hint: '≤ 24 hours', accent: AppColors.amber),
                       DashboardStatCard(label: 'This week', value: '${stats.dueThisWeek}', hint: 'Stay ahead', accent: AppColors.cyan),

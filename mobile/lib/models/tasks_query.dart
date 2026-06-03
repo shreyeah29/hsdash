@@ -67,6 +67,9 @@ abstract final class TaskTeam {
   };
 
   static const values = [photo, cinematic, traditional, album, coordinator];
+
+  /// Human-readable label — prefer [StudioTeam.displayLabel] for UI.
+  static String labelFor(String? team) => labels[team] ?? team ?? '—';
 }
 
 /// `GET /tasks` query: `status`

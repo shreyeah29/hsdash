@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/features/events/events_providers.dart';
@@ -210,9 +211,8 @@ Future<bool?> showCreateDeliverableTasksSheet(
   BuildContext context, {
   String? calendarDay,
 }) {
-  return showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
+  return showAppBottomSheet<bool>(
+    context,
     builder: (ctx) => CreateDeliverableTasksSheet(calendarDay: calendarDay),
   );
 }

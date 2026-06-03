@@ -24,10 +24,14 @@ android {
         applicationId = "com.hsdash.hsdash_mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Pixel 4a / Apple Silicon emulators are arm64; skip armeabi-v7a (NDK/cmake fails on this host).
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     buildTypes {

@@ -29,7 +29,7 @@ class UserFormData {
       'password': password,
       'role': role,
       'team': needsTeam ? team : null,
-      'designation': needsTeam ? designation : null,
+      'designation': needsTeam && designation != null && designation!.isNotEmpty ? designation : null,
       'isActive': isActive,
     };
   }
@@ -40,7 +40,7 @@ class UserFormData {
       'email': email,
       'role': role,
       'team': needsTeam ? team : null,
-      'designation': needsTeam ? designation : null,
+      'designation': needsTeam && designation != null && designation!.isNotEmpty ? designation : null,
       'isActive': isActive,
     };
     if (password != null && password!.isNotEmpty) {

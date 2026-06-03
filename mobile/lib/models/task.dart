@@ -12,6 +12,7 @@ class Task {
     this.assigneeName,
     this.assignedToId,
     this.assignedTeam,
+    this.createdAt,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class Task {
   final String? assigneeName;
   final String? assignedToId;
   final String? assignedTeam;
+  final String? createdAt;
 
   bool get isDataCopy => taskType == TaskTypeKey.dataCopy;
 
@@ -61,7 +63,17 @@ class Task {
       assigneeName: assignee?['name']?.toString(),
       assignedToId: json['assignedToId']?.toString() ?? assignee?['id']?.toString(),
       assignedTeam: json['assignedTeam']?.toString(),
+      createdAt: json['createdAt']?.toString(),
     );
+  }
+
+  DateTime? get createdAtLocal {
+    if (createdAt == null || createdAt!.isEmpty) return null;
+    try {
+      return DateTime.parse(createdAt!).toLocal();
+    } catch (_) {
+      return null;
+    }
   }
 
   String get label =>

@@ -1,49 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/admin_shell.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/features/auth/auth_routes.dart';
 import 'package:hsdash_mobile/features/auth/login_choice_screen.dart';
 import 'package:hsdash_mobile/features/auth/login_screen.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_shell.dart';
 import 'package:hsdash_mobile/features/editor/editor_shell.dart';
 import 'package:hsdash_mobile/features/realtime/realtime_sync.dart';
-import 'package:hsdash_mobile/models/user.dart';
+/// Re-runs [GoRouter.redirect] when auth changes without recreating the router.
+final authRouterRefreshProvider = Provider<AuthRouterRefresh>((ref) {
+  final listenable = AuthRouterRefresh(ref);
+  ref.onDispose(listenable.dispose);
+  return listenable;
+});
+
+class AuthRouterRefresh extends ChangeNotifier {
+  AuthRouterRefresh(this._ref) {
+    _ref.listen(authControllerProvider, (_, __) => notifyListeners());
+  }
+
+  final Ref _ref;
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authControllerProvider);
+  final refresh = ref.watch(authRouterRefreshProvider);
 
   return GoRouter(
+    refreshListenable: refresh,
     initialLocation: '/login',
     redirect: (context, state) {
+      final auth = ref.read(authControllerProvider);
       final loggingIn = state.matchedLocation.startsWith('/login');
       if (auth.status == AuthStatus.unknown) return null;
       if (auth.status == AuthStatus.unauthenticated) return loggingIn ? null : '/login';
-      if (loggingIn) return _homeFor(auth.user!);
+      if (loggingIn) return homeRouteFor(auth.user!);
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginChoiceScreen()),
       GoRoute(path: '/login/admin', builder: (_, __) => const LoginScreen(portal: LoginPortal.admin)),
       GoRoute(path: '/login/team', builder: (_, __) => const LoginScreen(portal: LoginPortal.team)),
-      GoRoute(path: '/admin', builder: (_, __) => AdminShell(user: auth.user!)),
-      GoRoute(path: '/coordinator', builder: (_, __) => CoordinatorShell(user: auth.user!)),
-      GoRoute(path: '/editor', builder: (_, __) => EditorShell(user: auth.user!)),
+      GoRoute(path: '/admin', builder: (_, __) => const _AdminShellRoute()),
+      GoRoute(path: '/coordinator', builder: (_, __) => const _CoordinatorShellRoute()),
+      GoRoute(path: '/editor', builder: (_, __) => const _EditorShellRoute()),
     ],
   );
 });
 
-String _homeFor(User user) {
-  switch (user.role) {
-    case UserRole.admin:
-      return '/admin';
-    case UserRole.coordinator:
-      return '/coordinator';
-    case UserRole.editor:
-      return '/editor';
-    case UserRole.unknown:
-      return '/login';
+class _AdminShellRoute extends ConsumerWidget {
+  const _AdminShellRoute();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider.select((s) => s.user));
+    if (user == null) return const _AppBootSplash();
+    return AdminShell(user: user);
+  }
+}
+
+class _CoordinatorShellRoute extends ConsumerWidget {
+  const _CoordinatorShellRoute();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider.select((s) => s.user));
+    if (user == null) return const _AppBootSplash();
+    return CoordinatorShell(user: user);
+  }
+}
+
+class _EditorShellRoute extends ConsumerWidget {
+  const _EditorShellRoute();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider.select((s) => s.user));
+    if (user == null) return const _AppBootSplash();
+    return EditorShell(user: user);
+  }
+}
+
+/// Shown while auth/session is resolving.
+class _AppBootSplash extends StatelessWidget {
+  const _AppBootSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.surface,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: AppColors.violet),
+            SizedBox(height: 16),
+            Text('Loading…', style: TextStyle(color: AppColors.textMuted)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fallback when the router has not built the target page yet.
+class _AppRoutePlaceholder extends StatelessWidget {
+  const _AppRoutePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _AppBootSplash();
   }
 }
 
@@ -58,26 +127,19 @@ class HsDashApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'HS Dash',
       theme: buildAppTheme(),
+      scrollBehavior: const AppScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
+        // go_router can pass a null [child] while redirects run; never show an empty view.
+        final routeChild = child ?? const _AppRoutePlaceholder();
+
         if (auth.status == AuthStatus.unknown) {
-          return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: AppColors.violet),
-                  SizedBox(height: 16),
-                  Text('Loading…', style: TextStyle(color: AppColors.textMuted)),
-                ],
-              ),
-            ),
-          );
+          return const _AppBootSplash();
         }
-        if (auth.status == AuthStatus.authenticated && child != null) {
-          return RealtimeListener(child: child);
+        if (auth.status == AuthStatus.authenticated) {
+          return RealtimeListener(child: routeChild);
         }
-        return child ?? const SizedBox.shrink();
+        return routeChild;
       },
     );
   }

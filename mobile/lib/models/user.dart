@@ -34,11 +34,11 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      role: parseRole(json['role'] as String?),
-      team: json['team'] as String?,
+      id: json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      role: parseRole(json['role']?.toString()),
+      team: json['team']?.toString(),
       designation: json['designation'] as String?,
       isActive: json['isActive'] as bool? ?? true,
     );

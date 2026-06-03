@@ -15,6 +15,7 @@ class TaskActivity {
     this.eventDate,
     this.currentTaskStatus,
     this.assigneeId,
+    this.eventId,
   });
 
   final String id;
@@ -32,6 +33,7 @@ class TaskActivity {
   final String? eventDate;
   final String? currentTaskStatus;
   final String? assigneeId;
+  final String? eventId;
 
   factory TaskActivity.fromJson(Map<String, dynamic> json) {
     final task = json['task'] as Map<String, dynamic>?;
@@ -54,6 +56,7 @@ class TaskActivity {
       eventDate: event?['eventDate']?.toString(),
       currentTaskStatus: task?['status']?.toString(),
       assigneeId: task?['assignedToId']?.toString() ?? assignee?['id']?.toString(),
+      eventId: task?['eventId']?.toString() ?? event?['id']?.toString(),
     );
   }
 

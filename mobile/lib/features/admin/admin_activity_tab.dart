@@ -1,323 +1,590 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/activity_feed_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_providers.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
-import 'package:hsdash_mobile/models/task_activity.dart';
+import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
+import 'package:hsdash_mobile/models/team_member.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
-import 'package:hsdash_mobile/widgets/task_widgets.dart';
-import 'package:intl/intl.dart';
+import 'package:hsdash_mobile/widgets/ops_dashboard_widgets.dart';
 
-/// `GET /admin/task-activity` — grouped by team member with efficiency signals.
+/// Activity feed — shared by admin and coordinator.
 class AdminActivityTab extends ConsumerStatefulWidget {
-  const AdminActivityTab({super.key});
+  const AdminActivityTab({super.key, this.accent = AppColors.violet});
+
+  final Color accent;
 
   @override
   ConsumerState<AdminActivityTab> createState() => _AdminActivityTabState();
 }
 
-class _AdminActivityTabState extends ConsumerState<AdminActivityTab> {
-  ActivityDayFilter _filter = ActivityDayFilter.today;
-  final _expanded = <String>{};
+class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with SingleTickerProviderStateMixin {
+  static const _pageSize = 50;
+
+  late final TabController _tabs;
+  final _searchController = TextEditingController();
+  final _feedScroll = ScrollController();
+
+  ActivityPeriodFilter _period = ActivityPeriodFilter.today;
+  ActivityTypeFilter _type = ActivityTypeFilter.all;
+  String? _eventId;
+  String? _memberId;
+  String _search = '';
+  int _feedVisible = _pageSize;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 3, vsync: this);
+    _feedScroll.addListener(_onFeedScroll);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    _feedScroll.removeListener(_onFeedScroll);
+    _feedScroll.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onFeedScroll() {
+    if (_tabs.index != 0) return;
+    if (!_feedScroll.hasClients) return;
+    final pos = _feedScroll.position;
+    if (pos.pixels >= pos.maxScrollExtent - 240) {
+      setState(() => _feedVisible += _pageSize);
+    }
+  }
+
+  bool get _filtersActive => _eventId != null || _memberId != null || _type != ActivityTypeFilter.all;
+
+  OpsDashboardFilters get _filters => OpsDashboardFilters(
+        period: _period,
+        eventId: _eventId,
+        memberId: _memberId,
+        type: _type,
+        search: _search,
+      );
+
+  Future<void> _refresh() async {
+    ref.invalidate(adminActivityFeedProvider);
+    ref.invalidate(adminTaskActivityProvider);
+    ref.invalidate(tasksProvider);
+    ref.invalidate(teamMembersProvider);
+  }
+
+  void _resetPaging() => setState(() => _feedVisible = _pageSize);
+
+  Future<void> _openFilters(OpsDashboardData dashboard) async {
+    var eventId = _eventId;
+    var memberId = _memberId;
+    var type = _type;
+
+    await showAppBottomSheet<void>(
+      context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.paddingOf(ctx).bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 16),
+                  _SheetDropdown<String?>(
+                    label: 'Event',
+                    value: eventId,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('All events')),
+                      ...dashboard.eventOptions.map((e) => DropdownMenuItem(value: e.id, child: Text(e.label))),
+                    ],
+                    onChanged: (v) => setSheet(() => eventId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  _SheetDropdown<String?>(
+                    label: 'Team member',
+                    value: memberId,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('All members')),
+                      ...dashboard.memberOptions.map((m) => DropdownMenuItem(value: m.id, child: Text(m.label))),
+                    ],
+                    onChanged: (v) => setSheet(() => memberId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  _SheetDropdown<ActivityTypeFilter>(
+                    label: 'Activity type',
+                    value: type,
+                    items: const [
+                      DropdownMenuItem(value: ActivityTypeFilter.all, child: Text('All types')),
+                      DropdownMenuItem(value: ActivityTypeFilter.assigned, child: Text('Assigned')),
+                      DropdownMenuItem(value: ActivityTypeFilter.started, child: Text('Started')),
+                      DropdownMenuItem(value: ActivityTypeFilter.completed, child: Text('Completed')),
+                      DropdownMenuItem(value: ActivityTypeFilter.delayed, child: Text('Delayed')),
+                    ],
+                    onChanged: (v) => setSheet(() => type = v ?? ActivityTypeFilter.all),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _eventId = null;
+                              _memberId = null;
+                              _type = ActivityTypeFilter.all;
+                            });
+                            _resetPaging();
+                            Navigator.pop(ctx);
+                          },
+                          child: const Text('Clear'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(backgroundColor: widget.accent),
+                          onPressed: () {
+                            setState(() {
+                              _eventId = eventId;
+                              _memberId = memberId;
+                              _type = type;
+                            });
+                            _resetPaging();
+                            Navigator.pop(ctx);
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openMemberDetail(MemberOpsGroup member) {
+    showAppBottomSheet<void>(
+      context,
+      backgroundColor: OpsStyle.bg,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (_, scroll) {
+            return ListView(
+              controller: scroll,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                Center(
+                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    OpsAvatar(name: member.memberName, size: 48, accent: widget.accent),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(member.memberName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+                          Text(member.roleLabel, style: const TextStyle(fontSize: 14, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _DetailStat(value: '${member.openTasks}', label: 'Open'),
+                    _DetailStat(value: '${member.startedInPeriod}', label: 'Started', color: OpsStyle.blue),
+                    _DetailStat(value: '${member.completedInPeriod}', label: 'Done', color: OpsStyle.green),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (member.taskTimelines.isEmpty)
+                  const OpsEmptyState(title: 'No activity', subtitle: 'Nothing recorded in this period.', icon: Icons.history)
+                else
+                  ...member.taskTimelines.map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: OpsStyle.groupBox(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(t.eventName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            Text(t.taskName, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                            const SizedBox(height: 10),
+                            ...t.steps.asMap().entries.map(
+                                  (e) => OpsPipelineStep(entry: e.value, isLast: e.key == t.steps.length - 1),
+                                ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openEventDetail(EventOpsGroup event) {
+    showAppBottomSheet<void>(
+      context,
+      backgroundColor: OpsStyle.bg,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.35,
+          maxChildSize: 0.92,
+          builder: (_, scroll) {
+            return ListView(
+              controller: scroll,
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
+              children: [
+                Center(
+                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                  child: Text(event.eventName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+                ),
+                OpsGroupedSection(
+                  title: 'Activity',
+                  child: ColoredBox(
+                    color: OpsStyle.group,
+                    child: Column(
+                      children: event.entries.asMap().entries.map((e) {
+                        return OpsFeedRow(entry: e.value, showDivider: e.key < event.entries.length - 1);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(adminActivityFeedProvider);
+    final roster = ref.watch(teamMembersProvider);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(adminActivityFeedProvider);
-        ref.invalidate(adminTaskActivityProvider);
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const DashboardHero(
-            badge: 'Team pulse',
-            title: 'Activity by person',
-            subtitle: 'See who started or finished work today — spot late starts and idle assignees.',
-          ),
-          const SizedBox(height: 16),
-          SegmentedButton<ActivityDayFilter>(
-            segments: const [
-              ButtonSegment(value: ActivityDayFilter.today, label: Text('Today')),
-              ButtonSegment(value: ActivityDayFilter.week, label: Text('7 days')),
-              ButtonSegment(value: ActivityDayFilter.all, label: Text('All')),
-            ],
-            selected: {_filter},
-            onSelectionChanged: (s) => setState(() => _filter = s.first),
-          ),
-          const SizedBox(height: 16),
-          feed.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
-            error: (e, _) => ErrorPanel(
-              message: '$e',
-              onRetry: () {
-                ref.invalidate(adminActivityFeedProvider);
-                ref.invalidate(adminTaskActivityProvider);
-              },
-            ),
-            data: (data) {
-              final groups = buildMemberActivityGroups(
-                activities: data.activities,
-                openTasks: data.openTasks,
-                filter: _filter,
-              );
-              final summary = summarizeFeed(groups, _filter);
+    return ColoredBox(
+      color: OpsStyle.bg,
+      child: feed.when(
+        loading: () => Center(child: CircularProgressIndicator(color: widget.accent, strokeWidth: 2.5)),
+        error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: ErrorPanel(message: '$e', onRetry: _refresh)),
+        data: (data) {
+          final rosterList = roster.maybeWhen(data: (m) => m, orElse: () => <TeamMember>[]);
+          final dashboard = buildOpsDashboard(
+            activities: data.activities,
+            tasks: data.tasks,
+            filters: _filters,
+            roster: rosterList,
+          );
 
-              if (groups.isEmpty) {
-                return const EmptyPanel(message: 'No team activity in this period.');
-              }
-
-              final active = groups.where((g) => g.events.isNotEmpty).toList();
-              final quiet = groups.where((g) => g.events.isEmpty && g.staleTaskCount > 0).toList();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _SummaryStrip(summary: summary),
-                  const SizedBox(height: 16),
-                  if (active.isNotEmpty) ...[
-                    Text(
-                      _filter == ActivityDayFilter.today ? 'Active today' : 'With updates',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-                    ...active.map((g) => _MemberSection(
-                          group: g,
-                          expanded: _filter == ActivityDayFilter.today || _expanded.contains(g.memberId),
-                          onToggle: _filter == ActivityDayFilter.today
-                              ? () {}
-                              : () => setState(() {
-                                    if (_expanded.contains(g.memberId)) {
-                                      _expanded.remove(g.memberId);
-                                    } else {
-                                      _expanded.add(g.memberId);
-                                    }
-                                  }),
-                        )),
-                  ],
-                  if (quiet.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'No motion in this window',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textMuted.withValues(alpha: 0.9)),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Assigned work still pending — follow up on these editors.',
-                      style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    ...quiet.map((g) => _QuietMemberCard(group: g)),
-                  ],
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              OpsPeriodBar(
+                period: _period,
+                accent: widget.accent,
+                onChanged: (p) {
+                  setState(() => _period = p);
+                  _resetPaging();
+                },
+              ),
+              OpsSearchBar(
+                controller: _searchController,
+                onChanged: (s) {
+                  setState(() => _search = s);
+                  _resetPaging();
+                },
+                filterActive: _filtersActive,
+                onFilterTap: () => _openFilters(dashboard),
+                accent: widget.accent,
+              ),
+              const SizedBox(height: 8),
+              TabBar(
+                controller: _tabs,
+                labelColor: widget.accent,
+                unselectedLabelColor: AppColors.textMuted,
+                indicatorColor: widget.accent,
+                indicatorWeight: 2.5,
+                labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                tabs: const [
+                  Tab(text: 'Feed'),
+                  Tab(text: 'People'),
+                  Tab(text: 'Weddings'),
                 ],
-              );
-            },
-          ),
-        ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabs,
+                  children: [
+                    _FeedTab(
+                      entries: dashboard.timeline,
+                      visible: _feedVisible,
+                      scrollController: _feedScroll,
+                      onRefresh: _refresh,
+                      accent: widget.accent,
+                    ),
+                    _PeopleTab(members: dashboard.members, onRefresh: _refresh, onMemberTap: _openMemberDetail),
+                    _WeddingsTab(events: dashboard.events, onRefresh: _refresh, onEventTap: _openEventDetail),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _SummaryStrip extends StatelessWidget {
-  const _SummaryStrip({required this.summary});
-
-  final ActivityFeedSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        StatChip(label: 'Active', value: '${summary.activeMembers}', accent: AppColors.violet),
-        StatChip(label: 'Started', value: '${summary.started}', accent: AppColors.cyan),
-        StatChip(label: 'Finished', value: '${summary.completed}', accent: AppColors.emerald),
-        if (summary.lateStarts > 0)
-          StatChip(label: 'Late starts', value: '${summary.lateStarts}', accent: AppColors.rose),
-        if (summary.idleMembers > 0)
-          StatChip(label: 'No updates', value: '${summary.idleMembers}', accent: AppColors.amber),
-      ],
-    );
-  }
-}
-
-class _MemberSection extends StatelessWidget {
-  const _MemberSection({
-    required this.group,
-    required this.expanded,
-    required this.onToggle,
+class _FeedTab extends StatelessWidget {
+  const _FeedTab({
+    required this.entries,
+    required this.visible,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.accent,
   });
 
-  final MemberActivityGroup group;
-  final bool expanded;
-  final VoidCallback onToggle;
+  final List<OpsActivityEntry> entries;
+  final int visible;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    final team = teamLabel(group.teamKey);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          ListTile(
-            onTap: onToggle,
-            title: Text(group.memberName, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('$team · ${group.openTaskCount} open · ${group.staleTaskCount} not started'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (group.lateStartCount > 0)
-                  Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.rose.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('${group.lateStartCount} late', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.rose)),
-                  ),
-                Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Wrap(
-              spacing: 6,
-              children: [
-                _MiniStat(label: 'Started', value: group.startedCount),
-                _MiniStat(label: 'Done', value: group.completedCount),
-              ],
-            ),
-          ),
-          if (expanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Column(
-                children: group.events.isEmpty
-                    ? [
-                        const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text('No status changes in this period.', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                        ),
-                      ]
-                    : group.events.map((e) => _ActivityEventTile(activity: e)).toList(),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.label, required this.value});
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.violetLight, borderRadius: BorderRadius.circular(8)),
-      child: Text('$value $label', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.violet)),
-    );
-  }
-}
-
-class _QuietMemberCard extends StatelessWidget {
-  const _QuietMemberCard({required this.group});
-
-  final MemberActivityGroup group;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: const Color(0xFFFFFBEB),
-      child: ListTile(
-        leading: const Icon(Icons.hourglass_empty, color: AppColors.amber),
-        title: Text(group.memberName, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${teamLabel(group.teamKey)} · ${group.staleTaskCount} tasks still pending / delayed'),
-        trailing: Text('${group.openTaskCount} open', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.amber)),
-      ),
-    );
-  }
-}
-
-class _ActivityEventTile extends StatelessWidget {
-  const _ActivityEventTile({required this.activity});
-
-  final TaskActivity activity;
-
-  @override
-  Widget build(BuildContext context) {
-    final when = _formatWhen(activity.createdAt);
-    final verb = activity.isCompleteEvent
-        ? 'Finished'
-        : activity.isStartEvent
-            ? 'Started'
-            : 'Updated';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '$verb · ${activity.clientName ?? 'Wedding'}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
-              Text(when, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-            ],
-          ),
-          Text(activity.taskLabel, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          if (activity.isLateStart) ...[
-            const SizedBox(height: 6),
-            const Text(
-              'Late start — began after deadline or from delayed',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.rose),
+    if (entries.isEmpty) {
+      return RefreshIndicator(
+        color: accent,
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            OpsEmptyState(
+              title: 'No activity yet',
+              subtitle: 'Task updates will appear here as your team works.',
+              icon: Icons.history,
             ),
           ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (activity.previousStatus != null) ...[
-                TaskStatusChip(status: activity.previousStatus!),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
-                ),
-              ],
-              TaskStatusChip(status: activity.newStatus),
-            ],
+        ),
+      );
+    }
+
+    final shown = entries.take(visible).toList();
+    final hasMore = entries.length > visible;
+
+    return RefreshIndicator(
+      color: accent,
+      onRefresh: onRefresh,
+      child: ListView(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: [
+          OpsFeedTimeline(
+            entries: shown,
+            hasMore: hasMore,
+            remaining: entries.length - visible,
           ),
         ],
       ),
     );
   }
+}
 
-  String _formatWhen(String iso) {
-    try {
-      return DateFormat('h:mm a').format(DateTime.parse(iso).toLocal());
-    } catch (_) {
-      return iso;
+class _PeopleTab extends StatelessWidget {
+  const _PeopleTab({required this.members, required this.onRefresh, required this.onMemberTap});
+
+  final List<MemberOpsGroup> members;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<MemberOpsGroup> onMemberTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (members.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            OpsEmptyState(title: 'No people match', subtitle: 'Try adjusting your filters.', icon: Icons.people_outline),
+          ],
+        ),
+      );
     }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 12, bottom: 24),
+        children: [
+          OpsGroupedSection(
+            title: 'Team',
+            child: ColoredBox(
+              color: OpsStyle.group,
+              child: Column(
+                children: members.asMap().entries.map((e) {
+                  final m = e.value;
+                  return OpsPersonRow(
+                    name: m.memberName,
+                    role: m.roleLabel,
+                    openTasks: m.openTasks,
+                    lastActivity: m.lastActivity,
+                    showDivider: e.key < members.length - 1,
+                    onTap: () => onMemberTap(m),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeddingsTab extends StatelessWidget {
+  const _WeddingsTab({required this.events, required this.onRefresh, required this.onEventTap});
+
+  final List<EventOpsGroup> events;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<EventOpsGroup> onEventTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            OpsEmptyState(title: 'No wedding activity', subtitle: 'Events with updates will show here.', icon: Icons.event_outlined),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 12, bottom: 24),
+        children: [
+          OpsGroupedSection(
+            title: 'Weddings',
+            child: ColoredBox(
+              color: OpsStyle.group,
+              child: Column(
+                children: events.asMap().entries.map((e) {
+                  final ev = e.value;
+                  final people = {...ev.assignedMembers, ...ev.startedMembers, ...ev.completedMembers}.length;
+                  return OpsEventRow(
+                    eventName: ev.eventName,
+                    activityCount: ev.entries.length,
+                    memberCount: people,
+                    showDivider: e.key < events.length - 1,
+                    onTap: () => onEventTap(ev),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailStat extends StatelessWidget {
+  const _DetailStat({required this.value, required this.label, this.color});
+
+  final String value;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: OpsStyle.groupBox(),
+        child: Column(
+          children: [
+            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color ?? AppColors.textPrimary)),
+            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetDropdown<T> extends StatelessWidget {
+  const _SheetDropdown({required this.label, required this.value, required this.items, required this.onChanged});
+
+  final String label;
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T>(
+          value: value,
+          isExpanded: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: OpsStyle.bg,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ],
+    );
   }
 }
