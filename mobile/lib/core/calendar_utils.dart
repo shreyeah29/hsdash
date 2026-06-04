@@ -37,7 +37,7 @@ int daysBetweenKeys(String fromKey, String toKey) {
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const deliverableDeadlineRules = [
-  ('Data copy', 1),
+  ('Hard drives', 60),
   ('Sneak peak', 7),
   ('Full set photos', 20),
   ('Cinematic video', 20),

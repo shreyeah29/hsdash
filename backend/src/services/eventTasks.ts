@@ -12,7 +12,7 @@ export type AutoTaskTemplate = {
 
 export const DEFAULT_EVENT_TASKS: AutoTaskTemplate[] = [
   // Deadlines count from event (shoot) day — see production sheet
-  { taskType: TaskType.DATA_COPY, assignedTeam: Team.COORDINATOR_TEAM, daysAfterEvent: 1 },
+  { taskType: TaskType.DATA_COPY, assignedTeam: Team.COORDINATOR_TEAM, daysAfterEvent: 60 },
   { taskType: TaskType.SNEAK_PEEK_PHOTOS, assignedTeam: Team.PHOTO_TEAM, daysAfterEvent: 7 },
   { taskType: TaskType.FULL_SET_PHOTOS, assignedTeam: Team.PHOTO_TEAM, daysAfterEvent: 20 },
   { taskType: TaskType.CINEMATIC_VIDEO, assignedTeam: Team.CINEMATIC_TEAM, daysAfterEvent: 20 },

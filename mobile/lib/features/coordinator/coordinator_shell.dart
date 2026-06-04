@@ -17,6 +17,7 @@ import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/shoot_calendar_panel.dart';
+import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_tab.dart';
 import 'package:hsdash_mobile/widgets/wedding_deliverables.dart';
 
 class CoordinatorShell extends ConsumerStatefulWidget {
@@ -44,12 +45,14 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: 'Today'),
             NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
+            NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Weddings'),
             NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
             NavigationDestination(icon: Icon(Icons.work_outline), selectedIcon: Icon(Icons.work), label: 'Work'),
           ],
           children: [
             const EmmanuelTodayPendingTab(),
             const ShootCalendarPanel(mode: ShootCalendarMode.coordinator, monochrome: true),
+            WeddingsArchiveTab(accent: LaxmanPalette.black, canEdit: false, canActivate: true),
             AdminActivityTab(
               accent: LaxmanPalette.black,
               excludeMemberId: widget.user.id,
@@ -69,13 +72,15 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
       destinations: const [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
+        NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Weddings'),
         NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
         NavigationDestination(icon: Icon(Icons.sd_storage_outlined), selectedIcon: Icon(Icons.sd_storage), label: 'Data copy'),
       ],
-      children: const [
-        _HomeTab(),
-        ShootCalendarPanel(mode: ShootCalendarMode.coordinator),
-        AdminActivityTab(accent: AppColors.amber),
+      children: [
+        const _HomeTab(),
+        const ShootCalendarPanel(mode: ShootCalendarMode.coordinator),
+        WeddingsArchiveTab(accent: AppColors.amber, canEdit: false, canActivate: true),
+        const AdminActivityTab(accent: AppColors.amber),
         CoordinatorDataCopyTab(),
       ],
     );
@@ -144,7 +149,7 @@ class _HomeTab extends ConsumerWidget {
                       Text('Your data copy', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 6),
                       const Text(
-                        'Due 1 day after each event — update on the Data copy tab.',
+                        'Due 60 days after each event — update on the Hard drives tab.',
                         style: TextStyle(fontSize: 13, color: AppColors.textMuted),
                       ),
                       const SizedBox(height: 10),

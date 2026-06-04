@@ -99,6 +99,9 @@ model ShootCalendarEntry {
   day          DateTime
 
   clientName   String
+  brideName    String   @default("")
+  groomName    String   @default("")
+  phoneNumber  String   @default("")
   clientType   String   @default("")
   clientContact String  @default("")
   city         String   @default("")

@@ -579,7 +579,7 @@ Cannot delete ADMIN users.
 
 | `taskType` | Team | Days after event |
 |------------|------|------------------|
-| `DATA_COPY` | COORDINATOR_TEAM | +1 |
+| `DATA_COPY` | COORDINATOR_TEAM | +60 |
 | `SNEAK_PEEK_PHOTOS` | PHOTO_TEAM | +7 |
 | `FULL_SET_PHOTOS` | PHOTO_TEAM | +20 |
 | `CINEMATIC_VIDEO` | CINEMATIC_TEAM | +20 |

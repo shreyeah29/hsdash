@@ -36,12 +36,12 @@ class EmmanuelTodayPendingTab extends ConsumerWidget {
                 children: [
                   Text('TODAY', style: LaxmanType.sectionHead('')),
                   const SizedBox(height: 8),
-                  Text('Data copy', style: LaxmanType.display('Data copy', size: 36)),
+                  Text('Hard drives', style: LaxmanType.display('Hard drives', size: 36)),
                   const SizedBox(height: 8),
                   Text(
                     openCount == 0
-                        ? 'All data copy tasks are complete.'
-                        : '$openCount pending — due one day after each event.',
+                        ? 'All hard drives tasks are complete.'
+                        : '$openCount pending — due 60 days after each event.',
                     style: LaxmanType.body('', size: 15),
                   ),
                 ],
@@ -137,7 +137,7 @@ class _PendingDataCopyRowState extends ConsumerState<_PendingDataCopyRow> {
     final hint = deadlineHint(t.deadline);
     return LaxmanTaskRow(
       clientName: t.clientName ?? 'Wedding',
-      label: 'Data copy',
+      label: 'Hard drives',
       meta: '${hint.date} · ${hint.hint}',
       status: t.status,
       trailing: laxmanTaskAction(

@@ -82,6 +82,9 @@ class Task {
         return '${w[0].toUpperCase()}${w.substring(1)}';
       }).join(' ');
 
+  /// UI label for pipeline lanes (data copy → hard drives).
+  String get pipelineLabel => isDataCopy ? 'Hard drives' : label;
+
   static String _reqString(dynamic value, {String? fallback}) {
     if (value == null) return fallback ?? '';
     return value.toString();

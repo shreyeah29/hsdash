@@ -6,6 +6,9 @@ class ShootCalendarEntry {
     required this.id,
     required this.day,
     required this.clientName,
+    this.brideName,
+    this.groomName,
+    this.phoneNumber,
     this.eventId,
     this.clientType,
     this.clientContact,
@@ -24,6 +27,9 @@ class ShootCalendarEntry {
   final String id;
   final String day;
   final String clientName;
+  final String? brideName;
+  final String? groomName;
+  final String? phoneNumber;
   final String? eventId;
   final String? clientType;
   final String? clientContact;
@@ -55,6 +61,9 @@ class ShootCalendarEntry {
       id: json['id']?.toString() ?? '',
       day: _parseDay(json['day']),
       clientName: json['clientName']?.toString() ?? 'Wedding',
+      brideName: json['brideName'] as String?,
+      groomName: json['groomName'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
       eventId: json['eventId'] as String?,
       clientType: json['clientType'] as String?,
       clientContact: json['clientContact'] as String?,
@@ -83,6 +92,9 @@ class ShootFormData {
   const ShootFormData({
     required this.day,
     required this.clientName,
+    this.brideName = '',
+    this.groomName = '',
+    this.phoneNumber = '',
     this.clientType = '',
     this.clientContact = '',
     this.city = '',
@@ -98,6 +110,9 @@ class ShootFormData {
 
   final String day;
   final String clientName;
+  final String brideName;
+  final String groomName;
+  final String phoneNumber;
   final String clientType;
   final String clientContact;
   final String city;
@@ -113,6 +128,9 @@ class ShootFormData {
   Map<String, dynamic> toJson() => {
         'day': day,
         'clientName': clientName,
+        'brideName': brideName,
+        'groomName': groomName,
+        'phoneNumber': phoneNumber,
         'clientType': clientType,
         'clientContact': clientContact,
         'city': city,
@@ -130,6 +148,9 @@ class ShootFormData {
     return ShootFormData(
       day: dayKey,
       clientName: entry.clientName,
+      brideName: entry.brideName ?? '',
+      groomName: entry.groomName ?? '',
+      phoneNumber: entry.phoneNumber ?? '',
       clientType: entry.clientType ?? '',
       clientContact: entry.clientContact ?? '',
       city: entry.city ?? '',

@@ -7,6 +7,7 @@ import 'package:hsdash_mobile/features/admin/admin_home_tab.dart';
 import 'package:hsdash_mobile/features/admin/team_management_tab.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
+import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_tab.dart';
 import 'package:hsdash_mobile/widgets/shoot_calendar_panel.dart';
 
 class AdminShell extends ConsumerStatefulWidget {
@@ -32,6 +33,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Overview'),
         NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
+        NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Weddings'),
         NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
         NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Team'),
       ],
@@ -39,6 +41,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         AdminHomeTab(),
         AdminDeadlinesTab(),
         ShootCalendarPanel(mode: ShootCalendarMode.admin),
+        WeddingsArchiveTab(accent: AppColors.violet, canEdit: true, canActivate: false),
         AdminActivityTab(),
         TeamManagementTab(),
       ],

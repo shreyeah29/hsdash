@@ -16,8 +16,11 @@ abstract final class EditorLane {
   static const cinematic = ('Cinematic', 'CINEMATIC_TEAM', Icons.movie_outlined);
   static const traditional = ('Traditional', 'TRADITIONAL_TEAM', Icons.videocam_outlined);
   static const album = ('Album', 'ALBUM_TEAM', Icons.auto_stories_outlined);
+  static const hardDrives = ('Hard drives', 'COORDINATOR_TEAM', Icons.sd_storage_outlined);
 
-  static const all = [photo, cinematic, traditional, album];
+  static const all = [photo, cinematic, traditional, album, hardDrives];
+
+  static bool isHardDrivesLane(String teamKey) => teamKey == hardDrives.$2;
 }
 
 typedef LaneAssignCallback = void Function(String teamKey, String? memberId, String? memberName);
@@ -58,25 +61,50 @@ class ShootPipelineAssignPanel extends ConsumerWidget {
           childAspectRatio: 1.35,
           children: EditorLane.all.map((lane) {
             final laneTasks = _laneTasks(lane.$2);
+            final isHardDrives = EditorLane.isHardDrivesLane(lane.$2);
             return _LaneCard(
               label: lane.$1,
               icon: lane.$3,
               tasks: laneTasks,
-              onTap: () => _openLanePicker(context, ref, lane.$1, lane.$2, laneTasks),
+              onTap: () {
+                if (isHardDrives) {
+                  _openHardDrivesSheet(context, laneTasks);
+                } else {
+                  _openLanePicker(context, ref, lane.$1, lane.$2, laneTasks);
+                }
+              },
             );
           }).toList(),
         ),
-        Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            childrenPadding: const EdgeInsets.only(top: 4, bottom: 4),
-            title: const Text('All deliverable status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            subtitle: Text(
-              '${tasks.where((t) => t.status == 'COMPLETED').length} / ${tasks.length} done',
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+              splashColor: AppColors.violet.withValues(alpha: 0.08),
+              highlightColor: AppColors.violet.withValues(alpha: 0.06),
+              listTileTheme: const ListTileThemeData(
+                tileColor: Colors.white,
+                selectedTileColor: Color(0xFFF0EDFF),
+                iconColor: AppColors.textPrimary,
+              ),
             ),
-            children: tasks.map((t) => _CompactStatusRow(task: t)).toList(),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(top: 4, bottom: 4),
+              backgroundColor: Colors.white,
+              collapsedBackgroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(),
+              collapsedShape: const RoundedRectangleBorder(),
+              title: const Text('All pipeline tasks', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              subtitle: Text(
+                '${tasks.where((t) => t.status == 'COMPLETED').length} / ${tasks.length} done',
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+              children: tasks.map((t) => _CompactStatusRow(task: t)).toList(),
+            ),
           ),
         ),
       ],
@@ -114,8 +142,60 @@ class ShootPipelineAssignPanel extends ConsumerWidget {
     );
 
     if (picked == null || !context.mounted) return;
+    if (EditorLane.isHardDrivesLane(teamKey)) return;
     onLaneAssigned(teamKey, picked.id, picked.name);
     unawaited(_persistLane(ref, laneTasks, picked.id));
+  }
+
+  Future<void> _openHardDrivesSheet(BuildContext context, List<Task> laneTasks) async {
+    if (laneTasks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hard drives task for this event yet.')),
+      );
+      return;
+    }
+
+    final task = laneTasks.first;
+    await showAppBottomSheet<void>(
+      context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(12, 0, 12, MediaQuery.paddingOf(ctx).bottom + 12),
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Hard drives', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  Text(
+                    task.assigneeName ?? 'Coordinator',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Emmanuel updates status from his dashboard. Pipeline progress refreshes automatically.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.35),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: Text(task.pipelineLabel, style: const TextStyle(fontWeight: FontWeight.w600))),
+                      TaskStatusChip(status: task.status),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _persistLane(WidgetRef ref, List<Task> laneTasks, String? memberId) async {
@@ -309,8 +389,11 @@ class _LaneCard extends StatelessWidget {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
+        splashColor: AppColors.violet.withValues(alpha: 0.1),
+        highlightColor: AppColors.violet.withValues(alpha: 0.06),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(12),
@@ -347,7 +430,7 @@ class _LaneCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                tasks.isEmpty ? 'No tasks' : tasks.map((t) => t.label).join(' · '),
+                tasks.isEmpty ? 'No tasks' : tasks.map((t) => t.pipelineLabel).join(' · '),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 10, color: AppColors.textMuted, height: 1.2),
@@ -382,7 +465,7 @@ class _CompactStatusRow extends StatelessWidget {
           Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(task.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            child: Text(task.pipelineLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           if (task.assigneeName != null)
             Text(

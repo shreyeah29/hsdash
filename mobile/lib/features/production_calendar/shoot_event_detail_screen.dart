@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/shoot_time_utils.dart';
+import 'package:hsdash_mobile/core/weddings_archive_index.dart';
+import 'package:hsdash_mobile/features/production_calendar/client_related_shoots_provider.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/features/production_calendar/shoot_form_screen.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
@@ -68,14 +70,33 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
     }
   }
 
-  List<Task> get _deliverables => _entry.tasks.where((t) => !t.isDataCopy).toList();
+  List<Task> get _pipelineTasks => _entry.tasks;
 
   void _afterChange() {
     invalidateShootCalendarEntries(ref);
+    invalidateClientRelatedShoots(ref);
     widget.onMutated();
   }
 
+  void _openRelatedEvent(ShootCalendarEntry entry) {
+    if (entry.id == _entry.id) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShootEventDetailScreen(
+          entryId: entry.id,
+          initialEntry: entry,
+          canEdit: widget.canEdit,
+          canActivate: widget.canActivate,
+          canManageAssignments:
+              entry.hasPostProduction && (widget.canEdit || widget.canActivate),
+          onMutated: widget.onMutated,
+        ),
+      ),
+    );
+  }
+
   void _onLaneAssigned(String teamKey, String? memberId, String? memberName) {
+    if (teamKey == 'COORDINATOR_TEAM') return;
     setState(() {
       _entry = ShootCalendarEntry(
         id: _entry.id,
@@ -113,9 +134,11 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
     final e = _entry;
     final dayLabel = formatFriendlyDay(shootDayKey(e.day), includeYear: true);
     final times = splitShootTimes(e.startTime, e.endTime);
-    final deliverables = _deliverables;
-    final done = deliverables.where((t) => t.status == 'COMPLETED').length;
-    final progress = deliverables.isEmpty ? 0.0 : done / deliverables.length;
+    final pipelineTasks = _pipelineTasks;
+    final done = pipelineTasks.where((t) => t.status == 'COMPLETED').length;
+    final progress = pipelineTasks.isEmpty ? 0.0 : done / pipelineTasks.length;
+    final clientKey = weddingKeyForEntry(e);
+    final relatedAsync = ref.watch(clientRelatedShootsProvider(clientKey));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
@@ -138,21 +161,26 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
             if (_has(e.city)) _row('City', e.city!),
             if (_has(e.venue)) _row('Venue', e.venue!),
           ]),
+          relatedAsync.when(
+            data: (related) => _clientEventsSection(related, currentId: e.id),
+            loading: () => _clientEventsLoading(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           _detailSection('On-site crew', [
             _block('Photo team (on-site)', e.photoTeam),
             _block('Video team (on-site)', e.videoTeam),
             if (_has(e.addons)) _block('Notes / add-ons', e.addons),
           ]),
           if (e.hasPostProduction) ...[
-            _pipelineProgress(deliverables, done, progress),
+            _pipelineProgress(pipelineTasks, done, progress),
             const SizedBox(height: 8),
             if (widget.canManageAssignments)
               _detailSection('Crew by lane', [
-                ShootPipelineAssignPanel(tasks: deliverables, onLaneAssigned: _onLaneAssigned),
+                ShootPipelineAssignPanel(tasks: pipelineTasks, onLaneAssigned: _onLaneAssigned),
               ])
             else
               _detailSection('Deliverables', [
-                DeliverableTasksPanel(tasks: deliverables, allowAssign: false),
+                DeliverableTasksPanel(tasks: pipelineTasks, allowAssign: false),
               ]),
           ],
           const SizedBox(height: 24),
@@ -306,6 +334,188 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
       decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
       child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
+  }
+
+  Widget _clientEventsLoading() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Container(
+        height: 72,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _clientEventsSection(List<ShootCalendarEntry> related, {required String currentId}) {
+    final others = related.where((r) => r.id != currentId).length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'All events for this client',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.violet.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${related.length}',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.violet),
+                ),
+              ),
+            ],
+          ),
+          if (others == 0 && related.length == 1) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'No other shoots scheduled — this is the only event on record.',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.35),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < related.length; i++) ...[
+                  if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                  _clientEventTile(related[i], isCurrent: related[i].id == currentId),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _clientEventTile(ShootCalendarEntry entry, {required bool isCurrent}) {
+    final dayLabel = formatFriendlyDay(shootDayKey(entry.day), includeYear: true);
+    final eventLabel = _has(entry.eventName) ? entry.eventName! : 'Shoot';
+    final subtitle = [
+      if (_has(entry.venue)) entry.venue!,
+      if (_has(entry.city) && !_has(entry.venue)) entry.city!,
+    ].join(' · ');
+
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: (isCurrent ? AppColors.violet : AppColors.border).withValues(alpha: isCurrent ? 0.12 : 0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  shootDayKey(entry.day).split('-')[2],
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: isCurrent ? AppColors.violet : AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  _monthShort(int.parse(shootDayKey(entry.day).split('-')[1])),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isCurrent ? AppColors.violet : AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        eventLabel,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isCurrent ? AppColors.violet : AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (isCurrent)
+                      _pill('Current', AppColors.violet)
+                    else
+                      Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted.withValues(alpha: 0.7)),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(dayLabel, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+                const SizedBox(height: 6),
+                _pill(
+                  entry.hasPostProduction ? 'Post-production active' : 'Scheduled',
+                  entry.hasPostProduction ? AppColors.emerald : AppColors.amber,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (isCurrent) {
+      return Material(
+        color: AppColors.violet.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        child: content,
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _openRelatedEvent(entry),
+        borderRadius: BorderRadius.circular(16),
+        child: content,
+      ),
+    );
+  }
+
+  String _monthShort(int month) {
+    const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (month < 1 || month > 12) return '';
+    return names[month - 1];
   }
 
   Future<void> _activateAndAssign(BuildContext context) async {

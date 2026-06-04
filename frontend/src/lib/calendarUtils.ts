@@ -32,7 +32,7 @@ export function taskTypeLabel(taskType: string) {
 
 /** Standard deliverable offsets from event (shoot) day. */
 export const DELIVERABLE_DEADLINE_DAYS: { label: string; days: number }[] = [
-  { label: "Data copy", days: 1 },
+  { label: "Hard drives", days: 60 },
   { label: "Sneak peak", days: 7 },
   { label: "Full set photos", days: 20 },
   { label: "Cinematic video", days: 20 },

@@ -210,9 +210,119 @@ productionCalendarRouter.get("/entries/assigned", async (req, res, next) => {
   }
 });
 
+function resolveDisplayLabel(entry: {
+  brideName: string;
+  groomName: string;
+  clientName: string;
+}): string {
+  const b = entry.brideName.trim();
+  const g = entry.groomName.trim();
+  if (b && g) return `${b} & ${g}`;
+  if (b) return b;
+  if (g) return g;
+  return entry.clientName.trim();
+}
+
+function clientProfileKey(entry: {
+  brideName: string;
+  groomName: string;
+  clientName: string;
+  phoneNumber: string;
+  clientContact: string;
+  city: string;
+}): string {
+  const b = entry.brideName.trim();
+  const g = entry.groomName.trim();
+  if (b || g) {
+    return `w:${b}|${g}|${entry.phoneNumber.trim()}|${entry.clientContact.trim()}|${entry.city.trim()}`;
+  }
+  return `o:${entry.clientName.trim()}|${entry.phoneNumber.trim()}|${entry.clientContact.trim()}|${entry.city.trim()}`;
+}
+
+productionCalendarRouter.get("/clients", requireCoordinatorOrAdmin, async (req, res, next) => {
+  try {
+    const q = z.object({ search: z.string().max(200).optional() }).parse(req.query);
+    const needle = q.search?.trim().toLowerCase() ?? "";
+
+    const rows = await prisma.shootCalendarEntry.findMany({
+      orderBy: [{ updatedAt: "desc" }],
+      select: {
+        brideName: true,
+        groomName: true,
+        clientName: true,
+        clientType: true,
+        clientContact: true,
+        city: true,
+        venue: true,
+        phoneNumber: true,
+      },
+    });
+
+    const byKey = new Map<
+      string,
+      {
+        id: string;
+        displayLabel: string;
+        clientName: string;
+        clientType: string;
+        clientContact: string;
+        city: string;
+        venue: string;
+        brideName: string;
+        groomName: string;
+        phoneNumber: string;
+      }
+    >();
+
+    for (const row of rows) {
+      const name = row.clientName.trim();
+      if (!name && !row.brideName.trim() && !row.groomName.trim()) continue;
+      const id = clientProfileKey(row);
+      if (byKey.has(id)) continue;
+      byKey.set(id, {
+        id,
+        displayLabel: resolveDisplayLabel(row),
+        clientName: name || resolveDisplayLabel(row),
+        clientType: row.clientType,
+        clientContact: row.clientContact,
+        city: row.city,
+        venue: row.venue,
+        brideName: row.brideName,
+        groomName: row.groomName,
+        phoneNumber: row.phoneNumber,
+      });
+    }
+
+    let clients = [...byKey.values()].sort((a, b) => a.displayLabel.localeCompare(b.displayLabel));
+    if (needle) {
+      clients = clients.filter((c) => {
+        const hay = [
+          c.displayLabel,
+          c.clientName,
+          c.brideName,
+          c.groomName,
+          c.city,
+          c.phoneNumber,
+          c.clientContact,
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(needle);
+      });
+    }
+
+    res.json({ clients });
+  } catch (e) {
+    next(e);
+  }
+});
+
 const baseFields = z.object({
   day: isoDay,
   clientName: z.string().min(1),
+  brideName: z.string().max(200).optional().default(""),
+  groomName: z.string().max(200).optional().default(""),
+  phoneNumber: z.string().max(80).optional().default(""),
   clientType: z.string().max(200).optional().default(""),
   clientContact: z.string().max(200).optional().default(""),
   city: z.string().max(200).optional().default(""),
@@ -276,6 +386,9 @@ productionCalendarRouter.post("/entries", requireRole(Role.ADMIN), async (req, r
         data: {
           day: parseDayUtc(body.day),
           clientName: body.clientName,
+          brideName: body.brideName ?? "",
+          groomName: body.groomName ?? "",
+          phoneNumber: body.phoneNumber ?? "",
           clientType: body.clientType ?? "",
           clientContact: body.clientContact ?? "",
           city: body.city ?? "",
@@ -397,6 +510,9 @@ productionCalendarRouter.put("/entries/:id", requireRole(Role.ADMIN), async (req
         data: {
           ...(nextDay ? { day: nextDay } : {}),
           ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
+          ...(body.brideName !== undefined ? { brideName: body.brideName } : {}),
+          ...(body.groomName !== undefined ? { groomName: body.groomName } : {}),
+          ...(body.phoneNumber !== undefined ? { phoneNumber: body.phoneNumber } : {}),
           ...(body.clientType !== undefined ? { clientType: body.clientType } : {}),
           ...(body.clientContact !== undefined ? { clientContact: body.clientContact } : {}),
           ...(body.city !== undefined ? { city: body.city } : {}),

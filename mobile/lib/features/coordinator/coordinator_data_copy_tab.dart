@@ -9,7 +9,7 @@ import 'package:hsdash_mobile/models/tasks_query.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/task_widgets.dart';
 
-/// Coordinator (Emmanuel): update **data copy** only — due 1 day after the event.
+/// Coordinator (Emmanuel): update **hard drives** only — due 60 days after the event.
 class CoordinatorDataCopyTab extends ConsumerWidget {
   const CoordinatorDataCopyTab({super.key});
 
@@ -25,9 +25,9 @@ class CoordinatorDataCopyTab extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Data copy', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text('Hard drives', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               Text(
-                'Your SPOC task — due 1 day after each shoot. Mark progress here; admins see it on the dashboard.',
+                'Your SPOC task — due 60 days after each shoot. Mark progress here; pipeline updates live for admins.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
               ),
             ],
