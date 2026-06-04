@@ -15,7 +15,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "import-data": "tsx scripts/importData.ts"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +36,7 @@
     "node-cron": "^4.2.1",
     "prisma": "^6.19.3",
     "socket.io": "^4.8.3",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
