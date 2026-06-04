@@ -171,47 +171,40 @@ export async function runShootDataImport(filePath: string): Promise<ImportSummar
 
   const createdClientKeys = new Set<string>();
   const reusedClientKeys = new Set<string>();
-  const BATCH = 50;
 
-  for (let i = 0; i < mappedRows.length; i += BATCH) {
-    const batch = mappedRows.slice(i, i + BATCH);
+  for (const row of mappedRows) {
+    if (existingDuplicateKeys.has(row.duplicateKey)) {
+      summary.rowsSkipped += 1;
+      logs.push({
+        rowNumber: row.rowNumber,
+        sheetName: row.sheetName,
+        level: "skip",
+        message: "Event already exists in database (same client, date, and event)",
+      });
+      continue;
+    }
 
-    await prisma.$transaction(async (tx) => {
-      for (const row of batch) {
-        if (existingDuplicateKeys.has(row.duplicateKey)) {
-          summary.rowsSkipped += 1;
-          logs.push({
-            rowNumber: row.rowNumber,
-            sheetName: row.sheetName,
-            level: "skip",
-            message: "Event already exists in database (same client, date, and event)",
-          });
-          continue;
-        }
+    const storageKey = phoneStorageKey(row.input.phoneNumber || "");
+    const profile = clientProfiles.get(storageKey);
 
-        const storageKey = phoneStorageKey(row.input.phoneNumber || "");
-        const profile = clientProfiles.get(storageKey);
+    let input = row.input;
+    if (profile) {
+      input = applyExistingClientProfile(input, profile);
+      reusedClientKeys.add(storageKey);
+    } else {
+      createdClientKeys.add(storageKey);
+      clientProfiles.set(storageKey, {
+        clientName: input.clientName,
+        clientType: input.clientType || "",
+        clientContact: input.clientContact || "",
+        city: input.city || "",
+        phoneNumber: input.phoneNumber || "",
+      });
+    }
 
-        let input = row.input;
-        if (profile) {
-          input = applyExistingClientProfile(input, profile);
-          reusedClientKeys.add(storageKey);
-        } else {
-          createdClientKeys.add(storageKey);
-          clientProfiles.set(storageKey, {
-            clientName: input.clientName,
-            clientType: input.clientType || "",
-            clientContact: input.clientContact || "",
-            city: input.city || "",
-            phoneNumber: input.phoneNumber || "",
-          });
-        }
-
-        await createShootCalendarEntryTx(tx, input, admin.id);
-        summary.eventsCreated += 1;
-        existingDuplicateKeys.add(row.duplicateKey);
-      }
-    });
+    await createShootCalendarEntryTx(prisma, input, admin.id);
+    summary.eventsCreated += 1;
+    existingDuplicateKeys.add(row.duplicateKey);
   }
 
   summary.clientsCreated = createdClientKeys.size;

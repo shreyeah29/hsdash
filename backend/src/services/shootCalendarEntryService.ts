@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { prisma } from "../prisma/client";
 import { parseDayUtc } from "../utils/calendarDay";
 
 /** Payload aligned with Add Shoot Details / POST /production-calendar/entries */
@@ -27,12 +28,14 @@ export type ShootEntryCreateResult = {
   eventId: string | null;
 };
 
+type DbClient = Prisma.TransactionClient | typeof prisma;
+
 /**
  * Creates one shoot calendar row — same shape as manual Add Shoot Details
  * without activating post-production unless requested.
  */
 export async function createShootCalendarEntryTx(
-  tx: Prisma.TransactionClient,
+  tx: DbClient,
   input: ShootEntryCreateInput,
   createdById: string,
 ): Promise<ShootEntryCreateResult> {

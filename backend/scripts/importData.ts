@@ -1,4 +1,10 @@
 import "dotenv/config";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+
+// Ensure backend/.env wins over any partial dotenv injection (e.g. dotenvx omitting DATABASE_URL).
+config({ path: resolve(__dirname, "../.env"), override: true });
+
 import * as path from "path";
 import { prisma } from "../src/prisma/client";
 import { formatImportSummary, runShootDataImport } from "../src/services/importService";
