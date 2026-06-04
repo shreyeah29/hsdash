@@ -66,8 +66,8 @@ export function ShellLayout({
         >
           <div className="relative flex min-h-0 flex-1 flex-col">
             <div className="border-b border-zinc-200/80 p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">HS Dash</p>
-              <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
+              <img src="/hswf_logo_dark.png" alt="HSWF" className="h-7 w-auto object-contain" />
+              <h1 className="mt-3 text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
               <p className="mt-1 text-xs leading-relaxed text-zinc-600">
                 {subtitle ??
                   (variant === "coordinator"

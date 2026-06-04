@@ -9,6 +9,7 @@ import 'package:hsdash_mobile/features/auth/auth_routes.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/features/auth/auth_screen_background.dart';
+import 'package:hsdash_mobile/widgets/hswf_logo.dart';
 
 enum LoginPortal { admin, team }
 
@@ -111,6 +112,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Center(child: HswfLogo(height: 44, framed: true)),
+                          const SizedBox(height: 18),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
+import 'package:hsdash_mobile/widgets/hswf_logo.dart';
 
 /// Full-screen hero + overlaid sign-in. Routes: `/login/admin`, `/login/team`.
 class LoginChoiceScreen extends StatefulWidget {
@@ -109,47 +110,8 @@ class _TopBrand extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'HS',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF4338CA),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-        ),
+        const HswfLogo(height: 52, framed: true),
         const SizedBox(height: 20),
-        const Text(
-          'HS Dash',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 34,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -1,
-            height: 1.05,
-            shadows: [
-              Shadow(color: Color(0x80000000), blurRadius: 16, offset: Offset(0, 4)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
         Text(
           'Production operations for your studio',
           style: TextStyle(

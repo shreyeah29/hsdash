@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/app_brand.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/models/studio_team.dart';
 import 'package:hsdash_mobile/models/user_form.dart';
@@ -198,7 +199,7 @@ class _UserFormSheetState extends State<UserFormSheet> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Tasks and assignments filter by this team across HS Dash.',
+                  'Tasks and assignments filter by this team across ${AppBrand.name}.',
                   style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
                 const SizedBox(height: 10),

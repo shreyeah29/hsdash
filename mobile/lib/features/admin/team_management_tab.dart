@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/app_brand.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/users/users_providers.dart';
@@ -402,7 +403,7 @@ class _TeamMemberTile extends ConsumerWidget {
     final confirm = await showAppConfirmDialog(
       context,
       title: 'Remove team member?',
-      message: '${user.name} will lose access to HS Dash. This cannot be undone.',
+      message: '${user.name} will lose access to ${AppBrand.name}. This cannot be undone.',
       confirmLabel: 'Remove',
       confirmColor: AppColors.rose,
     );

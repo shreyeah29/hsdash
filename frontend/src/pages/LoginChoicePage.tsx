@@ -19,8 +19,12 @@ export function LoginChoicePage() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="mb-11 max-w-md text-center"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Wedding production</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 md:text-[2rem]">HS Dash</h1>
+          <img
+            src="/hswf_logo_dark.png"
+            alt="HSWF"
+            className="mx-auto h-10 w-auto object-contain"
+          />
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Wedding production</p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-600 md:text-[15px]">
             Calm operations for <GradientShimmerText className="font-semibold">your studio</GradientShimmerText> — choose how you sign in.
           </p>

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_profile.dart';
+import 'package:hsdash_mobile/widgets/hswf_logo.dart';
 
 /// Netflix-style admin workspace picker — same dashboard for every profile.
 class ProfileSelectionScreen extends ConsumerStatefulWidget {
@@ -145,21 +146,8 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Column(
         children: [
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFFFFFFFF), Color(0xFFC4B5FD)],
-            ).createShader(bounds),
-            child: const Text(
-              'HS DASH',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 3.5,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
+          const HswfLogo(height: 48, framed: true),
+          const SizedBox(height: 14),
           Text(
             'Choose a profile',
             style: TextStyle(

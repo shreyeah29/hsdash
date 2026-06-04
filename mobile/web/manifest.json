@@ -1,11 +1,11 @@
 {
-    "name": "hsdash_mobile",
-    "short_name": "hsdash_mobile",
+    "name": "HSWF",
+    "short_name": "HSWF",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "HS Dash wedding production mobile app",
+    "description": "HSWF wedding production mobile app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

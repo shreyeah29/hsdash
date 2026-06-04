@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsdash_mobile/config/app_brand.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/admin_shell.dart';
@@ -164,7 +165,7 @@ class HsDashApp extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
 
     return MaterialApp.router(
-      title: 'HS Dash',
+      title: AppBrand.name,
       theme: buildAppTheme(),
       scrollBehavior: const AppScrollBehavior(),
       routerConfig: router,
