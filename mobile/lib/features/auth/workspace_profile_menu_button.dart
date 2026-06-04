@@ -10,19 +10,34 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
     required this.onSwitchProfile,
     required this.onLogout,
     this.size = 56,
+    this.borderColor,
+    this.menuSurfaceColor,
   });
 
   final AdminWorkspaceProfile profile;
   final VoidCallback onSwitchProfile;
   final VoidCallback onLogout;
   final double size;
+  final Color? borderColor;
+  final Color? menuSurfaceColor;
 
   @override
   Widget build(BuildContext context) {
+    final surface = menuSurfaceColor ?? Colors.white;
+    final darkMenu = surface.computeLuminance() < 0.35;
+    final labelColor = darkMenu ? const Color(0xFFF4F4F5) : const Color(0xFF18181B);
+
     return PopupMenuButton<String>(
       tooltip: '${profile.label} — account',
       offset: Offset(0, size + 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.45),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: darkMenu ? const Color(0xFF2A3142) : AppColors.border),
+      ),
       onSelected: (value) {
         switch (value) {
           case 'switch':
@@ -32,23 +47,31 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'switch',
+          height: 48,
           child: Row(
             children: [
-              Icon(Icons.swap_horiz_rounded, size: 20),
-              SizedBox(width: 12),
-              Text('Switch profile', style: TextStyle(fontWeight: FontWeight.w600)),
+              Icon(Icons.swap_horiz_rounded, size: 20, color: darkMenu ? const Color(0xFF8B5CF6) : AppColors.violet),
+              const SizedBox(width: 12),
+              Text(
+                'Switch profile',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+              ),
             ],
           ),
         ),
         PopupMenuItem<String>(
           value: 'logout',
+          height: 48,
           child: Row(
             children: [
-              Icon(Icons.logout_rounded, size: 20, color: Colors.red),
+              Icon(Icons.logout_rounded, size: 20, color: Colors.red.shade400),
               const SizedBox(width: 12),
-              const Text('Log out', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'Log out',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+              ),
             ],
           ),
         ),
@@ -62,7 +85,7 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border, width: 2),
+              border: Border.all(color: borderColor ?? AppColors.border, width: 2),
             ),
             child: ClipOval(
               child: Image.asset(

@@ -12,9 +12,17 @@ import 'package:hsdash_mobile/widgets/ops_dashboard_widgets.dart';
 
 /// Activity feed — shared by admin and coordinator.
 class AdminActivityTab extends ConsumerStatefulWidget {
-  const AdminActivityTab({super.key, this.accent = AppColors.violet});
+  const AdminActivityTab({
+    super.key,
+    this.accent = AppColors.violet,
+    this.excludeMemberId,
+    this.monochrome = false,
+  });
 
   final Color accent;
+  /// When set, this member's actions are hidden (coordinator team feed).
+  final String? excludeMemberId;
+  final bool monochrome;
 
   @override
   ConsumerState<AdminActivityTab> createState() => _AdminActivityTabState();
@@ -67,6 +75,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
         memberId: _memberId,
         type: _type,
         search: _search,
+        excludeMemberId: widget.excludeMemberId,
       );
 
   Future<void> _refresh() async {
@@ -115,7 +124,9 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                     value: memberId,
                     items: [
                       const DropdownMenuItem(value: null, child: Text('All members')),
-                      ...dashboard.memberOptions.map((m) => DropdownMenuItem(value: m.id, child: Text(m.label))),
+                      ...dashboard.memberOptions
+                          .where((m) => m.id != widget.excludeMemberId)
+                          .map((m) => DropdownMenuItem(value: m.id, child: Text(m.label))),
                     ],
                     onChanged: (v) => setSheet(() => memberId = v),
                   ),

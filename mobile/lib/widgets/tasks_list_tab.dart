@@ -45,10 +45,22 @@ class TasksListTab extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           child: TextField(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Search wedding or deliverable…',
-              prefixIcon: Icon(Icons.search, size: 20),
+              hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.85), fontSize: 14),
+              prefixIcon: Icon(Icons.search_rounded, size: 22, color: AppColors.textMuted.withValues(alpha: 0.7)),
+              filled: true,
+              fillColor: Colors.white,
               isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.9)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
+              ),
             ),
             onChanged: (v) => ref.read(taskSearchProvider.notifier).set(v),
           ),
@@ -60,14 +72,9 @@ class TasksListTab extends ConsumerWidget {
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SegmentedButton<TaskFilter>(
-            segments: const [
-              ButtonSegment(value: TaskFilter.open, label: Text('Open')),
-              ButtonSegment(value: TaskFilter.done, label: Text('Done')),
-              ButtonSegment(value: TaskFilter.all, label: Text('All')),
-            ],
-            selected: {filter},
-            onSelectionChanged: (s) => ref.read(taskFilterProvider.notifier).setFilter(s.first),
+          child: TaskFilterBar(
+            selected: filter,
+            onChanged: (f) => ref.read(taskFilterProvider.notifier).setFilter(f),
           ),
         ),
         const SizedBox(height: 8),
@@ -212,16 +219,13 @@ class _TaskRowState extends ConsumerState<_TaskRow> {
     final t = widget.task;
     final hint = deadlineHint(t.deadline);
 
-    Widget? action;
-    if (widget.showStatusActions && !_busy && t.status != 'COMPLETED') {
-      if (t.status == 'PENDING' || t.status == 'DELAYED') {
-        action = TextButton(onPressed: () => _update(TaskStatusUpdate.inProgress), child: const Text('Start'));
-      } else if (t.status == 'IN_PROGRESS') {
-        action = TextButton(onPressed: () => _update(TaskStatusUpdate.completed), child: const Text('Mark done'));
-      }
-    } else if (_busy) {
-      action = const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2));
-    }
+    final action = buildTaskStatusAction(
+      showActions: widget.showStatusActions,
+      busy: _busy,
+      status: t.status,
+      onStart: () => _update(TaskStatusUpdate.inProgress),
+      onComplete: () => _update(TaskStatusUpdate.completed),
+    );
 
     return TaskCard(
       clientName: t.clientName ?? 'Wedding',

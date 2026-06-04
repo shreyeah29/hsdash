@@ -136,16 +136,13 @@ class _DataCopyRowState extends ConsumerState<_DataCopyRow> {
     final t = _task;
     final hint = deadlineHint(t.deadline);
 
-    Widget? action;
-    if (!_busy && t.status != 'COMPLETED') {
-      if (t.status == 'PENDING' || t.status == 'DELAYED') {
-        action = TextButton(onPressed: () => _update(TaskStatusUpdate.inProgress), child: const Text('Start'));
-      } else if (t.status == 'IN_PROGRESS') {
-        action = TextButton(onPressed: () => _update(TaskStatusUpdate.completed), child: const Text('Mark done'));
-      }
-    } else if (_busy) {
-      action = const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2));
-    }
+    final action = buildTaskStatusAction(
+      showActions: true,
+      busy: _busy,
+      status: t.status,
+      onStart: () => _update(TaskStatusUpdate.inProgress),
+      onComplete: () => _update(TaskStatusUpdate.completed),
+    );
 
     final statusLabel = t.status == 'DELAYED' ? 'DELAYED (overdue)' : t.status;
 

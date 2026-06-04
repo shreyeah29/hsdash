@@ -59,6 +59,7 @@ class RealtimeListener extends ConsumerStatefulWidget {
 
 class _RealtimeListenerState extends ConsumerState<RealtimeListener> {
   String? _connectedUserId;
+  RealtimeClient? _client;
 
   @override
   void initState() {
@@ -88,24 +89,26 @@ class _RealtimeListenerState extends ConsumerState<RealtimeListener> {
       return;
     }
 
-    ref.read(realtimeClientProvider).connect(
-          token: token,
-          onEvent: (event) {
-            if (!mounted) return;
-            handleRealtimeEvent(ref, event);
-          },
-        );
+    _client ??= ref.read(realtimeClientProvider);
+    _client!.connect(
+      token: token,
+      onEvent: (event) {
+        if (!mounted) return;
+        handleRealtimeEvent(ref, event);
+      },
+    );
     _connectedUserId = userId;
   }
 
   void _disconnect() {
-    ref.read(realtimeClientProvider).disconnect();
+    _client?.disconnect();
     _connectedUserId = null;
   }
 
   @override
   void dispose() {
-    _disconnect();
+    _client?.disconnect();
+    _connectedUserId = null;
     super.dispose();
   }
 

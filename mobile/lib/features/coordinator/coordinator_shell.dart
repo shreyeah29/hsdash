@@ -7,6 +7,11 @@ import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_data_copy_tab.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_providers.dart';
+import 'package:hsdash_mobile/features/coordinator/coordinator_work_tab.dart';
+import 'package:hsdash_mobile/features/coordinator/emmanuel_today_pending_tab.dart';
+import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
+import 'package:hsdash_mobile/features/editor/laxman/monochrome_app_theme.dart';
+import 'package:hsdash_mobile/features/editor/laxman/monochrome_identity.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/user.dart';
@@ -28,14 +33,39 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (isEmmanuelCoordinator(widget.user)) {
+      return Theme(
+        data: buildMonochromeAppTheme(Theme.of(context)),
+        child: DashboardShell(
+          tabIndex: _tab,
+          onTabChanged: (i) => setState(() => _tab = i),
+          accent: LaxmanPalette.black,
+          onLogout: () => ref.read(authControllerProvider.notifier).logout(),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: 'Today'),
+            NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
+            NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
+            NavigationDestination(icon: Icon(Icons.work_outline), selectedIcon: Icon(Icons.work), label: 'Work'),
+          ],
+          children: [
+            const EmmanuelTodayPendingTab(),
+            const ShootCalendarPanel(mode: ShootCalendarMode.coordinator, monochrome: true),
+            AdminActivityTab(
+              accent: LaxmanPalette.black,
+              excludeMemberId: widget.user.id,
+              monochrome: true,
+            ),
+            const CoordinatorWorkTab(),
+          ],
+        ),
+      );
+    }
+
     return DashboardShell(
-      showHeader: true,
-      user: widget.user,
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.amber,
       onLogout: () => ref.read(authControllerProvider.notifier).logout(),
-      titles: const ['Home', 'Shoots', 'Activity', 'Data copy'],
       destinations: const [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
@@ -133,4 +163,3 @@ class _HomeTab extends ConsumerWidget {
     );
   }
 }
-

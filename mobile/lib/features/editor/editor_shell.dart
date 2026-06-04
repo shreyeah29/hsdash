@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/task_utils.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/features/editor/laxman/laxman_editor_shell.dart';
+import 'package:hsdash_mobile/features/editor/laxman/monochrome_identity.dart';
 import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
@@ -23,16 +25,17 @@ class _EditorShellState extends ConsumerState<EditorShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLaxmanEditor(widget.user)) {
+      return LaxmanEditorShell(user: widget.user);
+    }
+
     final unread = ref.watch(unreadCountProvider);
 
     return DashboardShell(
-      showHeader: true,
-      user: widget.user,
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.emerald,
       onLogout: () => ref.read(authControllerProvider.notifier).logout(),
-      titles: const ['Today', 'My tasks', 'Alerts'],
       destinations: [
         const NavigationDestination(icon: Icon(Icons.wb_sunny_outlined), selectedIcon: Icon(Icons.wb_sunny), label: 'Today'),
         const NavigationDestination(icon: Icon(Icons.checklist_outlined), selectedIcon: Icon(Icons.checklist), label: 'Tasks'),
@@ -44,9 +47,7 @@ class _EditorShellState extends ConsumerState<EditorShell> {
       ],
       children: [
         _TodayTab(user: widget.user),
-        TasksListTab(
-          title: 'My tasks',
-          subtitle: widget.user.roleLabel,
+        const TasksListTab(
           showStatusActions: true,
         ),
         _NotificationsTab(onOpenTasks: () => setState(() => _tab = 1)),

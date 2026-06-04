@@ -117,6 +117,7 @@ class OpsDashboardFilters {
     this.memberId,
     this.type = ActivityTypeFilter.all,
     this.search = '',
+    this.excludeMemberId,
   });
 
   final ActivityPeriodFilter period;
@@ -124,6 +125,8 @@ class OpsDashboardFilters {
   final String? memberId;
   final ActivityTypeFilter type;
   final String search;
+  /// Hide this user's own actions (coordinator viewing team pulse).
+  final String? excludeMemberId;
 
   OpsDashboardFilters copyWith({
     ActivityPeriodFilter? period,
@@ -131,6 +134,7 @@ class OpsDashboardFilters {
     String? memberId,
     ActivityTypeFilter? type,
     String? search,
+    String? excludeMemberId,
     bool clearEvent = false,
     bool clearMember = false,
   }) {
@@ -140,6 +144,7 @@ class OpsDashboardFilters {
       memberId: clearMember ? null : (memberId ?? this.memberId),
       type: type ?? this.type,
       search: search ?? this.search,
+      excludeMemberId: excludeMemberId ?? this.excludeMemberId,
     );
   }
 }
@@ -309,6 +314,7 @@ List<OpsActivityEntry> applyOpsFilters(
   final q = filters.search.trim().toLowerCase();
   return entries.where((e) {
     if (!_inPeriod(e.timestamp, filters.period)) return false;
+    if (filters.excludeMemberId != null && e.memberId == filters.excludeMemberId) return false;
     if (filters.eventId != null && e.eventId != filters.eventId) return false;
     if (filters.memberId != null && e.memberId != filters.memberId) return false;
     if (filters.type != ActivityTypeFilter.all) {
@@ -386,6 +392,9 @@ OpsDashboardData buildOpsDashboard({
   }
   for (final t in tasks) {
     if (t.assignedToId != null) memberIds.add(t.assignedToId!);
+  }
+  if (filters.excludeMemberId != null) {
+    memberIds.remove(filters.excludeMemberId);
   }
 
   final eventOptionsMap = <String, String>{};

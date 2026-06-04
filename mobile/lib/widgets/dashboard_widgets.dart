@@ -16,6 +16,7 @@ class DashboardShell extends StatelessWidget {
     this.titles,
     this.onLogout,
     this.showHeader = false,
+    this.premiumDarkTabIndices,
   });
 
   final int tabIndex;
@@ -27,13 +28,23 @@ class DashboardShell extends StatelessWidget {
   final List<String>? titles;
   final VoidCallback? onLogout;
   final bool showHeader;
+  /// Tab indices that use cinematic dark chrome (e.g. admin home + deadlines).
+  final Set<int>? premiumDarkTabIndices;
+
+  static const _premiumHomeBg = Color(0xFF0B0D11);
+  static const _premiumNavBarBg = Color(0xFF06080C);
+  static const _premiumNavIcon = Color(0xFFF4F4F5);
+  static const _premiumNavIconMuted = Color(0xFFD4D4D8);
+  static const _premiumNavLabelMuted = Color(0xFFB8BEC9);
 
   @override
   Widget build(BuildContext context) {
+    final premiumHome = premiumDarkTabIndices?.contains(tabIndex) ?? false;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: appLightChromeOverlayStyle,
+      value: premiumHome ? SystemUiOverlayStyle.light : appLightChromeOverlayStyle,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: premiumHome ? _premiumHomeBg : AppColors.surface,
         appBar: showHeader && user != null && titles != null && onLogout != null
             ? AppBar(
                 backgroundColor: Colors.white,
@@ -60,12 +71,55 @@ class DashboardShell extends StatelessWidget {
             : null,
         body: SafeArea(
           bottom: false,
-          child: IndexedStack(index: tabIndex, children: children),
+          child: Stack(
+            children: [
+              IndexedStack(index: tabIndex, children: children),
+              if (!showHeader && onLogout != null)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: IconButton(
+                    tooltip: 'Log out',
+                    onPressed: onLogout,
+                    icon: Icon(Icons.logout_rounded, color: premiumHome ? _premiumNavIconMuted : AppColors.textMuted),
+                  ),
+                ),
+            ],
+          ),
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: tabIndex,
-          onDestinationSelected: onTabChanged,
-          destinations: destinations,
+        bottomNavigationBar: Theme(
+          data: premiumHome
+              ? Theme.of(context).copyWith(
+                  navigationBarTheme: NavigationBarThemeData(
+                    backgroundColor: _premiumNavBarBg,
+                    indicatorColor: const Color(0xFF8B5CF6).withValues(alpha: 0.32),
+                    surfaceTintColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    elevation: 0,
+                    height: 64,
+                    labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                      final selected = states.contains(WidgetState.selected);
+                      return TextStyle(
+                        fontSize: 11,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                        color: selected ? _premiumNavIcon : _premiumNavLabelMuted,
+                      );
+                    }),
+                    iconTheme: WidgetStateProperty.resolveWith((states) {
+                      final selected = states.contains(WidgetState.selected);
+                      return IconThemeData(
+                        color: selected ? _premiumNavIcon : _premiumNavIconMuted,
+                        size: 24,
+                      );
+                    }),
+                  ),
+                )
+              : Theme.of(context),
+          child: NavigationBar(
+            selectedIndex: tabIndex,
+            onDestinationSelected: onTabChanged,
+            destinations: destinations,
+          ),
         ),
       ),
     );
