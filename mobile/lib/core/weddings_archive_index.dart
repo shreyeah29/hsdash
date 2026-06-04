@@ -45,7 +45,7 @@ class WeddingsArchiveIndex {
 
   List<int> monthsForYear(int year) {
     final months = _byYearMonth[year]?.keys.toList() ?? [];
-    months.sort((a, b) => b.compareTo(a));
+    months.sort((a, b) => a.compareTo(b));
     return months;
   }
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/weddings_archive_index.dart';
+import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/shoot_event_detail_screen.dart';
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_providers.dart';
-import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_theme.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
@@ -32,6 +34,14 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
   int? _month;
   String? _weddingKey;
 
+  bool get _premium => WeddingsArchiveStyle.isPremiumDark(widget.accent);
+
+  Color get _accent {
+    if (widget.accent == LaxmanPalette.black) return LaxmanPalette.black;
+    if (widget.accent == AppColors.amber) return AppColors.amber;
+    return AdminHomePalette.accent;
+  }
+
   int get _depth {
     if (_weddingKey != null) return 3;
     if (_month != null) return 2;
@@ -55,29 +65,29 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
     final crumbs = <String>['Archive'];
     if (_year != null) crumbs.add('$_year');
     if (_month != null) crumbs.add(monthLabel(_month!));
-    if (_weddingKey != null && _year != null && _month != null) {
-      crumbs.add(index?.weddingGroup(_year!, _month!, _weddingKey!)?.displayName ?? 'Events');
-    }
     return crumbs;
   }
 
-  String get _heroTitle {
-    if (_weddingKey != null) return 'Events';
+  String _pageTitle(WeddingsArchiveIndex? index) {
+    if (_weddingKey != null && index != null && _year != null && _month != null) {
+      final name = index.weddingGroup(_year!, _month!, _weddingKey!)?.displayName;
+      return name != null ? _formatDisplayName(name) : 'Events';
+    }
     if (_month != null) return monthLabel(_month!);
     if (_year != null) return '$_year';
-    return 'Weddings';
+    return 'Wedding archive';
   }
 
-  String get _heroSubtitle {
+  String get _pageSubtitle {
     switch (_depth) {
       case 0:
-        return 'Pick a year to explore every wedding and event.';
+        return 'Browse by year, then month and client.';
       case 1:
-        return 'Choose a month to see who shot that season.';
+        return 'Pick a month for $_year.';
       case 2:
-        return 'Select a couple or client to view their events.';
+        return 'Select a client or couple.';
       case 3:
-        return 'Tap an event for full shoot & pipeline details.';
+        return 'Tap an event for details.';
       default:
         return '';
     }
@@ -115,99 +125,125 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
   Widget build(BuildContext context) {
     final entries = ref.watch(weddingsArchiveEntriesProvider);
     final index = ref.watch(weddingsArchiveIndexProvider);
+    final bg = WeddingsArchiveStyle.background(widget.accent);
 
-    return ColoredBox(
-      color: const Color(0xFFF4F4F8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ArchiveHero(
-            accent: widget.accent,
-            title: _heroTitle,
-            subtitle: _heroSubtitle,
-            breadcrumbs: _breadcrumbs(index),
-            showBack: _depth > 0,
-            onBack: _popLevel,
-            totalWeddings: index?.years.isNotEmpty == true
-                ? index!.years.map(index.weddingCountForYear).fold<int>(0, (a, b) => a + b)
-                : null,
-          ),
-          Expanded(
-            child: entries.when(
-              loading: () => Center(child: CircularProgressIndicator(color: widget.accent, strokeWidth: 2.5)),
-              error: (e, _) => ListView(
-                children: [ErrorPanel(message: '$e', onRetry: _refresh)],
-              ),
-              data: (_) {
-                if (index == null) {
-                  return Center(child: CircularProgressIndicator(color: widget.accent));
-                }
-                if (index.years.isEmpty) {
-                  return _EmptyArchive(accent: widget.accent);
-                }
-                return RefreshIndicator(
-                  color: widget.accent,
-                  onRefresh: _refresh,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, anim) {
-                      final slide = Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero).animate(anim);
-                      return FadeTransition(
-                        opacity: anim,
-                        child: SlideTransition(position: slide, child: child),
-                      );
-                    },
-                    child: KeyedSubtree(
-                      key: ValueKey('$_depth-$_year-$_month-$_weddingKey'),
-                      child: _buildBody(index),
-                    ),
-                  ),
-                );
-              },
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ArchiveHeader(
+          premium: _premium,
+          shellAccent: widget.accent,
+          accent: _accent,
+          title: _pageTitle(index),
+          subtitle: _pageSubtitle,
+          breadcrumbs: _breadcrumbs(index),
+          showBack: _depth > 0,
+          onBack: _popLevel,
+          totalWeddings: index?.years.isNotEmpty == true
+              ? index!.years.map(index.weddingCountForYear).fold<int>(0, (a, b) => a + b)
+              : null,
+          showStats: _depth == 0,
+        ),
+        Expanded(
+          child: entries.when(
+            loading: () => Center(child: CircularProgressIndicator(color: _accent, strokeWidth: 2)),
+            error: (e, _) => ListView(
+              children: [ErrorPanel(message: '$e', onRetry: _refresh)],
             ),
+            data: (_) {
+              if (index == null) {
+                return Center(child: CircularProgressIndicator(color: _accent));
+              }
+              if (index.years.isEmpty) {
+                return _EmptyArchive(shellAccent: widget.accent, accent: _accent);
+              }
+              return RefreshIndicator(
+                color: _accent,
+                backgroundColor: _premium ? AdminHomePalette.card : Colors.white,
+                onRefresh: _refresh,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, anim) {
+                    final slide = Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero).animate(anim);
+                    return FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(position: slide, child: child),
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey('$_depth-$_year-$_month-$_weddingKey'),
+                    child: _buildBody(index),
+                  ),
+                ),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
+
+    if (_premium) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: ColoredBox(color: bg, child: body),
+      );
+    }
+    return ColoredBox(color: bg, child: body);
   }
 
   Widget _buildBody(WeddingsArchiveIndex index) {
     if (_year == null) {
-      return _YearsGrid(index: index, accent: widget.accent, onSelect: (y) => setState(() => _year = y));
+      return _YearsList(
+        premium: _premium,
+        shellAccent: widget.accent,
+        index: index,
+        accent: _accent,
+        onSelect: (y) => setState(() => _year = y),
+      );
     }
     if (_month == null) {
       return _MonthsGrid(
+        premium: _premium,
+        shellAccent: widget.accent,
         index: index,
         year: _year!,
-        accent: widget.accent,
+        accent: _accent,
         onSelect: (m) => setState(() => _month = m),
       );
     }
     if (_weddingKey == null) {
       return _WeddingsList(
+        premium: _premium,
+        shellAccent: widget.accent,
         index: index,
         year: _year!,
         month: _month!,
-        accent: widget.accent,
+        accent: _accent,
         onSelect: (k) => setState(() => _weddingKey = k),
       );
     }
     final group = index.weddingGroup(_year!, _month!, _weddingKey!);
     if (group == null) {
-      return const Center(child: Text('Wedding not found'));
+      return Center(
+        child: Text('Wedding not found', style: WeddingsArchiveStyle.rowMeta(widget.accent)),
+      );
     }
     return _EventsTimeline(
+      premium: _premium,
+      shellAccent: widget.accent,
       group: group,
-      accent: widget.accent,
+      accent: _accent,
       onEventTap: _openEventDetail,
     );
   }
 }
 
-class _ArchiveHero extends StatelessWidget {
-  const _ArchiveHero({
+class _ArchiveHeader extends StatelessWidget {
+  const _ArchiveHeader({
+    required this.premium,
+    required this.shellAccent,
     required this.accent,
     required this.title,
     required this.subtitle,
@@ -215,8 +251,11 @@ class _ArchiveHero extends StatelessWidget {
     required this.showBack,
     required this.onBack,
     this.totalWeddings,
+    this.showStats = false,
   });
 
+  final bool premium;
+  final Color shellAccent;
   final Color accent;
   final String title;
   final String subtitle;
@@ -224,80 +263,74 @@ class _ArchiveHero extends StatelessWidget {
   final bool showBack;
   final VoidCallback onBack;
   final int? totalWeddings;
+  final bool showStats;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: WeddingsArchiveStyle.heroDecoration(accent),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+    final accentColor = premium ? accent : accent;
+    final muted = premium ? AdminHomePalette.textSecondary : AppColors.textMuted;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               if (showBack)
-                Material(
-                  color: Colors.white,
-                  shape: const CircleBorder(),
-                  elevation: 2,
-                  shadowColor: accent.withValues(alpha: 0.2),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: onBack,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(Icons.arrow_back_rounded, color: accent, size: 22),
-                    ),
-                  ),
+                _HeaderIconButton(
+                  premium: premium,
+                  accent: accentColor,
+                  icon: Icons.arrow_back_rounded,
+                  onTap: onBack,
                 )
               else
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.folder_special_rounded, color: accent, size: 22),
+                _HeaderIconButton(
+                  premium: premium,
+                  accent: accentColor,
+                  icon: Icons.folder_special_outlined,
+                  onTap: null,
                 ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: breadcrumbs.asMap().entries.map((e) {
-                    final isLast = e.key == breadcrumbs.length - 1;
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (e.key > 0)
-                          Icon(Icons.chevron_right, size: 14, color: accent.withValues(alpha: 0.5)),
-                        Text(
-                          e.value,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isLast ? FontWeight.w700 : FontWeight.w500,
-                            color: isLast ? accent : AppColors.textMuted,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
+                child: _BreadcrumbTrail(crumbs: breadcrumbs, muted: muted),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Text(title, style: WeddingsArchiveStyle.title(32, color: accent == LaxmanPalette.black ? Colors.black : null)),
+          Text('WEDDINGS', style: WeddingsArchiveStyle.sectionLabel(shellAccent)),
           const SizedBox(height: 6),
-          Text(subtitle, style: WeddingsArchiveStyle.bodyMuted()),
-          if (totalWeddings != null && !showBack) ...[
+          Text(
+            title,
+            style: WeddingsArchiveStyle.title(shellAccent),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: WeddingsArchiveStyle.subtitle(shellAccent),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (showStats && totalWeddings != null) ...[
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                _HeroStatChip(icon: Icons.favorite_border, label: '$totalWeddings weddings', accent: accent),
-                const SizedBox(width: 8),
-                _HeroStatChip(icon: Icons.calendar_month, label: 'By month', accent: accent),
+                _StatChip(
+                  premium: premium,
+                  accent: accentColor,
+                  icon: Icons.favorite_border,
+                  label: '$totalWeddings weddings',
+                ),
+                _StatChip(
+                  premium: premium,
+                  accent: accentColor,
+                  icon: Icons.calendar_month_outlined,
+                  label: 'By month',
+                ),
               ],
             ),
           ],
@@ -307,28 +340,95 @@ class _ArchiveHero extends StatelessWidget {
   }
 }
 
-class _HeroStatChip extends StatelessWidget {
-  const _HeroStatChip({required this.icon, required this.label, required this.accent});
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.premium,
+    required this.accent,
+    required this.icon,
+    required this.onTap,
+  });
 
-  final IconData icon;
-  final String label;
+  final bool premium;
   final Color accent;
+  final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final fill = premium ? AdminHomePalette.card : Colors.white;
+    final iconColor = premium ? AdminHomePalette.text : accent;
+
+    return Material(
+      color: fill,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, size: 20, color: iconColor),
+        ),
+      ),
+    );
+  }
+}
+
+class _BreadcrumbTrail extends StatelessWidget {
+  const _BreadcrumbTrail({required this.crumbs, required this.muted});
+
+  final List<String> crumbs;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      crumbs.join('  ›  '),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AdminHomeTypography.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: muted,
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.premium,
+    required this.accent,
+    required this.icon,
+    required this.label,
+  });
+
+  final bool premium;
+  final Color accent;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = premium ? accent.withValues(alpha: 0.14) : accent.withValues(alpha: 0.08);
+    final fg = premium ? AdminHomePalette.text : accent;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
+        color: bg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withValues(alpha: 0.15)),
+        border: Border.all(color: accent.withValues(alpha: premium ? 0.22 : 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: accent),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent)),
+          Text(
+            label,
+            style: AdminHomeTypography.inter(fontSize: 12, fontWeight: FontWeight.w600, color: fg),
+          ),
         ],
       ),
     );
@@ -336,9 +436,12 @@ class _HeroStatChip extends StatelessWidget {
 }
 
 class _EmptyArchive extends StatelessWidget {
-  const _EmptyArchive({required this.accent});
+  const _EmptyArchive({required this.shellAccent, required this.accent});
 
+  final Color shellAccent;
   final Color accent;
+
+  bool get premium => WeddingsArchiveStyle.isPremiumDark(shellAccent);
 
   @override
   Widget build(BuildContext context) {
@@ -348,14 +451,17 @@ class _EmptyArchive extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined, size: 56, color: accent.withValues(alpha: 0.35)),
+            Icon(Icons.inbox_outlined, size: 48, color: accent.withValues(alpha: 0.35)),
             const SizedBox(height: 16),
-            const Text('No weddings in the archive yet', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(
+              'No weddings in the archive yet',
+              style: WeddingsArchiveStyle.rowTitle(shellAccent),
+            ),
             const SizedBox(height: 8),
             Text(
               'Add shoots from the calendar — they will appear here by year.',
               textAlign: TextAlign.center,
-              style: WeddingsArchiveStyle.bodyMuted(),
+              style: WeddingsArchiveStyle.subtitle(shellAccent),
             ),
           ],
         ),
@@ -364,9 +470,17 @@ class _EmptyArchive extends StatelessWidget {
   }
 }
 
-class _YearsGrid extends StatelessWidget {
-  const _YearsGrid({required this.index, required this.accent, required this.onSelect});
+class _YearsList extends StatelessWidget {
+  const _YearsList({
+    required this.premium,
+    required this.shellAccent,
+    required this.index,
+    required this.accent,
+    required this.onSelect,
+  });
 
+  final bool premium;
+  final Color shellAccent;
   final WeddingsArchiveIndex index;
   final Color accent;
   final ValueChanged<int> onSelect;
@@ -374,59 +488,49 @@ class _YearsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
       children: [
-        Text('YEARS', style: WeddingsArchiveStyle.label(accent)),
-        const SizedBox(height: 12),
-        ...index.years.map((y) {
-          final weddings = index.weddingCountForYear(y);
-          final months = index.monthsForYear(y).length;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _TappableCard(
+        Text('YEARS', style: WeddingsArchiveStyle.sectionLabel(shellAccent)),
+        const SizedBox(height: 10),
+        _ArchiveGroupedList(
+          premium: premium,
+          accent: accent,
+          children: index.years.map((y) {
+            final weddings = index.weddingCountForYear(y);
+            final months = index.monthsForYear(y).length;
+            return _ArchiveListRow(
+              premium: premium,
+              shellAccent: shellAccent,
               accent: accent,
               onTap: () => onSelect(y),
-              child: Row(
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [accent, accent.withValues(alpha: 0.65)],
+              leading: premium
+                  ? Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: WeddingsArchiveStyle.yearBadgeDecoration(accent),
+                      child: Text(
+                        '$y',
+                        style: AdminHomeTypography.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
+                    )
+                  : Text(
                       '$y',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
+                      style: AdminHomeTypography.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: accent,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('$weddings ${weddings == 1 ? 'Wedding' : 'Weddings'}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text('$months active ${months == 1 ? 'month' : 'months'}', style: WeddingsArchiveStyle.bodyMuted()),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
-                ],
-              ),
-            ),
-          );
-        }),
+              title: '$weddings ${weddings == 1 ? 'wedding' : 'weddings'}',
+              subtitle: '$months active ${months == 1 ? 'month' : 'months'}',
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -434,12 +538,16 @@ class _YearsGrid extends StatelessWidget {
 
 class _MonthsGrid extends StatelessWidget {
   const _MonthsGrid({
+    required this.premium,
+    required this.shellAccent,
     required this.index,
     required this.year,
     required this.accent,
     required this.onSelect,
   });
 
+  final bool premium;
+  final Color shellAccent;
   final WeddingsArchiveIndex index;
   final int year;
   final Color accent;
@@ -451,43 +559,31 @@ class _MonthsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final months = index.monthsForYear(year);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
       children: [
-        Text('MONTHS · $year', style: WeddingsArchiveStyle.label(accent)),
+        Text('MONTHS · $year', style: WeddingsArchiveStyle.sectionLabel(shellAccent)),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.35,
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.05,
           ),
           itemCount: months.length,
           itemBuilder: (context, i) {
             final m = months[i];
             final weddings = index.weddingCountForMonth(year, m);
             final events = index.eventCountForMonth(year, m);
-            return _TappableCard(
+            return _MonthCell(
+              premium: premium,
               accent: accent,
+              shortLabel: _shortMonth[m - 1],
+              weddings: weddings,
+              events: events,
               onTap: () => onSelect(m),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_shortMonth[m - 1], style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: accent, height: 1)),
-                  const Spacer(),
-                  Text(monthLabel(m), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _MiniPill('$weddings wed.', accent),
-                      const SizedBox(width: 6),
-                      _MiniPill('$events evt.', accent, muted: true),
-                    ],
-                  ),
-                ],
-              ),
             );
           },
         ),
@@ -496,8 +592,60 @@ class _MonthsGrid extends StatelessWidget {
   }
 }
 
+class _MonthCell extends StatelessWidget {
+  const _MonthCell({
+    required this.premium,
+    required this.accent,
+    required this.shortLabel,
+    required this.weddings,
+    required this.events,
+    required this.onTap,
+  });
+
+  final bool premium;
+  final Color accent;
+  final String shortLabel;
+  final int weddings;
+  final int events;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        splashColor: accent.withValues(alpha: 0.16),
+        highlightColor: accent.withValues(alpha: 0.08),
+        child: Ink(
+          decoration: WeddingsArchiveStyle.monthTileDecoration(accent),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(shortLabel, style: WeddingsArchiveStyle.monthTileLabel(accent)),
+                const Spacer(),
+                Text('$weddings wed.', style: WeddingsArchiveStyle.monthMeta(accent)),
+                Text(
+                  '$events evt.',
+                  style: WeddingsArchiveStyle.monthMeta(accent).copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _WeddingsList extends StatelessWidget {
   const _WeddingsList({
+    required this.premium,
+    required this.shellAccent,
     required this.index,
     required this.year,
     required this.month,
@@ -505,6 +653,8 @@ class _WeddingsList extends StatelessWidget {
     required this.onSelect,
   });
 
+  final bool premium;
+  final Color shellAccent;
   final WeddingsArchiveIndex index;
   final int year;
   final int month;
@@ -515,45 +665,22 @@ class _WeddingsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final groups = index.weddingsForMonth(year, month);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
       children: [
-        Text('${groups.length} WEDDINGS', style: WeddingsArchiveStyle.label(accent)),
-        const SizedBox(height: 12),
-        ...groups.map((g) {
-          final done = g.events.where((e) => e.hasPostProduction).length;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _TappableCard(
+        _ArchiveGroupedList(
+          premium: premium,
+          accent: accent,
+          children: groups.map((g) {
+            return _ArchiveListRow(
+              premium: premium,
+              shellAccent: shellAccent,
               accent: accent,
               onTap: () => onSelect(g.key),
-              child: Row(
-                children: [
-                  _AvatarInitials(name: g.displayName, accent: accent),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(g.displayName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            _MiniPill('${g.events.length} events', accent),
-                            if (done > 0) ...[
-                              const SizedBox(width: 6),
-                              _MiniPill('$done live', AppColors.emerald, muted: true),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded, color: accent),
-                ],
-              ),
-            ),
-          );
-        }),
+              title: _formatDisplayName(g.displayName),
+              subtitle: '${g.events.length} ${g.events.length == 1 ? 'event' : 'events'}',
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -561,11 +688,15 @@ class _WeddingsList extends StatelessWidget {
 
 class _EventsTimeline extends StatelessWidget {
   const _EventsTimeline({
+    required this.premium,
+    required this.shellAccent,
     required this.group,
     required this.accent,
     required this.onEventTap,
   });
 
+  final bool premium;
+  final Color shellAccent;
   final WeddingArchiveGroup group;
   final Color accent;
   final ValueChanged<ShootCalendarEntry> onEventTap;
@@ -573,167 +704,140 @@ class _EventsTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
       children: [
-        Text('EVENT TIMELINE', style: WeddingsArchiveStyle.label(accent)),
-        const SizedBox(height: 16),
-        ...group.events.asMap().entries.map((e) {
-          final entry = e.value;
-          final isLast = e.key == group.events.length - 1;
-          final day = formatFriendlyDay(shootDayKey(entry.day), includeYear: true);
-          final eventLabel = (entry.eventName?.trim().isNotEmpty ?? false) ? entry.eventName!.trim() : 'Shoot';
-          return IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  width: 28,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: entry.hasPostProduction ? AppColors.emerald : accent,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 6),
-                          ],
-                        ),
-                      ),
-                      if (!isLast)
-                        Expanded(
-                          child: Container(
-                            width: 2,
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            color: accent.withValues(alpha: 0.2),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
-                    child: _TappableCard(
-                      accent: accent,
-                      onTap: () => onEventTap(entry),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(eventLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                              ),
-                              if (entry.hasPostProduction)
-                                const Icon(Icons.bolt, size: 18, color: AppColors.emerald)
-                              else
-                                Icon(Icons.schedule, size: 18, color: accent.withValues(alpha: 0.6)),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(day, style: WeddingsArchiveStyle.bodyMuted()),
-                          if (entry.venue?.trim().isNotEmpty == true) ...[
-                            const SizedBox(height: 4),
-                            Text(entry.venue!, maxLines: 1, overflow: TextOverflow.ellipsis, style: WeddingsArchiveStyle.bodyMuted()),
-                          ],
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _MiniPill(
-                                entry.hasPostProduction ? 'Pipeline active' : 'Scheduled',
-                                entry.hasPostProduction ? AppColors.emerald : accent,
-                              ),
-                              const Spacer(),
-                              Text('View details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent)),
-                              const SizedBox(width: 4),
-                              Icon(Icons.arrow_forward, size: 14, color: accent),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+        _ArchiveGroupedList(
+          premium: premium,
+          accent: accent,
+          children: group.events.map((entry) {
+            final day = formatFriendlyDay(shootDayKey(entry.day), includeYear: true);
+            final eventLabel =
+                (entry.eventName?.trim().isNotEmpty ?? false) ? entry.eventName!.trim() : 'Shoot';
+            return _ArchiveListRow(
+              premium: premium,
+              shellAccent: shellAccent,
+              accent: accent,
+              onTap: () => onEventTap(entry),
+              title: eventLabel,
+              subtitle: day,
+              trailing: Icon(
+                entry.hasPostProduction ? Icons.bolt : Icons.chevron_right_rounded,
+                size: 18,
+                color: entry.hasPostProduction ? AppColors.emerald : accent.withValues(alpha: 0.6),
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
 }
 
-class _TappableCard extends StatelessWidget {
-  const _TappableCard({required this.accent, required this.onTap, required this.child});
+/// Grouped panel with dividers between rows.
+class _ArchiveGroupedList extends StatelessWidget {
+  const _ArchiveGroupedList({
+    required this.premium,
+    required this.accent,
+    required this.children,
+  });
 
+  final bool premium;
   final Color accent;
-  final VoidCallback onTap;
-  final Widget child;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        splashColor: accent.withValues(alpha: 0.12),
-        highlightColor: accent.withValues(alpha: 0.06),
-        child: Ink(
-          decoration: WeddingsArchiveStyle.cardDecoration(accent),
-          child: Padding(padding: const EdgeInsets.all(16), child: child),
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    final dividerColor = WeddingsArchiveStyle.divider(accent);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: DecoratedBox(
+        decoration: WeddingsArchiveStyle.panelDecoration(accent),
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              children[i],
+              if (i < children.length - 1) Divider(height: 1, thickness: 1, color: dividerColor),
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
-class _AvatarInitials extends StatelessWidget {
-  const _AvatarInitials({required this.name, required this.accent});
+class _ArchiveListRow extends StatelessWidget {
+  const _ArchiveListRow({
+    required this.premium,
+    required this.shellAccent,
+    required this.accent,
+    required this.onTap,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+  });
 
-  final String name;
+  final bool premium;
+  final Color shellAccent;
   final Color accent;
+  final VoidCallback onTap;
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    String initials = '?';
-    if (parts.isNotEmpty) {
-      initials = parts.length == 1
-          ? parts.first.substring(0, 1).toUpperCase()
-          : '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    return CircleAvatar(
-      radius: 26,
-      backgroundColor: accent.withValues(alpha: 0.12),
-      child: Text(initials, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: accent)),
+    final titleStyle = WeddingsArchiveStyle.rowTitle(shellAccent);
+    final metaStyle = WeddingsArchiveStyle.rowMeta(shellAccent);
+    final chevron = trailing ??
+        Icon(Icons.chevron_right_rounded, size: 20, color: accent.withValues(alpha: 0.65));
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: titleStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(subtitle!, style: metaStyle),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              chevron,
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _MiniPill extends StatelessWidget {
-  const _MiniPill(this.text, this.color, {this.muted = false});
-
-  final String text;
-  final Color color;
-  final bool muted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: (muted ? AppColors.textMuted : color).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: muted ? AppColors.textMuted : color),
-      ),
-    );
+String _formatDisplayName(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return trimmed;
+  if (trimmed == trimmed.toUpperCase()) {
+    return trimmed
+        .split(RegExp(r'\s+'))
+        .map((w) => w.isEmpty ? w : '${w[0]}${w.substring(1).toLowerCase()}')
+        .join(' ');
   }
+  return trimmed;
 }
