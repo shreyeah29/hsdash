@@ -1,33 +1,45 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { Activity, Radio, RefreshCw } from "lucide-react";
+import { Activity, Heart, Radio, RefreshCw, Users } from "lucide-react";
 import { api } from "@/services/api";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
 import { Spotlight } from "@/components/premium/Spotlight";
 import { BorderBeam } from "@/components/premium/BorderBeam";
 import { Button } from "@/components/ui/button";
-import type { Event, TaskAssigneeSummary, TaskStatus } from "@/types/domain";
-import { StatusBadge } from "@/components/StatusBadge";
-
-type ActivityRow = {
-  id: string;
-  previousStatus: TaskStatus | null;
-  newStatus: TaskStatus;
-  createdAt: string;
-  actor: TaskAssigneeSummary | null;
-  task: {
-    id: string;
-    taskType: string;
-    assignedTeam: string;
-    event: Pick<Event, "clientName" | "eventDate"> | null;
-  };
-};
+import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
+import type { Task, User } from "@/types/domain";
+import {
+  buildOpsDashboard,
+  formatActivityWhen,
+  healthColor,
+  healthLabel,
+  opsKindColor,
+  opsKindLabel,
+  type ActivityPeriodFilter,
+  type ActivityTypeFilter,
+  type TaskActivityRow,
+} from "@/lib/activityFeedUtils";
+import { cn } from "@/lib/utils";
 
 async function fetchActivity() {
-  const { data } = await api.get<{ activities: ActivityRow[] }>("/admin/task-activity", { params: { limit: 100 } });
+  const { data } = await api.get<{ activities: TaskActivityRow[] }>("/admin/task-activity", {
+    params: { limit: 200 },
+  });
   return data.activities;
+}
+
+async function fetchTasks() {
+  const { data } = await api.get<{ tasks: Task[] }>("/tasks");
+  return data.tasks;
+}
+
+async function fetchRoster() {
+  const { data } = await api.get<{ users: User[] }>("/production-calendar/team-members");
+  return data.users;
 }
 
 function activityLoadErrorMessage(error: unknown): string {
@@ -47,46 +59,58 @@ function activityLoadErrorMessage(error: unknown): string {
   return "Could not load activity.";
 }
 
-function fmtWhen(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
+const PERIODS: { value: ActivityPeriodFilter; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+  { value: "all", label: "All" },
+];
 
-const feedContainer = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.055 } },
-};
-
-const feedItem = {
-  hidden: { opacity: 0, x: -10 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const } },
-};
+type TabKey = "feed" | "people" | "weddings";
 
 export function AdminNotificationsPage() {
-  const { data = [], isLoading, error, refetch, isRefetching, isFetching } = useQuery({
-    queryKey: ["admin-task-activity"],
-    queryFn: fetchActivity,
-  });
+  const [tab, setTab] = useState<TabKey>("feed");
+  const [period, setPeriod] = useState<ActivityPeriodFilter>("today");
+  const [type, setType] = useState<ActivityTypeFilter>("all");
+  const [search, setSearch] = useState("");
+  const [eventId, setEventId] = useState<string>("");
+  const [memberId, setMemberId] = useState<string>("");
 
-  const showEmpty = !isLoading && !error && data.length === 0;
+  const activityQuery = useQuery({ queryKey: ["admin-task-activity"], queryFn: fetchActivity });
+  const tasksQuery = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks });
+  const rosterQuery = useQuery({ queryKey: ["production-calendar-roster"], queryFn: fetchRoster });
+
+  const isLoading = activityQuery.isLoading || tasksQuery.isLoading;
+  const error = activityQuery.error;
+  const isRefetching = activityQuery.isRefetching || tasksQuery.isRefetching;
+
+  const dashboard = useMemo(() => {
+    return buildOpsDashboard(activityQuery.data ?? [], tasksQuery.data ?? [], {
+      period,
+      type,
+      search,
+      eventId: eventId || null,
+      memberId: memberId || null,
+    }, rosterQuery.data ?? []);
+  }, [activityQuery.data, tasksQuery.data, rosterQuery.data, period, type, search, eventId, memberId]);
+
+  function refetchAll() {
+    void activityQuery.refetch();
+    void tasksQuery.refetch();
+    void rosterQuery.refetch();
+  }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-10">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-8">
       <Spotlight className="rounded-3xl border border-zinc-200/80" glowColor="rgba(34, 211, 238, 0.07)">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-3 px-1 py-1 md:px-2 md:py-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Signal stream</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Team operations</p>
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-              <GradientShimmerText>Team pulse</GradientShimmerText>
+              <GradientShimmerText>Activity dashboard</GradientShimmerText>
             </h1>
             <p className="text-sm leading-relaxed text-zinc-600">
-              Live transcription of task motion across editors — every completion and lane change with cinematic clarity.
+              Feed, people pulse, and wedding-level motion — same ops view as the mobile admin tab.
             </p>
           </div>
 
@@ -94,105 +118,197 @@ export function AdminNotificationsPage() {
             <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
               <Radio className="h-4 w-4 text-cyan-600" />
               <span>
-                <span className="font-semibold text-zinc-900">{data.length}</span> events buffered
+                <span className="font-semibold text-zinc-900">{dashboard.timeline.length}</span> in view
               </span>
             </div>
-            <Button
-              type="button"
-              variant="glass"
-              size="sm"
-              className="rounded-xl gap-2"
-              disabled={isRefetching}
-              onClick={() => refetch()}
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+            <Button type="button" variant="glass" size="sm" className="gap-2 rounded-xl" disabled={isRefetching} onClick={refetchAll}>
+              <RefreshCw className={cn("h-4 w-4", isRefetching && "animate-spin")} />
               Refresh
             </Button>
           </GlassPanel>
         </div>
       </Spotlight>
 
-      <GlassPanel className="relative overflow-hidden p-6 md:p-8 shine">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-200/40 blur-3xl" />
-        <div className="relative mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50">
-            <Activity className="h-5 w-5 text-violet-600" strokeWidth={1.75} />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Activity timeline</h2>
-            <p className="text-xs text-zinc-600">Newest signals first · synced with backend audit trail</p>
-          </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {[
+          { label: "Active members", value: dashboard.overview.activeMembers },
+          { label: "Assigned today", value: dashboard.overview.assignedToday },
+          { label: "Started today", value: dashboard.overview.startedToday },
+          { label: "Completed today", value: dashboard.overview.completedToday },
+          { label: "Delayed tasks", value: dashboard.overview.delayedTasks },
+          { label: "Idle members", value: dashboard.overview.idleMembers },
+        ].map((m) => (
+          <GlassPanel key={m.label} className="p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">{m.label}</div>
+            <div className="mt-1 text-2xl font-semibold text-zinc-900">{m.value}</div>
+          </GlassPanel>
+        ))}
+      </div>
+
+      <GlassPanel className="space-y-5 p-6 md:p-8">
+        <div className="flex flex-wrap gap-2">
+          {PERIODS.map((p) => (
+            <Button
+              key={p.value}
+              type="button"
+              size="sm"
+              variant={period === p.value ? "premium" : "glass"}
+              className="rounded-xl"
+              onClick={() => setPeriod(p.value)}
+            >
+              {p.label}
+            </Button>
+          ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-5">
-          {isFetching && !isLoading ? <span className="text-xs text-zinc-600">Refreshing feed…</span> : null}
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <Input value={search} onChange={(ev) => setSearch(ev.target.value)} placeholder="Search member, client, task…" />
+          <Select value={type} onValueChange={(v) => setType(v as ActivityTypeFilter)}>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="assigned">Assigned</SelectItem>
+            <SelectItem value="started">Started</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="delayed">Delayed</SelectItem>
+          </Select>
+          <Select value={eventId || "ALL"} onValueChange={(v) => setEventId(v === "ALL" ? "" : v)}>
+            <SelectItem value="ALL">All events</SelectItem>
+            {dashboard.eventOptions.map((e) => (
+              <SelectItem key={e.id} value={e.id}>
+                {e.label}
+              </SelectItem>
+            ))}
+          </Select>
+          <Select value={memberId || "ALL"} onValueChange={(v) => setMemberId(v === "ALL" ? "" : v)}>
+            <SelectItem value="ALL">All members</SelectItem>
+            {dashboard.memberOptions.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+
+        <div className="flex flex-wrap gap-2 border-b border-zinc-100 pb-4">
+          {(
+            [
+              { key: "feed", label: "Feed", icon: Activity },
+              { key: "people", label: "People", icon: Users },
+              { key: "weddings", label: "Weddings", icon: Heart },
+            ] as const
+          ).map(({ key, label, icon: Icon }) => (
+            <Button
+              key={key}
+              type="button"
+              size="sm"
+              variant={tab === key ? "premium" : "ghost"}
+              className="gap-2 rounded-xl"
+              onClick={() => setTab(key)}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Button>
+          ))}
         </div>
 
         {error ? (
-          <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {activityLoadErrorMessage(error)}
           </div>
         ) : null}
 
-        {isLoading ? <p className="mt-8 text-center text-sm text-zinc-600">Pulling latest transitions…</p> : null}
+        {isLoading ? <p className="py-12 text-center text-sm text-zinc-600">Loading team operations…</p> : null}
 
-        {showEmpty ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-14 text-center">
-            <p className="text-sm font-medium text-zinc-900">Quiet channel</p>
-            <p className="mt-2 text-sm text-zinc-600">
-              No updates yet. Once editors move tasks between lanes, the timeline glows automatically.
-            </p>
-          </div>
+        {!isLoading && tab === "feed" ? (
+          dashboard.timeline.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-14 text-center">
+              <p className="text-sm font-medium text-zinc-900">Quiet channel</p>
+              <p className="mt-2 text-sm text-zinc-600">No activity matches your filters for this period.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {dashboard.timeline.map((e) => (
+                <li key={e.id}>
+                  <BorderBeam>
+                    <div className="rounded-2xl border border-zinc-100 bg-white p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-zinc-500">{formatActivityWhen(e.timestamp)}</span>
+                        <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", opsKindColor(e.kind))}>
+                          {opsKindLabel(e.kind)}
+                        </span>
+                        {e.synthetic ? (
+                          <span className="text-[10px] uppercase tracking-wide text-zinc-400">Synthetic</span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-zinc-900">{e.memberName}</p>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        {e.eventName ?? "Unknown client"} — {e.taskName}
+                      </p>
+                    </div>
+                  </BorderBeam>
+                </li>
+              ))}
+            </ul>
+          )
         ) : null}
 
-        {!isLoading && data.length > 0 ? (
-          <div className="relative mt-8">
-            <div className="pointer-events-none absolute bottom-4 left-[19px] top-4 w-px bg-gradient-to-b from-violet-500/40 via-cyan-400/15 to-transparent" />
-            <motion.ul variants={feedContainer} initial="hidden" animate="show" className="relative space-y-4">
-              {data.map((a) => (
-                <motion.li key={a.id} variants={feedItem} className="relative pl-12">
-                  <span className="absolute left-[15px] top-6 z-[1] h-2.5 w-2.5 -translate-x-1/2 rounded-full border border-violet-300/40 bg-violet-400 shadow-[0_0_16px_rgba(167,139,250,0.55)]" />
-
-                  <BorderBeam>
-                    <GlassPanel className="border-zinc-100 p-5">
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-zinc-600">
-                        <span className="tabular-nums text-zinc-600">{fmtWhen(a.createdAt)}</span>
-                        <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] normal-case tracking-normal text-zinc-600">
-                          {a.task.assignedTeam.replaceAll("_", " ")}
-                        </span>
-                      </div>
-
-                      <p className="mt-3 text-[15px] font-semibold text-zinc-900">
-                        {a.actor?.name ?? "Someone"}
-                        {a.actor?.team ? (
-                          <span className="font-normal text-zinc-600"> · {a.actor.team.replaceAll("_", " ")}</span>
-                        ) : null}
-                      </p>
-
-                      <p className="mt-2 text-sm text-zinc-600">
-                        <span className="text-zinc-600">Deliverable · </span>
-                        {a.task.event?.clientName ?? "Unknown client"}
-                        <span className="text-zinc-600"> — </span>
-                        <span className="font-medium text-zinc-800">{a.task.taskType.replaceAll("_", " ")}</span>
-                      </p>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        {a.previousStatus ? (
-                          <>
-                            <StatusBadge status={a.previousStatus} />
-                            <span className="text-xs text-zinc-600">→</span>
-                          </>
-                        ) : (
-                          <span className="text-[11px] uppercase tracking-wide text-zinc-600">Initialized</span>
-                        )}
-                        <StatusBadge status={a.newStatus} />
-                      </div>
-                    </GlassPanel>
-                  </BorderBeam>
-                </motion.li>
+        {!isLoading && tab === "people" ? (
+          dashboard.members.length === 0 ? (
+            <p className="py-12 text-center text-sm text-zinc-600">No team members match these filters.</p>
+          ) : (
+            <ul className="space-y-3">
+              {dashboard.members.map((m) => (
+                <li key={m.memberId} className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-zinc-900">{m.memberName}</div>
+                      <div className="text-xs text-zinc-500">{m.roleLabel}</div>
+                    </div>
+                    <span className={cn("rounded-full border px-2.5 py-1 text-[11px] font-semibold", healthColor(m.health))}>
+                      {healthLabel(m.health)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-600">
+                    <span>{m.openTasks} open</span>
+                    <span>{m.startedInPeriod} started</span>
+                    <span>{m.completedInPeriod} completed</span>
+                    {m.lastActivity ? <span>Last active {formatActivityWhen(m.lastActivity)}</span> : null}
+                  </div>
+                </li>
               ))}
-            </motion.ul>
-          </div>
+            </ul>
+          )
+        ) : null}
+
+        {!isLoading && tab === "weddings" ? (
+          dashboard.events.length === 0 ? (
+            <p className="py-12 text-center text-sm text-zinc-600">No wedding activity for this period.</p>
+          ) : (
+            <ul className="space-y-3">
+              {dashboard.events.map((ev) => (
+                <li key={ev.eventId} className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="font-semibold text-zinc-900">{ev.eventName}</div>
+                  <div className="mt-3 grid gap-2 text-xs text-zinc-600 sm:grid-cols-2">
+                    {ev.startedMembers.length ? (
+                      <div>
+                        <span className="font-medium text-zinc-800">Started:</span> {ev.startedMembers.join(", ")}
+                      </div>
+                    ) : null}
+                    {ev.completedMembers.length ? (
+                      <div>
+                        <span className="font-medium text-zinc-800">Completed:</span> {ev.completedMembers.join(", ")}
+                      </div>
+                    ) : null}
+                    {ev.delayedMembers.length ? (
+                      <div>
+                        <span className="font-medium text-rose-700">Delayed:</span> {ev.delayedMembers.join(", ")}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-2 text-xs text-zinc-500">{ev.entries.length} activity entries</div>
+                </li>
+              ))}
+            </ul>
+          )
         ) : null}
       </GlassPanel>
     </motion.div>

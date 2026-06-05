@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
+import 'package:hsdash_mobile/features/admin/admin_leads_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_deadlines_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_tab.dart';
 import 'package:hsdash_mobile/features/admin/team_management_tab.dart';
@@ -28,9 +29,10 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.violet,
-      premiumDarkTabIndices: const {0, 1, 2, 3},
+      premiumDarkTabIndices: const {0, 2, 3, 4},
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Overview'),
+        NavigationDestination(icon: Icon(Icons.person_add_outlined), selectedIcon: Icon(Icons.person_add), label: 'Leads'),
         NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
         NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
         NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Weddings'),
@@ -39,6 +41,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       ],
       children: const [
         AdminHomeTab(),
+        AdminLeadsTab(),
         AdminDeadlinesTab(),
         ShootCalendarPanel(mode: ShootCalendarMode.admin),
         WeddingsArchiveTab(accent: AppColors.violet, canEdit: true, canActivate: false),

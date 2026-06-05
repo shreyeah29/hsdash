@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { PublicEnquiryPage } from "@/pages/PublicEnquiryPage";
 import { LoginChoicePage } from "@/pages/LoginChoicePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
@@ -8,12 +9,14 @@ import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { TasksPage } from "@/pages/shared/TasksPage";
 import { TeamManagementPage } from "@/pages/admin/TeamManagementPage";
 import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
+import { WeddingsArchivePage } from "@/pages/admin/WeddingsArchivePage";
 import { TeamDashboardPage } from "@/pages/team/TeamDashboardPage";
 import { CoordinatorDashboardPage } from "@/pages/team/CoordinatorDashboardPage";
 import { ShootCalendarPage } from "@/pages/shared/ShootCalendarPage";
 import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
 import { AssignmentsBoardPage } from "@/pages/shared/AssignmentsBoardPage";
 import { AdminDeliverablesStatusPage } from "@/pages/admin/AdminDeliverablesStatusPage";
+import { AdminLeadsPage } from "@/pages/admin/AdminLeadsPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { RequireEditor, RequireCoordinatorRole } from "@/routes/RoleGateways";
@@ -23,6 +26,7 @@ import { Role } from "@/types/domain";
 function App() {
   return (
     <Routes>
+      <Route path="/enquiry" element={<PublicEnquiryPage />} />
       <Route path="/login" element={<LoginChoicePage />} />
       <Route path="/login/admin" element={<LoginPage loginKind="admin" />} />
       <Route path="/login/team" element={<LoginPage loginKind="team" />} />
@@ -38,7 +42,10 @@ function App() {
             }
           >
             <Route index element={<AdminDashboardPage />} />
-            <Route path="notifications" element={<AdminNotificationsPage />} />
+            <Route path="leads" element={<AdminLeadsPage />} />
+            <Route path="activity" element={<AdminNotificationsPage />} />
+            <Route path="notifications" element={<Navigate to="/admin/activity" replace />} />
+            <Route path="weddings-archive" element={<WeddingsArchivePage />} />
             <Route path="production-calendar" element={<ShootCalendarPage mode="admin" />} />
             <Route path="deliverables-status" element={<AdminDeliverablesStatusPage />} />
             <Route path="assignments" element={<AssignmentsBoardPage mode="admin" />} />

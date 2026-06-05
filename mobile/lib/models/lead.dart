@@ -1,0 +1,233 @@
+class LeadSummary {
+  const LeadSummary({
+    required this.id,
+    required this.status,
+    required this.source,
+    required this.eventType,
+    required this.name,
+    required this.phoneNumber,
+    required this.eventDate,
+    required this.eventLocation,
+    required this.brideName,
+    required this.groomName,
+    required this.clientName,
+    required this.message,
+    this.assignedToId,
+    this.assignedToName,
+    this.convertedEntryId,
+    this.convertedAt,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String status;
+  final String source;
+  final String eventType;
+  final String name;
+  final String phoneNumber;
+  final String eventDate;
+  final String eventLocation;
+  final String brideName;
+  final String groomName;
+  final String clientName;
+  final String message;
+  final String? assignedToId;
+  final String? assignedToName;
+  final String? convertedEntryId;
+  final String? convertedAt;
+  final String createdAt;
+
+  String get displayName {
+    if (eventType == 'WEDDING') {
+      final b = brideName.trim();
+      final g = groomName.trim();
+      if (b.isNotEmpty && g.isNotEmpty) return '$b & $g';
+      if (b.isNotEmpty) return b;
+      if (g.isNotEmpty) return g;
+    }
+    final c = clientName.trim();
+    if (c.isNotEmpty) return c;
+    return name.trim().isNotEmpty ? name.trim() : 'Lead';
+  }
+
+  bool get isConverted => convertedEntryId != null && convertedEntryId!.isNotEmpty;
+
+  factory LeadSummary.fromJson(Map<String, dynamic> json) {
+    final assigned = json['assignedTo'] as Map<String, dynamic>?;
+    return LeadSummary(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'NEW',
+      source: json['source']?.toString() ?? 'WEBSITE',
+      eventType: json['eventType']?.toString() ?? 'WEDDING',
+      name: json['name']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString() ?? '',
+      eventDate: json['eventDate']?.toString() ?? '',
+      eventLocation: json['eventLocation']?.toString() ?? '',
+      brideName: json['brideName']?.toString() ?? '',
+      groomName: json['groomName']?.toString() ?? '',
+      clientName: json['clientName']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      assignedToId: assigned?['id']?.toString(),
+      assignedToName: assigned?['name']?.toString(),
+      convertedEntryId: json['convertedEntryId']?.toString(),
+      convertedAt: json['convertedAt']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? '',
+    );
+  }
+}
+
+class LeadNote {
+  const LeadNote({
+    required this.id,
+    required this.content,
+    required this.authorName,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String content;
+  final String authorName;
+  final String createdAt;
+
+  factory LeadNote.fromJson(Map<String, dynamic> json) {
+    final author = json['author'] as Map<String, dynamic>?;
+    return LeadNote(
+      id: json['id']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      authorName: author?['name']?.toString() ?? 'Staff',
+      createdAt: json['createdAt']?.toString() ?? '',
+    );
+  }
+}
+
+class LeadActivity {
+  const LeadActivity({
+    required this.id,
+    required this.kind,
+    required this.message,
+    required this.createdAt,
+    this.actorName,
+  });
+
+  final String id;
+  final String kind;
+  final String message;
+  final String createdAt;
+  final String? actorName;
+
+  factory LeadActivity.fromJson(Map<String, dynamic> json) {
+    final actor = json['actor'] as Map<String, dynamic>?;
+    return LeadActivity(
+      id: json['id']?.toString() ?? '',
+      kind: json['kind']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      createdAt: json['createdAt']?.toString() ?? '',
+      actorName: actor?['name']?.toString(),
+    );
+  }
+}
+
+class LeadDetail extends LeadSummary {
+  const LeadDetail({
+    required super.id,
+    required super.status,
+    required super.source,
+    required super.eventType,
+    required super.name,
+    required super.phoneNumber,
+    required super.eventDate,
+    required super.eventLocation,
+    required super.brideName,
+    required super.groomName,
+    required super.clientName,
+    required super.message,
+    super.assignedToId,
+    super.assignedToName,
+    super.convertedEntryId,
+    super.convertedAt,
+    required super.createdAt,
+    required this.notes,
+    required this.activities,
+  });
+
+  final List<LeadNote> notes;
+  final List<LeadActivity> activities;
+
+  factory LeadDetail.fromJson(Map<String, dynamic> json) {
+    final notesJson = json['notes'] as List<dynamic>? ?? [];
+    final activitiesJson = json['activities'] as List<dynamic>? ?? [];
+    final assigned = json['assignedTo'] as Map<String, dynamic>?;
+    return LeadDetail(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'NEW',
+      source: json['source']?.toString() ?? 'WEBSITE',
+      eventType: json['eventType']?.toString() ?? 'WEDDING',
+      name: json['name']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString() ?? '',
+      eventDate: json['eventDate']?.toString() ?? '',
+      eventLocation: json['eventLocation']?.toString() ?? '',
+      brideName: json['brideName']?.toString() ?? '',
+      groomName: json['groomName']?.toString() ?? '',
+      clientName: json['clientName']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      assignedToId: assigned?['id']?.toString(),
+      assignedToName: assigned?['name']?.toString(),
+      convertedEntryId: json['convertedEntryId']?.toString(),
+      convertedAt: json['convertedAt']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? '',
+      notes: notesJson.map((e) => LeadNote.fromJson(e as Map<String, dynamic>)).toList(),
+      activities: activitiesJson.map((e) => LeadActivity.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+}
+
+class LeadStats {
+  const LeadStats({
+    required this.total,
+    required this.newCount,
+    required this.contacted,
+    required this.negotiation,
+    required this.confirmed,
+    required this.lost,
+    required this.conversionRate,
+  });
+
+  final int total;
+  final int newCount;
+  final int contacted;
+  final int negotiation;
+  final int confirmed;
+  final int lost;
+  final double conversionRate;
+
+  factory LeadStats.fromJson(Map<String, dynamic> json) {
+    return LeadStats(
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      newCount: (json['new'] as num?)?.toInt() ?? 0,
+      contacted: (json['contacted'] as num?)?.toInt() ?? 0,
+      negotiation: (json['negotiation'] as num?)?.toInt() ?? 0,
+      confirmed: (json['confirmed'] as num?)?.toInt() ?? 0,
+      lost: (json['lost'] as num?)?.toInt() ?? 0,
+      conversionRate: (json['conversionRate'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+String leadStatusLabel(String status) {
+  switch (status) {
+    case 'NEW':
+      return 'New';
+    case 'CONTACTED':
+      return 'Contacted';
+    case 'NEGOTIATION':
+      return 'Negotiation';
+    case 'CONFIRMED':
+      return 'Confirmed';
+    case 'LOST':
+      return 'Lost';
+    case 'ARCHIVED':
+      return 'Archived';
+    default:
+      return status;
+  }
+}

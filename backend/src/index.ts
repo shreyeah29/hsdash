@@ -11,6 +11,8 @@ import { usersRouter } from "./routes/users";
 import { adminRouter } from "./routes/admin";
 import { productionCalendarRouter } from "./routes/productionCalendar";
 import { notificationsRouter } from "./routes/notifications";
+import { leadsRouter } from "./routes/leads";
+import { adminLeadsRouter } from "./routes/adminLeads";
 import { attachSocket } from "./realtime/socket";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
@@ -39,6 +41,8 @@ app.use("/users", usersRouter);
 app.use("/admin", adminRouter);
 app.use("/production-calendar", productionCalendarRouter);
 app.use("/notifications", notificationsRouter);
+app.use("/leads", leadsRouter);
+app.use("/admin/leads", adminLeadsRouter);
 
 app.use(errorHandler);
 

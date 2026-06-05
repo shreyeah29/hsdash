@@ -97,6 +97,9 @@ export type ShootCalendarEntry = {
   id: string;
   day: string;
   clientName: string;
+  brideName?: string | null;
+  groomName?: string | null;
+  phoneNumber?: string | null;
   clientType: string;
   clientContact: string;
   city: string;

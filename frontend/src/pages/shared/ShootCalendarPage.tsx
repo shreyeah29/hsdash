@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/services/api";
 import type { ShootCalendarEntry, Task, User } from "@/types/domain";
@@ -13,6 +13,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 import { ShootCalendarExportTab } from "@/components/admin/ShootCalendarExportTab";
+import { ClientRelatedEventsPanel } from "@/components/production-calendar/ClientRelatedEventsPanel";
+import {
+  emptyShootClientForm,
+  shootFormCanSave,
+  shootFormFromEntry,
+  shootFormToPayload,
+  ShootClientFormSection,
+  type ShootClientFormState,
+} from "@/components/production-calendar/ShootClientFormSection";
 
 type TimeParts = { hour: number; minute: number; ampm: "AM" | "PM" };
 
@@ -135,35 +144,9 @@ async function fetchRoster() {
   return data.users;
 }
 
-type FormState = {
-  day: string;
-  clientName: string;
-  clientType: string;
-  clientContact: string;
-  city: string;
-  eventName: string;
-  venue: string;
-  startTime: string;
-  endTime: string;
-  photoTeam: string;
-  videoTeam: string;
-  addons: string;
-};
+type FormState = ShootClientFormState;
 
-const emptyForm = (day: string): FormState => ({
-  day,
-  clientName: "",
-  clientType: "",
-  clientContact: "",
-  city: "",
-  eventName: "",
-  venue: "",
-  startTime: "",
-  endTime: "",
-  photoTeam: "",
-  videoTeam: "",
-  addons: "",
-});
+const emptyForm = emptyShootClientForm;
 
 export type ShootCalendarMode = "admin" | "coordinator";
 
@@ -171,7 +154,9 @@ export type ShootCalendarMode = "admin" | "coordinator";
 export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const canMutate = mode === "admin";
   const coordinatorMode = mode === "coordinator";
+  const calendarPath = coordinatorMode ? "/coordinator/shoot-calendar" : "/admin/production-calendar";
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const { from, to } = monthRangeIso(cursor.y, cursor.m);
@@ -193,6 +178,15 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   }, [roster]);
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const day = searchParams.get("day");
+    if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
+      setSelectedKey(day);
+      const [y, m] = day.split("-").map(Number);
+      setCursor({ y, m: m - 1 });
+    }
+  }, [searchParams]);
   const [activeTab, setActiveTab] = useState<"calendar" | "export">("calendar");
   const [createTasksOpen, setCreateTasksOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -240,20 +234,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
   const saveEntry = useMutation({
     mutationFn: async () => {
-      const payload = {
-        day: form.day,
-        clientName: form.clientName,
-        clientType: form.clientType,
-        clientContact: form.clientContact,
-        city: form.city,
-        eventName: form.eventName,
-        venue: form.venue,
-        startTime: form.startTime,
-        endTime: form.endTime,
-        photoTeam: form.photoTeam,
-        videoTeam: form.videoTeam,
-        addons: form.addons,
-      };
+      const payload = shootFormToPayload(form);
       if (editingId && editingId !== "new") {
         const { data } = await api.put(`/production-calendar/entries/${editingId}`, payload);
         return data;
@@ -269,6 +250,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       setDialogOpen(false);
       setEditingId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["production-calendar-clients"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["my-tasks"] });
       await qc.invalidateQueries({ queryKey: ["my-notifications"] });
@@ -285,6 +267,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       setClearConfirmText("");
       setSelectedKey(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["production-calendar-clients"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["my-tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
@@ -298,6 +281,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["production-calendar-clients"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
@@ -342,6 +326,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
       console.info(`Pipeline active. Editors assigned: ${assigned}`);
       setActivateEntryId(null);
       await qc.invalidateQueries({ queryKey: ["production-calendar-entries"] });
+      await qc.invalidateQueries({ queryKey: ["production-calendar-clients"] });
       await qc.invalidateQueries({ queryKey: ["tasks"] });
       await qc.invalidateQueries({ queryKey: ["my-tasks"] });
       await qc.invalidateQueries({ queryKey: ["my-notifications"] });
@@ -365,20 +350,12 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   function openEdit(entry: ShootCalendarEntry) {
     if (!canMutate) return;
     setEditingId(entry.id);
-    setForm({
-      day: calendarDayKeyFromIso(entry.day),
-      clientName: entry.clientName,
-      clientType: entry.clientType,
-      clientContact: entry.clientContact ?? "",
-      city: entry.city ?? "",
-      eventName: entry.eventName,
-      venue: entry.venue ?? "",
-      startTime: entry.startTime,
-      endTime: entry.endTime,
-      photoTeam: entry.photoTeam,
-      videoTeam: entry.videoTeam,
-      addons: entry.addons,
-    });
+    setForm(
+      shootFormFromEntry({
+        ...entry,
+        day: calendarDayKeyFromIso(entry.day),
+      }),
+    );
     setDialogOpen(true);
   }
 
@@ -627,6 +604,10 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                           </div>
                         ) : null}
 
+                        <div className="mt-4">
+                          <ClientRelatedEventsPanel entry={e} calendarPath={calendarPath} />
+                        </div>
+
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                           <div className="text-[11px] text-zinc-600">Recorded by {e.createdBy.name}</div>
 
@@ -846,69 +827,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
             <DialogHeader>
               <DialogTitle>{editingId === "new" ? "Add shoot details" : "Edit shoot details"}</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Day</div>
-                <Input type="date" value={form.day} onChange={(ev) => setForm((f) => ({ ...f, day: ev.target.value }))} />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Client name</div>
-                <Input
-                  value={form.clientName}
-                  onChange={(ev) => setForm((f) => ({ ...f, clientName: ev.target.value }))}
-                  placeholder="e.g. Rahul & Priya"
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">Type of client</div>
-                <Input value={form.clientType} onChange={(ev) => setForm((f) => ({ ...f, clientType: ev.target.value }))} placeholder="Wedding, corporate…" />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">Event name</div>
-                <Input value={form.eventName} onChange={(ev) => setForm((f) => ({ ...f, eventName: ev.target.value }))} placeholder="Reception, ceremony…" />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">Client contact</div>
-                <Input value={form.clientContact} onChange={(ev) => setForm((f) => ({ ...f, clientContact: ev.target.value }))} placeholder="Phone / email" />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-zinc-600">City</div>
-                <Input value={form.city} onChange={(ev) => setForm((f) => ({ ...f, city: ev.target.value }))} placeholder="City" />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Venue</div>
-                <Input value={form.venue} onChange={(ev) => setForm((f) => ({ ...f, venue: ev.target.value }))} placeholder="Ceremony / reception location" />
-              </div>
-              <TimePicker label="Start time" value={form.startTime} onChange={(next) => setForm((f) => ({ ...f, startTime: next }))} />
-              <TimePicker label="End time" value={form.endTime} onChange={(next) => setForm((f) => ({ ...f, endTime: next }))} />
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Photo team (on-site)</div>
-                <textarea
-                  className={cn("premium-field min-h-[72px] w-full resize-y")}
-                  value={form.photoTeam}
-                  onChange={(ev) => setForm((f) => ({ ...f, photoTeam: ev.target.value }))}
-                  placeholder="Names / crew going"
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Video team (on-site)</div>
-                <textarea
-                  className={cn("premium-field min-h-[72px] w-full resize-y")}
-                  value={form.videoTeam}
-                  onChange={(ev) => setForm((f) => ({ ...f, videoTeam: ev.target.value }))}
-                  placeholder="Names / crew going"
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <div className="text-xs font-medium text-zinc-600">Notes / add-ons</div>
-                <textarea
-                  className={cn("premium-field min-h-[72px] w-full resize-y")}
-                  value={form.addons}
-                  onChange={(ev) => setForm((f) => ({ ...f, addons: ev.target.value }))}
-                  placeholder="Anything extra to remember"
-                />
-              </div>
-            </div>
+            <ShootClientFormSection form={form} setForm={setForm} TimePicker={TimePicker} />
             {saveEntry.isError ? <p className="mt-2 text-sm text-rose-600">{errMsg(saveEntry.error)}</p> : null}
             <div className="mt-6 flex justify-end gap-2 border-t border-zinc-100 pt-4">
               <Button type="button" variant="glass" className="rounded-xl" onClick={() => setDialogOpen(false)}>
@@ -918,7 +837,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
                 type="button"
                 variant="premium"
                 className="rounded-xl"
-                disabled={saveEntry.isPending || !form.clientName.trim()}
+                disabled={saveEntry.isPending || !shootFormCanSave(form)}
                 onClick={() => saveEntry.mutate()}
               >
                 {saveEntry.isPending ? "Saving…" : "Save"}
