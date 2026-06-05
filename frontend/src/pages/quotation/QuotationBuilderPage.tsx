@@ -85,8 +85,8 @@ export function QuotationBuilderPage() {
           eventName: "WEDDING",
           venue: lead.eventLocation || "",
           eventDate: d,
-          teamSize: "7 MEMBERS",
-          duration: "FULL DAY",
+          teamSize: "TEAM OF 5",
+          duration: "6 HOUR MAX",
           notes: "",
         },
       ]);

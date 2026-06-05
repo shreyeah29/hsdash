@@ -1,11 +1,21 @@
-/** Static Harishankar quotation brochure content (pages 1–5, 7–10 from Canva PDF). */
+/** Static Harishankar quotation brochure — assets extracted from Canva PDF. */
+
+/** Full-page renders (A4 ratio 595.5×842.25) served from /public/quotation */
+export const QUOTATION_PAGES = {
+  cover: "/quotation/page-01.png",
+  introduction: "/quotation/page-02.png",
+  heirlooms: "/quotation/page-03.png",
+  deliverables: "/quotation/page-04.png",
+  awards: "/quotation/page-05.png",
+  addons: "/quotation/page-08.png",
+  testimonials: "/quotation/page-09.png",
+  terms: "/quotation/page-10.png",
+} as const;
 
 export const BRAND = {
   name: "Harishankar Photography",
   tagline: "Weddings, the Harishankar Way",
   established: "ESTD. 2012",
-  heroImage:
-    "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2400&auto=format&fit=crop",
 };
 
 export const INTRODUCTION = `Some stories are too precious to be told in words. They deserve to be felt, remembered, and relived—frame by frame, moment by moment. That's exactly what Harishankar Photography does best.
