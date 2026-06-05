@@ -229,6 +229,7 @@ model Lead {
   source            LeadSource    @default(WEBSITE)
   eventType         LeadEventType @default(WEDDING)
   name              String        @default("")
+  email             String        @default("")
   phoneNumber       String
   phoneNormalized   String
   eventDate         DateTime

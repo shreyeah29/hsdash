@@ -5,6 +5,7 @@ class LeadSummary {
     required this.source,
     required this.eventType,
     required this.name,
+    required this.email,
     required this.phoneNumber,
     required this.eventDate,
     required this.eventLocation,
@@ -24,6 +25,7 @@ class LeadSummary {
   final String source;
   final String eventType;
   final String name;
+  final String email;
   final String phoneNumber;
   final String eventDate;
   final String eventLocation;
@@ -60,6 +62,7 @@ class LeadSummary {
       source: json['source']?.toString() ?? 'WEBSITE',
       eventType: json['eventType']?.toString() ?? 'WEDDING',
       name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
       phoneNumber: json['phoneNumber']?.toString() ?? '',
       eventDate: json['eventDate']?.toString() ?? '',
       eventLocation: json['eventLocation']?.toString() ?? '',
@@ -134,6 +137,7 @@ class LeadDetail extends LeadSummary {
     required super.source,
     required super.eventType,
     required super.name,
+    required super.email,
     required super.phoneNumber,
     required super.eventDate,
     required super.eventLocation,
@@ -163,6 +167,7 @@ class LeadDetail extends LeadSummary {
       source: json['source']?.toString() ?? 'WEBSITE',
       eventType: json['eventType']?.toString() ?? 'WEDDING',
       name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
       phoneNumber: json['phoneNumber']?.toString() ?? '',
       eventDate: json['eventDate']?.toString() ?? '',
       eventLocation: json['eventLocation']?.toString() ?? '',

@@ -13,6 +13,7 @@ import { createShootCalendarEntryTx } from "./shootCalendarEntryService";
 
 export type PublicLeadInput = {
   phoneNumber: string;
+  email?: string;
   eventDate: string;
   eventLocation: string;
   eventType: LeadEventType;
@@ -93,6 +94,7 @@ export async function createLeadFromPublic(input: PublicLeadInput) {
         source: LeadSource.WEBSITE,
         eventType: input.eventType,
         name,
+        email: input.email?.trim() ?? "",
         phoneNumber: input.phoneNumber.trim(),
         phoneNormalized,
         eventDate: parseDayUtc(input.eventDate),
@@ -124,6 +126,7 @@ export async function createLeadManual(input: ManualLeadInput, actorUserId: stri
         source: input.source ?? LeadSource.MANUAL,
         eventType: input.eventType,
         name,
+        email: input.email?.trim() ?? "",
         phoneNumber: input.phoneNumber.trim(),
         phoneNormalized,
         eventDate: parseDayUtc(input.eventDate),
@@ -256,6 +259,7 @@ export async function convertLeadToClient(leadId: string, adminUserId: string) {
         brideName,
         groomName,
         phoneNumber: lead.phoneNumber,
+        clientContact: lead.email.trim(),
         clientType: lead.eventType === LeadEventType.WEDDING ? "Wedding" : "Other",
         city: lead.eventLocation,
         venue: lead.eventLocation,

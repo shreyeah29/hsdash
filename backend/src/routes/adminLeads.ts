@@ -23,6 +23,7 @@ const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const leadInputSchema = z
   .object({
     phoneNumber: z.string().min(8).max(20),
+    email: z.string().max(200).optional().default(""),
     eventDate: isoDay,
     eventLocation: z.string().min(1).max(300),
     eventType: z.nativeEnum(LeadEventType),
@@ -37,6 +38,10 @@ const leadInputSchema = z
   .superRefine((data, ctx) => {
     if (!isValidPhone(data.phoneNumber)) {
       ctx.addIssue({ code: "custom", message: "Invalid phone number", path: ["phoneNumber"] });
+    }
+    const email = data.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      ctx.addIssue({ code: "custom", message: "Invalid email address", path: ["email"] });
     }
   });
 
@@ -103,6 +108,7 @@ adminLeadsRouter.get("/", async (req, res, next) => {
         { brideName: { contains: needle, mode: "insensitive" } },
         { groomName: { contains: needle, mode: "insensitive" } },
         { phoneNumber: { contains: needle } },
+        { email: { contains: needle, mode: "insensitive" } },
         { eventLocation: { contains: needle, mode: "insensitive" } },
       ];
     }

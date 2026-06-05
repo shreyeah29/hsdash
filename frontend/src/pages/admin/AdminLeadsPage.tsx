@@ -228,6 +228,7 @@ export function AdminLeadsPage() {
 
               <div className="grid gap-4 text-sm sm:grid-cols-2">
                 <Info label="Phone" value={lead.phoneNumber} />
+                {lead.email ? <Info label="Email" value={lead.email} /> : null}
                 <Info label="Event date" value={fmtDate(lead.eventDate)} />
                 <Info label="Location" value={lead.eventLocation} />
                 <Info label="Source" value={LEAD_SOURCE_LABELS[lead.source]} />

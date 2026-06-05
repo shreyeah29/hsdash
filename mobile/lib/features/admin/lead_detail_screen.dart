@@ -90,6 +90,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             Text(leadStatusLabel(lead.status), style: TextStyle(color: AppColors.violet, fontWeight: FontWeight.w600)),
             const SizedBox(height: 20),
             _InfoRow('Phone', lead.phoneNumber),
+            if (lead.email.isNotEmpty) _InfoRow('Email', lead.email),
             _InfoRow('Event date', lead.eventDate.split('T').first),
             _InfoRow('Location', lead.eventLocation),
             _InfoRow('Source', lead.source),

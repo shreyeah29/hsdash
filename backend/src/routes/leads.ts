@@ -13,6 +13,7 @@ const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const publicLeadSchema = z
   .object({
     phoneNumber: z.string().min(8).max(20),
+    email: z.string().max(200).optional().default(""),
     eventDate: isoDay,
     eventLocation: z.string().min(1).max(300),
     eventType: z.enum(["WEDDING", "OTHER"]),
@@ -26,6 +27,10 @@ const publicLeadSchema = z
   .superRefine((data, ctx) => {
     if (!isValidPhone(data.phoneNumber)) {
       ctx.addIssue({ code: "custom", message: "Invalid phone number", path: ["phoneNumber"] });
+    }
+    const email = data.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      ctx.addIssue({ code: "custom", message: "Invalid email address", path: ["email"] });
     }
     if (data.eventType === "WEDDING") {
       if (!data.brideName.trim() && !data.groomName.trim()) {
@@ -56,6 +61,7 @@ leadsRouter.post("/", async (req, res, next) => {
 
     const lead = await createLeadFromPublic({
       phoneNumber: body.phoneNumber,
+      email: body.email,
       eventDate: body.eventDate,
       eventLocation: body.eventLocation,
       eventType: body.eventType as LeadEventType,

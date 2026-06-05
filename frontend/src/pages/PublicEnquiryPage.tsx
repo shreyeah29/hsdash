@@ -15,6 +15,7 @@ export function PublicEnquiryPage() {
   const [brideName, setBrideName] = useState("");
   const [groomName, setGroomName] = useState("");
   const [clientName, setClientName] = useState("");
+  const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -34,6 +35,7 @@ export function PublicEnquiryPage() {
         brideName,
         groomName,
         clientName,
+        email,
         phoneNumber,
         eventDate,
         eventLocation,
@@ -137,6 +139,17 @@ export function PublicEnquiryPage() {
                 required
                 className="premium-field"
                 placeholder="+91 …"
+              />
+            </Field>
+
+            <Field label="Email address">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="premium-field"
+                placeholder="you@example.com"
+                autoComplete="email"
               />
             </Field>
 

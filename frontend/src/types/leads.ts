@@ -31,6 +31,7 @@ export type LeadSummary = {
   source: LeadSource;
   eventType: LeadEventType;
   name: string;
+  email: string;
   phoneNumber: string;
   eventDate: string;
   eventLocation: string;
