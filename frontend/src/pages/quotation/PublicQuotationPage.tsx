@@ -112,7 +112,7 @@ export function PublicQuotationPage() {
       <EventsBrochurePage quotation={quotation} />
       <PackageBrochurePage quotation={quotation} />
 
-      <StaticPage src={QUOTATION_PAGES.closing} alt="Harishankar Photography" />
+      <StaticPage src={QUOTATION_PAGES.addons} alt="Add ons" />
 
       <footer className="qb-actions">
         <div className="qb-actions-inner">
