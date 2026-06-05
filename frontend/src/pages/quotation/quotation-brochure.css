@@ -36,36 +36,50 @@
   line-height: normal;
 }
 
-/* ── Events page ── */
-.qb-events {
+.qb-pdf-bg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Events page (PDF page 6) ── */
+.qb-events-page {
+  background-color: var(--qb-brown);
+}
+
+.qb-events-content-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13.5%;
+  bottom: 14%;
   background: var(--qb-brown);
+  z-index: 1;
+}
+
+.qb-events-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   color: var(--qb-cream);
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 6% 5.5% 5%;
+  grid-template-rows: auto 1fr;
+  padding: 13.5% 5.5% 14%;
   box-sizing: border-box;
 }
 
 .qb-events-header {
   text-align: center;
-  padding-bottom: 4%;
-}
-
-.qb-events-header h2 {
-  margin: 0;
-  font-family: "Jost", sans-serif;
-  font-size: clamp(0.95rem, 4.2vw, 1.45rem);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  line-height: 1.35;
-  text-transform: uppercase;
-  color: var(--qb-cream);
+  padding-bottom: 3%;
 }
 
 .qb-events-header p {
-  margin: 0.65rem 0 0;
+  margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: clamp(1rem, 3.6vw, 1.3rem);
   font-style: italic;
@@ -88,6 +102,17 @@
   grid-template-columns: 1fr 1fr;
   gap: clamp(0.45rem, 1.8vw, 0.65rem);
   align-content: center;
+}
+
+.qb-events-grid--sparse {
+  grid-template-columns: 1fr;
+  max-width: min(88%, 320px);
+  margin: 0 auto;
+  gap: clamp(0.55rem, 2vw, 0.75rem);
+}
+
+.qb-events-grid--sparse .qb-event-card {
+  min-height: clamp(72px, 18vw, 96px);
 }
 
 .qb-event-card {
@@ -166,42 +191,28 @@
   opacity: 0.95;
 }
 
-.qb-events-footnote {
-  padding-top: 3%;
+/* ── Package page (PDF page 7) ── */
+.qb-package-page {
+  background-color: var(--qb-package);
 }
 
-.qb-events-footnote p {
-  margin: 0;
-  background: var(--qb-beige);
-  color: #2c2420;
-  border-radius: 999px;
-  padding: 0.55rem 0.85rem;
-  font-size: clamp(0.42rem, 1.15vw, 0.54rem);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1.45;
+.qb-package-content-mask {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 9%;
+  bottom: 7%;
+  background: rgba(109, 93, 82, 0.97);
+  z-index: 1;
 }
 
-/* ── Package page ── */
-.qb-package {
+.qb-package-overlay {
   position: absolute;
   inset: 0;
-  background: var(--qb-package);
+  z-index: 2;
   color: #fff;
   box-sizing: border-box;
   overflow: hidden;
-}
-
-.qb-package-bg {
-  position: absolute;
-  inset: 0;
-  background-image: url("/quotation/page-07-img-0.png");
-  background-size: cover;
-  background-position: center;
-  opacity: 0.32;
-  pointer-events: none;
 }
 
 .qb-package-inner {
@@ -219,6 +230,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
 }
 

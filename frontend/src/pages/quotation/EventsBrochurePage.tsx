@@ -1,4 +1,4 @@
-import { EVENTS_FOOTNOTE } from "@/lib/quotationTemplate";
+import { QUOTATION_PAGES } from "@/lib/quotationTemplate";
 import type { Quotation } from "@/types/quotation";
 
 function formatEventDate(iso: string) {
@@ -8,23 +8,30 @@ function formatEventDate(iso: string) {
   return { day, month };
 }
 
-/** PDF uses alternating tan / beige — odd rows lean tan, even lean beige. */
+/** PDF checkerboard: tan left / beige right, then swap on the next row. */
 function cardTone(index: number) {
-  return index % 2 === 0 ? "tan" : "beige";
+  const row = Math.floor(index / 2);
+  const col = index % 2;
+  return (row + col) % 2 === 0 ? "tan" : "beige";
 }
 
 export function EventsBrochurePage({ quotation }: { quotation: Quotation }) {
+  const sparse = quotation.events.length <= 2;
+
   return (
     <section className="quotation-brochure-page">
-      <div className="quotation-brochure-dynamic">
-        <div className="qb-events">
+      <div className="quotation-brochure-dynamic qb-events-page">
+        <img src={QUOTATION_PAGES.events} alt="" className="qb-pdf-bg" aria-hidden />
+        {/* Hides sample client + events baked into the PDF; title + footnote stay visible. */}
+        <div className="qb-events-content-mask" aria-hidden />
+
+        <div className="qb-events-overlay">
           <header className="qb-events-header">
-            <h2>Upcoming Events</h2>
             <p>For: {quotation.clientName}</p>
           </header>
 
           <div className="qb-events-body">
-            <div className="qb-events-grid">
+            <div className={`qb-events-grid${sparse ? " qb-events-grid--sparse" : ""}`}>
               {quotation.events.map((ev, i) => {
                 const { day, month } = formatEventDate(ev.eventDate);
                 return (
@@ -46,10 +53,6 @@ export function EventsBrochurePage({ quotation }: { quotation: Quotation }) {
               })}
             </div>
           </div>
-
-          <footer className="qb-events-footnote">
-            <p>{EVENTS_FOOTNOTE}</p>
-          </footer>
         </div>
       </div>
     </section>

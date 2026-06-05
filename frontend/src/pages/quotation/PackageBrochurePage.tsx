@@ -1,4 +1,4 @@
-import { PACKAGE_NOTES } from "@/lib/quotationTemplate";
+import { PACKAGE_NOTES, QUOTATION_PAGES } from "@/lib/quotationTemplate";
 import type { Quotation } from "@/types/quotation";
 
 function PaymentLine({ label, value }: { label: string; value: string }) {
@@ -16,9 +16,11 @@ export function PackageBrochurePage({ quotation }: { quotation: Quotation }) {
 
   return (
     <section className="quotation-brochure-page">
-      <div className="quotation-brochure-dynamic">
-        <div className="qb-package">
-          <div className="qb-package-bg" aria-hidden />
+      <div className="quotation-brochure-dynamic qb-package-page">
+        <img src={QUOTATION_PAGES.package} alt="" className="qb-pdf-bg" aria-hidden />
+        <div className="qb-package-content-mask" aria-hidden />
+
+        <div className="qb-package-overlay">
           <div className="qb-package-inner">
             <div className="qb-package-main">
               <h2 className="qb-package-title">Package</h2>
