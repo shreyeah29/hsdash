@@ -3,10 +3,6 @@
 /** Full-page renders (A4 ratio 595.5×842.25) served from /public/quotation */
 export const QUOTATION_PAGES = {
   cover: "/quotation/page-01.png",
-  /** Full PDF page 6 — static title/footnote show through; events are overlaid. */
-  events: "/quotation/page-06.png",
-  /** Full PDF page 7 — decorative corners show through; package copy is overlaid. */
-  package: "/quotation/page-07.png",
   /** Full PDF page 8 — static add-ons table. */
   addons: "/quotation/page-08.png",
 } as const;
