@@ -29,7 +29,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       tabIndex: _tab,
       onTabChanged: (i) => setState(() => _tab = i),
       accent: AppColors.violet,
-      premiumDarkTabIndices: const {0, 2, 3, 4},
+      premiumDarkTabIndices: const {0, 1, 2, 3, 4},
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Overview'),
         NavigationDestination(icon: Icon(Icons.person_add_outlined), selectedIcon: Icon(Icons.person_add), label: 'Leads'),
