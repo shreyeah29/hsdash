@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowRight, Check, Copy, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
+import { getEnquiryUrl, enquiryShareMessage } from "@/lib/enquiryUrl";
 import { api } from "@/services/api";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
@@ -64,6 +65,14 @@ export function AdminLeadsPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [copied, setCopied] = useState<"link" | "message" | null>(null);
+  const enquiryUrl = getEnquiryUrl();
+
+  async function copyText(text: string, kind: "link" | "message") {
+    await navigator.clipboard.writeText(text);
+    setCopied(kind);
+    window.setTimeout(() => setCopied(null), 2000);
+  }
 
   const statsQ = useQuery({ queryKey: ["admin-leads-stats"], queryFn: fetchStats });
   const leadsQ = useQuery({
@@ -150,12 +159,44 @@ export function AdminLeadsPage() {
             </h1>
             <p className="mt-2 text-sm text-zinc-600">Enquiries from website and manual entry — follow up through conversion.</p>
           </div>
-          <Button type="button" variant="glass" size="sm" className="gap-2 rounded-xl" onClick={() => { void statsQ.refetch(); void leadsQ.refetch(); }}>
-            <RefreshCw className={cn("h-4 w-4", (statsQ.isRefetching || leadsQ.isRefetching) && "animate-spin")} />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="glass"
+              size="sm"
+              className="gap-2 rounded-xl"
+              onClick={() => void copyText(enquiryUrl, "link")}
+            >
+              {copied === "link" ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              Copy enquiry link
+            </Button>
+            <Button
+              type="button"
+              variant="glass"
+              size="sm"
+              className="gap-2 rounded-xl"
+              onClick={() => void copyText(enquiryShareMessage(enquiryUrl), "message")}
+            >
+              {copied === "message" ? <Check className="h-4 w-4 text-emerald-600" /> : <MessageSquare className="h-4 w-4" />}
+              Copy WhatsApp message
+            </Button>
+            <Button type="button" variant="glass" size="sm" className="gap-2 rounded-xl" onClick={() => { void statsQ.refetch(); void leadsQ.refetch(); }}>
+              <RefreshCw className={cn("h-4 w-4", (statsQ.isRefetching || leadsQ.isRefetching) && "animate-spin")} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </Spotlight>
+
+      <GlassPanel className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Public enquiry form</div>
+          <a href={enquiryUrl} target="_blank" rel="noreferrer" className="truncate text-sm font-medium text-violet-700 hover:underline">
+            {enquiryUrl}
+          </a>
+        </div>
+        <p className="text-xs text-zinc-600">Send this link when a client enquires on WhatsApp, Instagram, or phone.</p>
+      </GlassPanel>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {statCards.map((c) => (
@@ -182,7 +223,9 @@ export function AdminLeadsPage() {
         {leadsQ.isLoading ? (
           <p className="py-12 text-center text-sm text-zinc-600">Loading leads…</p>
         ) : leads.length === 0 ? (
-          <p className="py-12 text-center text-sm text-zinc-600">No leads yet. Share the public enquiry link: /enquiry</p>
+          <p className="py-12 text-center text-sm text-zinc-600">
+            No leads yet. Copy the enquiry link above and send it to your next client.
+          </p>
         ) : (
           <ul className="divide-y divide-zinc-100">
             {leads.map((l) => (
