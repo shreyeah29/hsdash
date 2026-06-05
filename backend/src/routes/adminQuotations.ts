@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from "../middleware/auth";
 import { Role } from "@prisma/client";
 import {
   createQuotation,
+  getLatestQuotationForLead,
   listQuotationsForLead,
   quotationInclude,
 } from "../services/quotationService";
@@ -36,6 +37,19 @@ const createSchema = z.object({
   engagementFinalPayment: z.string().max(200).optional().default(""),
   expiresAt: z.string().datetime(),
   events: z.array(eventSchema).min(1).max(30),
+});
+
+adminQuotationsRouter.get("/leads/:leadId/quotations/latest", async (req, res, next) => {
+  try {
+    const quotation = await getLatestQuotationForLead(req.params.leadId);
+    if (!quotation) {
+      res.status(404).json({ error: "No quotations yet" });
+      return;
+    }
+    res.json({ quotation });
+  } catch (e) {
+    next(e);
+  }
 });
 
 adminQuotationsRouter.get("/leads/:leadId/quotations", async (req, res, next) => {

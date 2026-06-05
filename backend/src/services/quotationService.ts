@@ -278,7 +278,29 @@ export async function requestQuotationRevision(slug: string, message?: string) {
 }
 
 export async function listQuotationsForLead(leadId: string) {
+  return listQuotationsForLeadSummary(leadId);
+}
+
+export async function listQuotationsForLeadSummary(leadId: string) {
   return prisma.quotation.findMany({
+    where: { leadId },
+    orderBy: { version: "desc" },
+    select: {
+      id: true,
+      version: true,
+      slug: true,
+      status: true,
+      packageAmount: true,
+      viewCount: true,
+      firstViewedAt: true,
+      lastViewedAt: true,
+      createdAt: true,
+    },
+  });
+}
+
+export async function getLatestQuotationForLead(leadId: string) {
+  return prisma.quotation.findFirst({
     where: { leadId },
     orderBy: { version: "desc" },
     include: quotationInclude,

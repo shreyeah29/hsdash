@@ -10,8 +10,10 @@ import {
   convertLeadToClient,
   createLeadManual,
   leadInclude,
+  leadIncludeDetail,
   updateLeadStatus,
 } from "../services/leadService";
+import { listQuotationsForLeadSummary } from "../services/quotationService";
 import { isValidPhone } from "../utils/phone";
 
 export const adminLeadsRouter = Router();
@@ -143,11 +145,31 @@ adminLeadsRouter.post("/", async (req, res, next) => {
   }
 });
 
+adminLeadsRouter.get("/:id/bundle", async (req, res, next) => {
+  try {
+    const leadId = req.params.id;
+    const [lead, quotations] = await Promise.all([
+      prisma.lead.findUnique({
+        where: { id: leadId },
+        include: leadIncludeDetail,
+      }),
+      listQuotationsForLeadSummary(leadId),
+    ]);
+    if (!lead) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+    res.json({ lead, quotations });
+  } catch (e) {
+    next(e);
+  }
+});
+
 adminLeadsRouter.get("/:id", async (req, res, next) => {
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: req.params.id },
-      include: leadInclude,
+      include: leadIncludeDetail,
     });
     if (!lead) {
       res.status(404).json({ error: "Lead not found" });
@@ -190,7 +212,7 @@ adminLeadsRouter.patch("/:id", async (req, res, next) => {
 
     const full = await prisma.lead.findUnique({
       where: { id: req.params.id },
-      include: leadInclude,
+      include: leadIncludeDetail,
     });
     res.json({ lead: full });
   } catch (e) {
@@ -213,7 +235,7 @@ adminLeadsRouter.post("/:id/convert", async (req, res, next) => {
     const result = await convertLeadToClient(req.params.id, req.auth!.userId);
     const lead = await prisma.lead.findUnique({
       where: { id: req.params.id },
-      include: leadInclude,
+      include: leadIncludeDetail,
     });
     res.json({ ...result, lead });
   } catch (e) {

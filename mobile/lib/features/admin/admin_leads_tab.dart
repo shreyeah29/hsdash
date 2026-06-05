@@ -16,23 +16,6 @@ class AdminLeadsTab extends ConsumerStatefulWidget {
 class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
   String? _statusFilter;
 
-  static Color _statusColor(String status) {
-    switch (status) {
-      case 'NEW':
-        return AdminHomePalette.accent;
-      case 'CONTACTED':
-        return const Color(0xFF60A5FA);
-      case 'NEGOTIATION':
-        return const Color(0xFFFBBF24);
-      case 'CONFIRMED':
-        return const Color(0xFF34D399);
-      case 'LOST':
-        return const Color(0xFFFB7185);
-      default:
-        return AdminHomePalette.textSecondary;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final stats = ref.watch(leadStatsProvider);
@@ -128,6 +111,7 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
                       for (final s in ['NEW', 'CONTACTED', 'NEGOTIATION', 'CONFIRMED', 'LOST', 'ARCHIVED'])
                         _FilterPill(
                           label: leadStatusLabel(s),
+                          color: leadStatusColor(s),
                           selected: _statusFilter == s,
                           onTap: () => setState(() => _statusFilter = s),
                         ),
@@ -190,14 +174,16 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
                         (context, i) {
                           final lead = list[i];
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.only(bottom: 8),
                             child: _LeadCard(
                               lead: lead,
-                              index: i + 1,
-                              statusColor: _statusColor(lead.status),
+                              statusColor: leadStatusColor(lead.status),
                               onTap: () async {
+                                ref.read(leadDetailBundleProvider(lead.id).future);
                                 await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => LeadDetailScreen(leadId: lead.id)),
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => LeadDetailScreen(leadId: lead.id, preview: lead),
+                                  ),
                                 );
                                 ref.invalidate(leadsListProvider(_statusFilter));
                                 ref.invalidate(leadStatsProvider);
@@ -260,14 +246,22 @@ class _MetricDivider extends StatelessWidget {
 }
 
 class _FilterPill extends StatelessWidget {
-  const _FilterPill({required this.label, required this.selected, required this.onTap});
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+  });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final accent = color ?? AdminHomePalette.accent;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Material(
@@ -276,21 +270,30 @@ class _FilterPill extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: selected ? AdminHomePalette.accent.withValues(alpha: 0.18) : AdminHomePalette.card.withValues(alpha: 0.85),
+              color: selected ? accent.withValues(alpha: 0.18) : AdminHomePalette.card.withValues(alpha: 0.85),
               border: Border.all(
-                color: selected ? AdminHomePalette.accent.withValues(alpha: 0.45) : AdminHomePalette.textSecondary.withValues(alpha: 0.12),
+                color: selected ? accent.withValues(alpha: 0.5) : AdminHomePalette.textSecondary.withValues(alpha: 0.12),
               ),
             ),
-            child: Text(
-              label,
-              style: AdminHomeTypography.inter(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? AdminHomePalette.accent : AdminHomePalette.textSecondary,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (color != null) ...[
+                  _StatusIndicator(color: accent, size: 7),
+                  const SizedBox(width: 7),
+                ],
+                Text(
+                  label,
+                  style: AdminHomeTypography.inter(
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected ? accent : AdminHomePalette.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -302,13 +305,11 @@ class _FilterPill extends StatelessWidget {
 class _LeadCard extends StatelessWidget {
   const _LeadCard({
     required this.lead,
-    required this.index,
     required this.statusColor,
     required this.onTap,
   });
 
   final LeadSummary lead;
-  final int index;
   final Color statusColor;
   final VoidCallback onTap;
 
@@ -316,200 +317,67 @@ class _LeadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateLabel = _formatEventDate(lead.eventDate);
     final location = lead.eventLocation.isNotEmpty ? lead.eventLocation : leadStatusLabel(lead.source);
-    final initials = _initials(lead.displayName);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        splashColor: statusColor.withValues(alpha: 0.08),
-        highlightColor: statusColor.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
         child: Ink(
+          padding: const EdgeInsets.fromLTRB(10, 11, 14, 11),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AdminHomePalette.card,
-                AdminHomePalette.surface.withValues(alpha: 0.95),
-              ],
-            ),
-            border: Border.all(color: statusColor.withValues(alpha: 0.22)),
-            boxShadow: [
-              BoxShadow(
-                color: statusColor.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(14),
+            color: AdminHomePalette.card.withValues(alpha: 0.88),
+            border: Border.all(color: AdminHomePalette.textSecondary.withValues(alpha: 0.1)),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -24,
-                  right: -24,
-                  child: Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          statusColor.withValues(alpha: 0.28),
-                          statusColor.withValues(alpha: 0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(width: 3, color: statusColor.withValues(alpha: 0.85)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+          child: Row(
+            children: [
+              _StatusIndicator(color: statusColor, size: 8, barHeight: 32),
+              const SizedBox(width: 10),
+              if (dateLabel != null) ...[
+                SizedBox(
+                  width: 34,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (dateLabel != null)
-                        Container(
-                          width: 54,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.22)),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                dateLabel.$1,
-                                style: AdminHomePalette.scheduleTime.copyWith(fontSize: 20, height: 1),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(dateLabel.$2, style: AdminHomePalette.statLabel.copyWith(fontSize: 9)),
-                            ],
-                          ),
-                        ),
-                      if (dateLabel != null) const SizedBox(width: 14),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              statusColor.withValues(alpha: 0.35),
-                              statusColor.withValues(alpha: 0.12),
-                            ],
-                          ),
-                          border: Border.all(color: statusColor.withValues(alpha: 0.35)),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initials,
-                          style: AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AdminHomePalette.text),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              lead.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AdminHomeTypography.inter(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.phone_in_talk_outlined, size: 13, color: AdminHomePalette.textSecondary),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    lead.phoneNumber,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AdminHomePalette.editorialMeta.copyWith(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.place_outlined, size: 13, color: AdminHomePalette.textSecondary),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    location,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AdminHomePalette.editorialMeta.copyWith(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            _StatusPill(label: leadStatusLabel(lead.status), color: statusColor),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        children: [
-                          Text(
-                            '#$index',
-                            style: AdminHomePalette.statLabel.copyWith(fontSize: 8, color: AdminHomePalette.textSecondary.withValues(alpha: 0.6)),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AdminHomePalette.background.withValues(alpha: 0.6),
-                              border: Border.all(color: AdminHomePalette.textSecondary.withValues(alpha: 0.12)),
-                            ),
-                            child: Icon(
-                              Icons.arrow_outward_rounded,
-                              size: 16,
-                              color: statusColor.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Text(dateLabel.$1, style: AdminHomePalette.scheduleTime.copyWith(fontSize: 16, height: 1)),
+                      Text(dateLabel.$2, style: AdminHomePalette.statLabel.copyWith(fontSize: 8)),
                     ],
                   ),
                 ),
+                Container(
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  color: AdminHomePalette.textSecondary.withValues(alpha: 0.15),
+                ),
               ],
-            ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lead.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AdminHomeTypography.inter(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${lead.phoneNumber} · $location',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AdminHomePalette.editorialMeta.copyWith(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 18, color: AdminHomePalette.textSecondary.withValues(alpha: 0.45)),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+&\s+|\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
   (String, String)? _formatEventDate(String iso) {
@@ -523,24 +391,34 @@ class _LeadCard extends StatelessWidget {
   }
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.color});
+class _StatusIndicator extends StatelessWidget {
+  const _StatusIndicator({required this.color, this.size = 8, this.barHeight});
 
-  final String label;
   final Color color;
+  final double size;
+  final double? barHeight;
 
   @override
   Widget build(BuildContext context) {
+    if (barHeight != null) {
+      return Container(
+        width: 3,
+        height: barHeight,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(2),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 6)],
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: AdminHomeTypography.inter(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: color),
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 5)],
       ),
     );
   }

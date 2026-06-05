@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class LeadSummary {
   const LeadSummary({
     required this.id,
@@ -157,6 +159,31 @@ class LeadDetail extends LeadSummary {
   final List<LeadNote> notes;
   final List<LeadActivity> activities;
 
+  factory LeadDetail.fromSummary(LeadSummary summary) {
+    return LeadDetail(
+      id: summary.id,
+      status: summary.status,
+      source: summary.source,
+      eventType: summary.eventType,
+      name: summary.name,
+      email: summary.email,
+      phoneNumber: summary.phoneNumber,
+      eventDate: summary.eventDate,
+      eventLocation: summary.eventLocation,
+      brideName: summary.brideName,
+      groomName: summary.groomName,
+      clientName: summary.clientName,
+      message: summary.message,
+      assignedToId: summary.assignedToId,
+      assignedToName: summary.assignedToName,
+      convertedEntryId: summary.convertedEntryId,
+      convertedAt: summary.convertedAt,
+      createdAt: summary.createdAt,
+      notes: const [],
+      activities: const [],
+    );
+  }
+
   factory LeadDetail.fromJson(Map<String, dynamic> json) {
     final notesJson = json['notes'] as List<dynamic>? ?? [];
     final activitiesJson = json['activities'] as List<dynamic>? ?? [];
@@ -234,5 +261,24 @@ String leadStatusLabel(String status) {
       return 'Archived';
     default:
       return status;
+  }
+}
+
+Color leadStatusColor(String status) {
+  switch (status) {
+    case 'NEW':
+      return const Color(0xFF8B5CF6);
+    case 'CONTACTED':
+      return const Color(0xFF60A5FA);
+    case 'NEGOTIATION':
+      return const Color(0xFFFBBF24);
+    case 'CONFIRMED':
+      return const Color(0xFFEF4444);
+    case 'LOST':
+      return const Color(0xFFFB7185);
+    case 'ARCHIVED':
+      return const Color(0xFF71717A);
+    default:
+      return const Color(0xFF9EA3B0);
   }
 }

@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/env.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:hsdash_mobile/features/admin/leads_providers.dart';
+import 'package:hsdash_mobile/features/admin/quotation_builder_screen.dart';
 import 'package:hsdash_mobile/models/lead.dart';
+import 'package:hsdash_mobile/models/quotation.dart';
 
 class LeadDetailScreen extends ConsumerStatefulWidget {
-  const LeadDetailScreen({super.key, required this.leadId});
+  const LeadDetailScreen({super.key, required this.leadId, this.preview});
 
   final String leadId;
+  final LeadSummary? preview;
 
   @override
   ConsumerState<LeadDetailScreen> createState() => _LeadDetailScreenState();
@@ -25,28 +28,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     super.dispose();
   }
 
-  static Color _statusColor(String status) {
-    switch (status) {
-      case 'NEW':
-        return AdminHomePalette.accent;
-      case 'CONTACTED':
-        return const Color(0xFF60A5FA);
-      case 'NEGOTIATION':
-        return const Color(0xFFFBBF24);
-      case 'CONFIRMED':
-        return const Color(0xFF34D399);
-      case 'LOST':
-        return const Color(0xFFFB7185);
-      default:
-        return AdminHomePalette.textSecondary;
-    }
+  void _invalidateLead() {
+    ref.invalidate(leadDetailBundleProvider(widget.leadId));
   }
 
   Future<void> _setStatus(String status) async {
     setState(() => _busy = true);
     try {
       await ref.read(leadsRepositoryProvider).updateLead(widget.leadId, status: status);
-      ref.invalidate(leadDetailProvider(widget.leadId));
+      _invalidateLead();
     } catch (e) {
       if (mounted) _snack('$e');
     } finally {
@@ -61,7 +51,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     try {
       await ref.read(leadsRepositoryProvider).addNote(widget.leadId, text);
       _noteController.clear();
-      ref.invalidate(leadDetailProvider(widget.leadId));
+      _invalidateLead();
     } catch (e) {
       if (mounted) _snack('$e');
     } finally {
@@ -73,7 +63,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     setState(() => _busy = true);
     try {
       await ref.read(leadsRepositoryProvider).convertLead(widget.leadId);
-      ref.invalidate(leadDetailProvider(widget.leadId));
+      _invalidateLead();
       if (mounted) _snack('Lead converted — shoot added to calendar');
     } catch (e) {
       if (mounted) _snack('$e');
@@ -94,8 +84,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final leadAsync = ref.watch(leadDetailProvider(widget.leadId));
-    final quotationsAsync = ref.watch(leadQuotationsProvider(widget.leadId));
+    final bundleAsync = ref.watch(leadDetailBundleProvider(widget.leadId));
 
     return Scaffold(
       backgroundColor: AdminHomePalette.background,
@@ -106,257 +95,358 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: leadAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
+      body: bundleAsync.when(
+        loading: () {
+          if (widget.preview != null) {
+            return _LeadDetailBody(
+              lead: LeadDetail.fromSummary(widget.preview!),
+              quotations: const [],
+              busy: _busy,
+              loadingExtras: true,
+              noteController: _noteController,
+              onSetStatus: _setStatus,
+              onAddNote: _addNote,
+              onConvert: _convert,
+              onSnack: _snack,
+              onOpenQuotationBuilder: () => _openQuotationBuilder(widget.preview!),
+              leadId: widget.leadId,
+            );
+          }
+          return const Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2));
+        },
         error: (e, _) => Center(child: Text('$e', style: AdminHomePalette.editorialMeta)),
-        data: (lead) => ListView(
-          padding: const EdgeInsets.fromLTRB(22, 0, 22, 40),
-          children: [
-            AdminHomeSurface(
-              child: Column(
+        data: (bundle) => _LeadDetailBody(
+          lead: bundle.lead,
+          quotations: bundle.quotations,
+          busy: _busy,
+          loadingExtras: false,
+          noteController: _noteController,
+          onSetStatus: _setStatus,
+          onAddNote: _addNote,
+          onConvert: _convert,
+          onSnack: _snack,
+          onOpenQuotationBuilder: () => _openQuotationBuilder(bundle.lead),
+          leadId: widget.leadId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openQuotationBuilder(LeadSummary lead) async {
+    final refreshed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => QuotationBuilderScreen(lead: lead)),
+    );
+    if (refreshed == true) _invalidateLead();
+  }
+}
+
+class _LeadDetailBody extends StatelessWidget {
+  const _LeadDetailBody({
+    required this.lead,
+    required this.quotations,
+    required this.busy,
+    required this.loadingExtras,
+    required this.noteController,
+    required this.onSetStatus,
+    required this.onAddNote,
+    required this.onConvert,
+    required this.onSnack,
+    required this.onOpenQuotationBuilder,
+    required this.leadId,
+  });
+
+  final LeadDetail lead;
+  final List<QuotationSummary> quotations;
+  final bool busy;
+  final bool loadingExtras;
+  final TextEditingController noteController;
+  final Future<void> Function(String status) onSetStatus;
+  final Future<void> Function() onAddNote;
+  final Future<void> Function() onConvert;
+  final void Function(String msg) onSnack;
+  final Future<void> Function() onOpenQuotationBuilder;
+  final String leadId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 40),
+      children: [
+        AdminHomeSurface(
+          padding: const EdgeInsets.all(14),
+          radius: AdminHomePalette.radiusSm,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(lead.displayName, style: AdminHomePalette.editorialTitle.copyWith(fontSize: 24)),
-                      ),
-                      _StatusPill(label: leadStatusLabel(lead.status), color: _statusColor(lead.status)),
-                    ],
+                  Expanded(
+                    child: Text(lead.displayName, style: AdminHomePalette.editorialTitle.copyWith(fontSize: 18)),
                   ),
-                  const SizedBox(height: 18),
-                  _DetailRow(icon: Icons.phone_outlined, label: 'Phone', value: lead.phoneNumber),
-                  if (lead.email.isNotEmpty) _DetailRow(icon: Icons.mail_outline, label: 'Email', value: lead.email),
-                  _DetailRow(icon: Icons.event_outlined, label: 'Event date', value: _formatDate(lead.eventDate)),
-                  _DetailRow(icon: Icons.location_on_outlined, label: 'Location', value: lead.eventLocation.isNotEmpty ? lead.eventLocation : '—'),
-                  _DetailRow(icon: Icons.language_outlined, label: 'Source', value: lead.source),
-                  if (lead.assignedToName != null) _DetailRow(icon: Icons.person_outline, label: 'Assigned', value: lead.assignedToName!),
+                  _StatusPill(label: leadStatusLabel(lead.status), color: leadStatusColor(lead.status)),
                 ],
               ),
+              const SizedBox(height: 10),
+              _DetailRow(icon: Icons.phone_outlined, label: 'Phone', value: lead.phoneNumber),
+              if (lead.email.isNotEmpty) _DetailRow(icon: Icons.mail_outline, label: 'Email', value: lead.email),
+              _DetailRow(icon: Icons.event_outlined, label: 'Event date', value: _formatDate(lead.eventDate)),
+              _DetailRow(icon: Icons.location_on_outlined, label: 'Location', value: lead.eventLocation.isNotEmpty ? lead.eventLocation : '—'),
+              _DetailRow(icon: Icons.language_outlined, label: 'Source', value: lead.source),
+              if (lead.assignedToName != null) _DetailRow(icon: Icons.person_outline, label: 'Assigned', value: lead.assignedToName!),
+            ],
+          ),
+        ),
+        if (lead.message.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          AdminHomeSurface(
+            padding: const EdgeInsets.all(14),
+            radius: AdminHomePalette.radiusSm,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('MESSAGE', style: AdminHomePalette.sectionTitle),
+                const SizedBox(height: 6),
+                Text(lead.message, style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text.withValues(alpha: 0.9), height: 1.45, fontSize: 13)),
+              ],
             ),
-            if (lead.message.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              AdminHomeSurface(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ],
+        const SizedBox(height: 18),
+        Text('UPDATE STATUS', style: AdminHomePalette.sectionTitle),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final s in ['NEW', 'CONTACTED', 'NEGOTIATION', 'CONFIRMED', 'LOST', 'ARCHIVED'])
+              _StatusChip(
+                label: leadStatusLabel(s),
+                selected: lead.status == s,
+                color: leadStatusColor(s),
+                onTap: busy ? null : () => onSetStatus(s),
+              ),
+          ],
+        ),
+        if (lead.status == 'CONFIRMED' && !lead.isConverted) ...[
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: busy ? null : onConvert,
+              style: FilledButton.styleFrom(
+                backgroundColor: AdminHomePalette.accent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm)),
+              ),
+              child: const Text('Convert to client', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+            ),
+          ),
+        ],
+        if (lead.isConverted)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              'Converted to calendar entry',
+              style: AdminHomeTypography.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF34D399)),
+            ),
+          ),
+        if (lead.status == 'NEGOTIATION') ...[
+          const SizedBox(height: 20),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onOpenQuotationBuilder,
+              borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm),
+              child: Ink(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm),
+                  border: Border.all(color: AdminHomePalette.accent.withValues(alpha: 0.4)),
+                  color: AdminHomePalette.accent.withValues(alpha: 0.08),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('MESSAGE', style: AdminHomePalette.sectionTitle),
-                    const SizedBox(height: 10),
-                    Text(lead.message, style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text.withValues(alpha: 0.9), height: 1.5)),
+                    Icon(Icons.description_outlined, size: 18, color: AdminHomePalette.accent),
+                    const SizedBox(width: 8),
+                    Text(
+                      quotations.isEmpty ? 'Create quotation' : 'New quotation version',
+                      style: AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AdminHomePalette.accent),
+                    ),
                   ],
                 ),
               ),
-            ],
-            const SizedBox(height: 24),
-            Text('UPDATE STATUS', style: AdminHomePalette.sectionTitle),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final s in ['NEW', 'CONTACTED', 'NEGOTIATION', 'CONFIRMED', 'LOST', 'ARCHIVED'])
-                  _StatusChip(
-                    label: leadStatusLabel(s),
-                    selected: lead.status == s,
-                    color: _statusColor(s),
-                    onTap: _busy ? null : () => _setStatus(s),
-                  ),
-              ],
             ),
-            if (lead.status == 'CONFIRMED' && !lead.isConverted) ...[
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _busy ? null : _convert,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AdminHomePalette.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm)),
-                  ),
-                  child: const Text('Convert to client', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.3)),
-                ),
-              ),
-            ],
-            if (lead.isConverted)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  'Converted to calendar entry',
-                  style: AdminHomeTypography.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF34D399)),
-                ),
-              ),
-            if (lead.status == 'NEGOTIATION') ...[
-              const SizedBox(height: 20),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () async {
-                    final url = quotationBuilderUrl(widget.leadId);
-                    await Clipboard.setData(ClipboardData(text: url));
-                    if (context.mounted) _snack('Builder link copied — open in browser');
-                  },
-                  borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm),
-                  child: Ink(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AdminHomePalette.radiusSm),
-                      border: Border.all(color: AdminHomePalette.accent.withValues(alpha: 0.4)),
-                      color: AdminHomePalette.accent.withValues(alpha: 0.08),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.description_outlined, size: 18, color: AdminHomePalette.accent),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Create quotation',
-                          style: AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AdminHomePalette.accent),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 28),
-            Text('QUOTATIONS', style: AdminHomePalette.sectionTitle),
-            const SizedBox(height: 12),
-            quotationsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
-              ),
-              error: (e, _) => Text('$e', style: AdminHomePalette.editorialMeta),
-              data: (quotes) {
-                if (quotes.isEmpty) {
-                  return Text(
-                    'No quotations yet',
-                    style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.textSecondary),
-                  );
-                }
-                return Column(
-                  children: quotes.map((q) {
-                    final url = quotationPublicUrl(q.slug);
-                    final viewed = q.viewCount > 0
-                        ? 'Viewed ${q.viewCount}× · ${_formatDateTime(q.lastViewedAt)}'
-                        : 'Not yet opened';
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: AdminHomeSurface(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AdminHomePalette.accent.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'V${q.version}',
-                                    style: AdminHomeTypography.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AdminHomePalette.accent),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(q.packageAmount, style: AdminHomeTypography.inter(fontSize: 13, fontWeight: FontWeight.w500)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(viewed, style: AdminHomePalette.editorialMeta.copyWith(fontSize: 12)),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                _IconAction(
-                                  icon: Icons.link_rounded,
-                                  label: 'Link',
-                                  onTap: () async {
-                                    await Clipboard.setData(ClipboardData(text: url));
-                                    if (context.mounted) _snack('Link copied');
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                _IconAction(
-                                  icon: Icons.chat_bubble_outline_rounded,
-                                  label: 'WhatsApp',
-                                  onTap: () async {
-                                    await Clipboard.setData(ClipboardData(text: quotationWhatsAppMessage(lead.displayName, url)));
-                                    if (context.mounted) _snack('WhatsApp message copied');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-            Text('NOTES', style: AdminHomePalette.sectionTitle),
-            const SizedBox(height: 12),
-            AdminHomeSurface(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _noteController,
-                      style: AdminHomeTypography.inter(fontSize: 14, color: AdminHomePalette.text),
-                      decoration: InputDecoration(
-                        hintText: 'Add follow-up note…',
-                        hintStyle: AdminHomeTypography.inter(fontSize: 14, color: AdminHomePalette.textSecondary),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onSubmitted: (_) => _addNote(),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _busy ? null : _addNote,
-                    icon: Icon(Icons.send_rounded, color: _busy ? AdminHomePalette.textSecondary : AdminHomePalette.accent),
-                  ),
-                ],
-              ),
-            ),
-            ...lead.notes.map(
-              (n) => Padding(
-                padding: const EdgeInsets.only(top: 10),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Text('QUOTATIONS', style: AdminHomePalette.sectionTitle),
+        const SizedBox(height: 12),
+        if (loadingExtras)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
+          )
+        else if (quotations.isEmpty)
+          Text(
+            'No quotations yet',
+            style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.textSecondary),
+          )
+        else
+          Column(
+            children: quotations.map((q) {
+              final url = quotationPublicUrl(q.slug);
+              final viewed = q.viewCount > 0
+                  ? 'Viewed ${q.viewCount}× · ${_formatDateTime(q.lastViewedAt)}'
+                  : 'Not yet opened';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: AdminHomeSurface(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(12),
                   radius: AdminHomePalette.radiusSm,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${n.authorName} · ${_formatDateTime(n.createdAt)}',
-                        style: AdminHomePalette.statLabel.copyWith(fontSize: 9),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AdminHomePalette.accent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'V${q.version}',
+                              style: AdminHomeTypography.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AdminHomePalette.accent),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(q.packageAmount, style: AdminHomeTypography.inter(fontSize: 12, fontWeight: FontWeight.w500)),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
-                      Text(n.content, style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text.withValues(alpha: 0.92), height: 1.45)),
+                      Text(viewed, style: AdminHomePalette.editorialMeta.copyWith(fontSize: 11)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _IconAction(
+                            icon: Icons.link_rounded,
+                            label: 'Link',
+                            onTap: () async {
+                              await Clipboard.setData(ClipboardData(text: url));
+                              if (context.mounted) onSnack('Link copied');
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          _IconAction(
+                            icon: Icons.chat_bubble_outline_rounded,
+                            label: 'WhatsApp',
+                            onTap: () async {
+                              await Clipboard.setData(ClipboardData(text: quotationWhatsAppMessage(lead.displayName, url)));
+                              if (context.mounted) onSnack('WhatsApp message copied');
+                            },
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 20),
+        Text('NOTES', style: AdminHomePalette.sectionTitle),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  brightness: Brightness.dark,
+                  textSelectionTheme: TextSelectionThemeData(
+                    cursorColor: AdminHomePalette.accent,
+                    selectionColor: AdminHomePalette.accent.withValues(alpha: 0.35),
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: AdminHomePalette.card,
+                    hintStyle: AdminHomeTypography.inter(fontSize: 14, color: AdminHomePalette.textSecondary),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: AdminHomePalette.textSecondary.withValues(alpha: 0.25)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: AdminHomePalette.textSecondary.withValues(alpha: 0.25)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: AdminHomePalette.accent.withValues(alpha: 0.65)),
+                    ),
+                  ),
+                ),
+                child: TextField(
+                  controller: noteController,
+                  minLines: 1,
+                  maxLines: 3,
+                  style: AdminHomeTypography.inter(fontSize: 14, color: AdminHomePalette.text),
+                  cursorColor: AdminHomePalette.accent,
+                  decoration: const InputDecoration(hintText: 'Add follow-up note…'),
+                  onSubmitted: (_) => onAddNote(),
+                ),
               ),
             ),
-            const SizedBox(height: 28),
-            Text('TIMELINE', style: AdminHomePalette.sectionTitle),
-            const SizedBox(height: 16),
-            _ActivityTimeline(activities: lead.activities),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              style: IconButton.styleFrom(
+                backgroundColor: AdminHomePalette.accent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: AdminHomePalette.card,
+              ),
+              onPressed: busy ? null : onAddNote,
+              icon: const Icon(Icons.send_rounded, size: 18),
+            ),
           ],
         ),
-      ),
+        if (loadingExtras)
+          const Padding(
+            padding: EdgeInsets.only(top: 16),
+            child: Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
+          )
+        else ...[
+          ...lead.notes.map(
+            (n) => Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: AdminHomeSurface(
+                padding: const EdgeInsets.all(12),
+                radius: AdminHomePalette.radiusSm,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${n.authorName} · ${_formatDateTime(n.createdAt)}',
+                      style: AdminHomePalette.statLabel.copyWith(fontSize: 9),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(n.content, style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text.withValues(alpha: 0.92), height: 1.4, fontSize: 13)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('TIMELINE', style: AdminHomePalette.sectionTitle),
+          const SizedBox(height: 16),
+          _ActivityTimeline(activities: lead.activities),
+        ],
+      ],
     );
   }
 }
@@ -371,18 +461,18 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: AdminHomePalette.textSecondary),
-          const SizedBox(width: 10),
+          Icon(icon, size: 14, color: AdminHomePalette.textSecondary),
+          const SizedBox(width: 8),
           SizedBox(
-            width: 72,
+            width: 68,
             child: Text(label, style: AdminHomePalette.statLabel.copyWith(fontSize: 9)),
           ),
           Expanded(
-            child: Text(value, style: AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w500)),
+            child: Text(value, style: AdminHomeTypography.inter(fontSize: 13, fontWeight: FontWeight.w500)),
           ),
         ],
       ),

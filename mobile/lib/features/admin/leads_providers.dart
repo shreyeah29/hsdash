@@ -17,6 +17,10 @@ final leadDetailProvider = FutureProvider.autoDispose.family<LeadDetail, String>
   return ref.read(leadsRepositoryProvider).fetchLead(id);
 });
 
+final leadDetailBundleProvider = FutureProvider.autoDispose.family<LeadDetailBundle, String>((ref, id) async {
+  return ref.read(leadsRepositoryProvider).fetchLeadBundle(id);
+});
+
 final leadQuotationsProvider = FutureProvider.autoDispose.family<List<QuotationSummary>, String>((ref, leadId) async {
   return ref.read(leadsRepositoryProvider).fetchQuotations(leadId);
 });

@@ -297,3 +297,18 @@ export const leadInclude = {
     include: { actor: { select: { id: true, name: true, email: true } } },
   },
 } satisfies Prisma.LeadInclude;
+
+/** Detail view — caps nested rows so heavy leads stay fast on mobile. */
+export const leadIncludeDetail = {
+  assignedTo: { select: { id: true, name: true, email: true, team: true } },
+  notes: {
+    orderBy: { createdAt: "desc" as const },
+    take: 50,
+    include: { author: { select: { id: true, name: true } } },
+  },
+  activities: {
+    orderBy: { createdAt: "desc" as const },
+    take: 100,
+    include: { actor: { select: { id: true, name: true } } },
+  },
+} satisfies Prisma.LeadInclude;
