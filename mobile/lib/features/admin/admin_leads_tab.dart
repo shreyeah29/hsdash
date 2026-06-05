@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hsdash_mobile/config/env.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/lead_detail_screen.dart';
 import 'package:hsdash_mobile/features/admin/leads_providers.dart';
@@ -48,30 +46,6 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
         elevation: 0,
         actions: [
           IconButton(
-            tooltip: 'Copy enquiry link',
-            icon: const Icon(Icons.link),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: enquiryFormUrl));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Enquiry link copied')),
-                );
-              }
-            },
-          ),
-          IconButton(
-            tooltip: 'Copy WhatsApp message',
-            icon: const Icon(Icons.chat_bubble_outline),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: enquiryShareMessage()));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Message copied — paste in WhatsApp')),
-                );
-              }
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.invalidate(leadStatsProvider);
@@ -89,67 +63,6 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.violetLight,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.violet.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Share with clients',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        enquiryFormUrl,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.violet),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                await Clipboard.setData(ClipboardData(text: enquiryFormUrl));
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Link copied')),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.copy, size: 16),
-                              label: const Text('Copy link'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                await Clipboard.setData(ClipboardData(text: enquiryShareMessage()));
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('WhatsApp message copied')),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.chat, size: 16),
-                              label: const Text('Copy message'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
             SliverToBoxAdapter(
               child: stats.when(
                 loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
@@ -200,7 +113,7 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
                       child: Padding(
                         padding: EdgeInsets.all(24),
                         child: Text(
-                          'No leads yet.\nUse Copy link above and send to your next client.',
+                          'No leads yet.\nNew enquiries will appear here.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textMuted),
                         ),

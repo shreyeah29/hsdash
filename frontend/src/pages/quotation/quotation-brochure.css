@@ -13,10 +13,13 @@
 
 .quotation-brochure-page {
   line-height: 0;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .quotation-brochure-page + .quotation-brochure-page {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .quotation-brochure-img {
@@ -30,60 +33,69 @@
   width: 100%;
   aspect-ratio: 595.5 / 842.25;
   overflow: hidden;
+  line-height: normal;
 }
 
-/* Events page */
+/* ── Events page ── */
 .qb-events {
+  position: absolute;
+  inset: 0;
   background: var(--qb-brown);
   color: var(--qb-cream);
-  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 6% 5.5% 5%;
+  box-sizing: border-box;
 }
 
 .qb-events-header {
   text-align: center;
-  margin-bottom: clamp(1rem, 3vw, 1.75rem);
+  padding-bottom: 4%;
 }
 
 .qb-events-header h2 {
+  margin: 0;
   font-family: "Jost", sans-serif;
-  font-size: clamp(1.1rem, 3.5vw, 1.65rem);
+  font-size: clamp(0.95rem, 4.2vw, 1.45rem);
   font-weight: 600;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.22em;
+  line-height: 1.35;
   text-transform: uppercase;
   color: var(--qb-cream);
 }
 
 .qb-events-header p {
-  margin-top: 0.35rem;
+  margin: 0.65rem 0 0;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1rem, 2.8vw, 1.35rem);
+  font-size: clamp(1rem, 3.6vw, 1.3rem);
   font-style: italic;
+  font-weight: 500;
+  line-height: 1.2;
   color: #d4c9bc;
 }
 
-.qb-events-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(0.5rem, 1.5vw, 0.75rem);
-  align-content: start;
+.qb-events-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 2% 0;
 }
 
-@media (min-width: 480px) {
-  .qb-events-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.qb-events-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.45rem, 1.8vw, 0.65rem);
+  align-content: center;
 }
 
 .qb-event-card {
   display: grid;
-  grid-template-columns: 38% 1fr;
-  border-radius: clamp(14px, 3vw, 22px);
+  grid-template-columns: 34% 1fr;
+  border-radius: clamp(12px, 2.8vw, 18px);
   overflow: hidden;
-  min-height: clamp(72px, 14vw, 96px);
+  min-height: clamp(68px, 16vw, 88px);
 }
 
 .qb-event-card.tan {
@@ -92,12 +104,6 @@
 
 .qb-event-card.beige {
   background: var(--qb-beige);
-  color: #2c2420;
-}
-
-.qb-event-card.beige .qb-event-date,
-.qb-event-card.beige .qb-event-details {
-  color: #2c2420;
 }
 
 .qb-event-date {
@@ -105,84 +111,87 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.32);
+  padding: 0.35rem 0.25rem;
   color: #fff;
 }
 
 .qb-event-card.beige .qb-event-date {
-  border-right-color: rgba(44, 36, 32, 0.2);
+  border-right-color: rgba(44, 36, 32, 0.18);
+  color: #2c2420;
 }
 
 .qb-event-month {
-  font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+  font-size: clamp(0.5rem, 1.5vw, 0.62rem);
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
 }
 
 .qb-event-day {
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.75rem, 6vw, 2.75rem);
+  font-size: clamp(1.55rem, 5.5vw, 2.35rem);
   font-weight: 500;
-  line-height: 1;
-  margin-top: 0.1rem;
+  line-height: 0.95;
+  margin-top: 0.15rem;
 }
 
 .qb-event-details {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0.5rem clamp(0.5rem, 2vw, 0.85rem);
+  gap: 0.2rem;
+  padding: 0.4rem 0.55rem 0.4rem 0.5rem;
   color: #fff;
 }
 
+.qb-event-card.beige .qb-event-details {
+  color: #2c2420;
+}
+
 .qb-event-name {
-  font-size: clamp(0.6rem, 1.8vw, 0.78rem);
+  font-size: clamp(0.52rem, 1.65vw, 0.68rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .qb-event-meta {
-  margin-top: 0.25rem;
-  font-size: clamp(0.5rem, 1.4vw, 0.62rem);
+  font-size: clamp(0.46rem, 1.35vw, 0.56rem);
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  line-height: 1.45;
+  line-height: 1.35;
   opacity: 0.95;
 }
 
 .qb-events-footnote {
-  margin-top: auto;
-  padding-top: clamp(0.75rem, 2vw, 1.25rem);
+  padding-top: 3%;
 }
 
 .qb-events-footnote p {
+  margin: 0;
   background: var(--qb-beige);
   color: #2c2420;
   border-radius: 999px;
-  padding: clamp(0.45rem, 1.5vw, 0.65rem) clamp(0.75rem, 2.5vw, 1.25rem);
-  font-size: clamp(0.45rem, 1.2vw, 0.58rem);
+  padding: 0.55rem 0.85rem;
+  font-size: clamp(0.42rem, 1.15vw, 0.54rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Package page */
+/* ── Package page ── */
 .qb-package {
-  position: relative;
+  position: absolute;
+  inset: 0;
   background: var(--qb-package);
   color: #fff;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: clamp(2rem, 6vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(1.5rem, 4vw, 2rem);
-  text-align: center;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .qb-package-bg {
@@ -191,60 +200,91 @@
   background-image: url("/quotation/page-07-img-0.png");
   background-size: cover;
   background-position: center;
-  opacity: 0.35;
+  opacity: 0.32;
   pointer-events: none;
 }
 
-.qb-package-content {
+.qb-package-inner {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 420px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 9% 8% 6%;
+  box-sizing: border-box;
+}
+
+.qb-package-main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.qb-package h2 {
-  font-size: clamp(1.5rem, 5vw, 2.25rem);
+.qb-package-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 5.5vw, 2rem);
   font-weight: 700;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.26em;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
 .qb-package-amount {
-  margin-top: clamp(0.5rem, 2vw, 1rem);
-  font-size: clamp(1rem, 3.2vw, 1.45rem);
+  margin: clamp(0.65rem, 2.5vw, 1rem) 0 0;
+  font-size: clamp(0.9rem, 3.2vw, 1.25rem);
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+}
+
+.qb-package-payments {
+  width: 100%;
+  max-width: 340px;
+  margin-top: clamp(1.25rem, 4.5vw, 2rem);
 }
 
 .qb-package-block {
-  margin-top: clamp(1.25rem, 4vw, 2rem);
+  margin-top: clamp(0.85rem, 3vw, 1.35rem);
+}
+
+.qb-package-block:first-child {
+  margin-top: 0;
 }
 
 .qb-package-block h3 {
-  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  margin: 0;
+  font-size: clamp(0.62rem, 1.85vw, 0.78rem);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
+  line-height: 1.3;
 }
 
 .qb-package-block p {
-  margin-top: 0.35rem;
-  font-size: clamp(0.75rem, 2.2vw, 0.95rem);
+  margin: 0.35rem 0 0;
+  font-size: clamp(0.68rem, 2vw, 0.88rem);
   font-weight: 400;
-  line-height: 1.5;
-}
-
-.qb-package-block .amount-bold {
-  font-weight: 700;
+  line-height: 1.45;
 }
 
 .qb-package-engagement {
-  margin-top: clamp(1.5rem, 5vw, 2.5rem);
-  padding-top: clamp(1rem, 3vw, 1.5rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  width: 100%;
+  max-width: 340px;
+  margin-top: clamp(1.5rem, 5vw, 2.25rem);
+  padding-top: clamp(1rem, 3.5vw, 1.5rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  text-align: center;
+}
+
+.qb-package-engagement .qb-package-title {
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
+  letter-spacing: 0.22em;
+}
+
+.qb-package-engagement .qb-package-amount {
+  margin-top: 0.5rem;
 }
 
 .qb-package-notes {
@@ -255,11 +295,11 @@
 }
 
 .qb-package-notes h4 {
-  font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+  margin: 0 0 0.45rem;
+  font-size: clamp(0.58rem, 1.65vw, 0.72rem);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
 }
 
 .qb-package-notes ul {
@@ -269,9 +309,9 @@
 }
 
 .qb-package-notes li {
-  font-size: clamp(0.55rem, 1.5vw, 0.68rem);
-  line-height: 1.55;
-  margin-bottom: 0.35rem;
+  font-size: clamp(0.5rem, 1.4vw, 0.62rem);
+  line-height: 1.5;
+  margin-bottom: 0.3rem;
   opacity: 0.92;
 }
 
@@ -279,7 +319,7 @@
   content: "• ";
 }
 
-/* Action bar */
+/* ── Action bar ── */
 .qb-actions {
   position: sticky;
   bottom: 0;
