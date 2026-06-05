@@ -1,0 +1,40 @@
+export type QuotationEvent = {
+  id: string;
+  sortOrder: number;
+  eventName: string;
+  venue: string;
+  eventDate: string;
+  teamSize: string;
+  duration: string;
+  notes: string;
+};
+
+export type Quotation = {
+  id: string;
+  leadId: string;
+  version: number;
+  slug: string;
+  status: "ACTIVE" | "ACCEPTED" | "REVISION_REQUESTED" | "EXPIRED";
+  clientName: string;
+  phoneNumber: string;
+  email: string;
+  packageAmount: string;
+  bookingAmount: string;
+  secondPayment: string;
+  finalPayment: string;
+  additionalNotes: string;
+  includeEngagementPackage: boolean;
+  engagementPackageAmount: string;
+  engagementBookingAmount: string;
+  engagementFinalPayment: string;
+  expiresAt: string;
+  sentAt: string | null;
+  acceptedAt: string | null;
+  revisionRequestedAt: string | null;
+  revisionMessage: string;
+  viewCount: number;
+  firstViewedAt: string | null;
+  lastViewedAt: string | null;
+  createdAt: string;
+  events: QuotationEvent[];
+};

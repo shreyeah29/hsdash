@@ -17,3 +17,11 @@ String enquiryShareMessage([String? url]) {
   final link = url ?? enquiryFormUrl;
   return "Thank you for contacting HS Photography. Please fill out our enquiry form and we'll get back to you shortly:\n$link";
 }
+
+String quotationPublicUrl(String slug) => '$publicSiteUrl/q/$slug';
+
+String quotationBuilderUrl(String leadId) => '$publicSiteUrl/admin/quotations/builder/$leadId';
+
+String quotationWhatsAppMessage(String clientName, String url) {
+  return 'Dear $clientName,\n\nPlease find your personalised wedding photography proposal from Harishankar Photography:\n\n$url\n\nWe look forward to being part of your celebration.';
+}

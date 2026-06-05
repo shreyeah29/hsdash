@@ -13,6 +13,8 @@ import { productionCalendarRouter } from "./routes/productionCalendar";
 import { notificationsRouter } from "./routes/notifications";
 import { leadsRouter } from "./routes/leads";
 import { adminLeadsRouter } from "./routes/adminLeads";
+import { quotationsRouter } from "./routes/quotations";
+import { adminQuotationsRouter } from "./routes/adminQuotations";
 import { attachSocket } from "./realtime/socket";
 import { startCronJobs } from "./services/cron";
 import { runInitialSeed } from "./services/initialSeed";
@@ -43,6 +45,8 @@ app.use("/production-calendar", productionCalendarRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/leads", leadsRouter);
 app.use("/admin/leads", adminLeadsRouter);
+app.use("/quotations", quotationsRouter);
+app.use("/admin", adminQuotationsRouter);
 
 app.use(errorHandler);
 

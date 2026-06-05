@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Copy, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink, FileText, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
 import { getEnquiryUrl, enquiryShareMessage } from "@/lib/enquiryUrl";
+import { getQuotationPublicUrl, quotationWhatsAppMessage } from "@/lib/quotationUrl";
+import type { Quotation } from "@/types/quotation";
 import { api } from "@/services/api";
 import { GlassPanel } from "@/components/premium/GlassPanel";
 import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
@@ -41,6 +44,11 @@ async function fetchRoster() {
   return data.users;
 }
 
+async function fetchQuotations(leadId: string) {
+  const { data } = await api.get<{ quotations: Quotation[] }>(`/admin/leads/${leadId}/quotations`);
+  return data.quotations;
+}
+
 function displayName(lead: LeadSummary) {
   if (lead.eventType === "WEDDING") {
     const b = lead.brideName.trim();
@@ -65,10 +73,10 @@ export function AdminLeadsPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
-  const [copied, setCopied] = useState<"link" | "message" | null>(null);
+  const [copied, setCopied] = useState<"link" | "message" | "quote-link" | "quote-message" | null>(null);
   const enquiryUrl = getEnquiryUrl();
 
-  async function copyText(text: string, kind: "link" | "message") {
+  async function copyText(text: string, kind: "link" | "message" | "quote-link" | "quote-message") {
     await navigator.clipboard.writeText(text);
     setCopied(kind);
     window.setTimeout(() => setCopied(null), 2000);
@@ -89,6 +97,11 @@ export function AdminLeadsPage() {
     enabled: !!selectedId,
   });
   const rosterQ = useQuery({ queryKey: ["production-calendar-roster"], queryFn: fetchRoster });
+  const quotationsQ = useQuery({
+    queryKey: ["admin-lead-quotations", selectedId],
+    queryFn: () => fetchQuotations(selectedId!),
+    enabled: !!selectedId,
+  });
 
   const patchLead = useMutation({
     mutationFn: async (payload: { id: string; status?: LeadStatus; assignedToId?: string | null }) => {
@@ -323,6 +336,83 @@ export function AdminLeadsPage() {
               ) : null}
               {lead.convertedEntryId ? (
                 <p className="text-sm text-emerald-700">Converted — calendar entry created.</p>
+              ) : null}
+
+              {lead.status === "NEGOTIATION" ? (
+                <Link
+                  to={`/admin/quotations/builder/${lead.id}`}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#B8965A]/40 bg-[#FAF7F2] px-4 py-3 text-sm font-medium text-[#2C2C2C] transition hover:bg-[#F5EFE6]"
+                >
+                  <FileText className="h-4 w-4 text-[#B8965A]" />
+                  Create quotation
+                </Link>
+              ) : null}
+
+              {(quotationsQ.data?.length ?? 0) > 0 ? (
+                <div>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Quotations</h3>
+                  <ul className="space-y-3">
+                    {quotationsQ.data!.map((q) => {
+                      const url = getQuotationPublicUrl(q.slug);
+                      return (
+                        <li key={q.id} className="rounded-xl border border-zinc-200 p-4 text-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <span className="font-medium text-zinc-900">Version {q.version}</span>
+                              <span className="ml-2 text-zinc-600">{q.packageAmount}</span>
+                            </div>
+                            <span className="rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] uppercase text-zinc-600">
+                              {q.status.replaceAll("_", " ")}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-xs text-zinc-500">
+                            {q.viewCount > 0 ? (
+                              <>
+                                Viewed {q.viewCount} time{q.viewCount === 1 ? "" : "s"}
+                                {q.lastViewedAt ? ` · Last ${new Date(q.lastViewedAt).toLocaleString()}` : ""}
+                              </>
+                            ) : (
+                              "Not yet opened"
+                            )}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="glass"
+                              size="sm"
+                              className="gap-1 rounded-lg text-xs"
+                              onClick={() => void copyText(url, "quote-link")}
+                            >
+                              {copied === "quote-link" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              Copy link
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="glass"
+                              size="sm"
+                              className="gap-1 rounded-lg text-xs"
+                              onClick={() =>
+                                void copyText(quotationWhatsAppMessage(displayName(lead), url), "quote-message")
+                              }
+                            >
+                              {copied === "quote-message" ? <Check className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                              WhatsApp
+                            </Button>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Preview
+                            </a>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               ) : null}
 
               <div>

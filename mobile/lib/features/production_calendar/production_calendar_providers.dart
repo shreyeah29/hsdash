@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/task_utils.dart';
 import 'package:hsdash_mobile/data/repositories/production_calendar_repository.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
@@ -27,12 +28,31 @@ class ProductionCalendarMonthNotifier extends Notifier<DateTime> {
 final productionCalendarMonthProvider =
     NotifierProvider<ProductionCalendarMonthNotifier, DateTime>(ProductionCalendarMonthNotifier.new);
 
-final productionCalendarEntriesProvider = FutureProvider.autoDispose<List<ShootCalendarEntry>>((ref) async {
-  final month = ref.watch(productionCalendarMonthProvider);
+/// Wide-range cache — loaded once per session; month navigation filters client-side (no spinner).
+final productionCalendarWideEntriesProvider = FutureProvider<List<ShootCalendarEntry>>((ref) async {
+  final now = DateTime.now();
+  final from = localDayKey(DateTime(now.year - 8, 1, 1));
+  final to = localDayKey(DateTime(now.year + 2, 12, 31));
+  return ref.read(productionCalendarRepositoryProvider).fetchEntries(from: from, to: to);
+});
+
+List<ShootCalendarEntry> entriesForMonth(List<ShootCalendarEntry> all, DateTime month) {
   final range = monthRangeIso(month);
-  return ref.read(productionCalendarRepositoryProvider).fetchEntries(
-        from: range['from']!,
-        to: range['to']!,
+  final from = range['from']!;
+  final to = range['to']!;
+  return all
+      .where((e) {
+        final key = shootDayKey(e.day);
+        return key.compareTo(from) >= 0 && key.compareTo(to) <= 0;
+      })
+      .toList();
+}
+
+/// Month view derived from [productionCalendarWideEntriesProvider] — instant when changing months.
+final productionCalendarEntriesProvider = Provider<AsyncValue<List<ShootCalendarEntry>>>((ref) {
+  final month = ref.watch(productionCalendarMonthProvider);
+  return ref.watch(productionCalendarWideEntriesProvider).whenData(
+        (entries) => entriesForMonth(entries, month),
       );
 });
 
@@ -52,7 +72,7 @@ final editorAssignedShootsProvider = FutureProvider.autoDispose<List<ShootCalend
 
 /// Refresh shoot calendar only — safe while other dashboard tabs stay mounted.
 void invalidateShootCalendarEntries(WidgetRef ref) {
-  ref.invalidate(productionCalendarEntriesProvider);
+  ref.invalidate(productionCalendarWideEntriesProvider);
   ref.invalidate(editorAssignedShootsProvider);
 }
 

@@ -82,6 +82,18 @@ enum LeadActivityKind {
   NOTE_ADDED
   ASSIGNED
   CONVERTED
+  QUOTATION_CREATED
+  QUOTATION_SENT
+  QUOTATION_VIEWED
+  QUOTATION_ACCEPTED
+  QUOTATION_REVISION_REQUESTED
+}
+
+enum QuotationStatus {
+  ACTIVE
+  ACCEPTED
+  REVISION_REQUESTED
+  EXPIRED
 }
 
 model User {
@@ -104,6 +116,7 @@ model User {
   leadsAssigned        Lead[]             @relation("LeadAssignee")
   leadNotes            LeadNote[]         @relation("LeadNoteAuthor")
   leadActivities       LeadActivity[]     @relation("LeadActivityActor")
+  quotationsCreated    Quotation[]        @relation("QuotationCreatedBy")
 
   @@index([role])
   @@index([team])
@@ -245,8 +258,9 @@ model Lead {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  notes      LeadNote[]
-  activities LeadActivity[]
+  notes       LeadNote[]
+  activities  LeadActivity[]
+  quotations  Quotation[]
 
   @@index([status])
   @@index([source])
@@ -282,6 +296,74 @@ model LeadActivity {
   createdAt    DateTime         @default(now())
 
   @@index([leadId])
+  @@index([createdAt])
+}
+
+model Quotation {
+  id                      String          @id @default(cuid())
+  leadId                  String
+  lead                    Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  version                 Int
+  slug                    String          @unique
+  status                  QuotationStatus @default(ACTIVE)
+  clientName              String
+  phoneNumber             String          @default("")
+  email                   String          @default("")
+  packageAmount           String
+  bookingAmount           String
+  secondPayment           String          @default("")
+  finalPayment            String          @default("")
+  additionalNotes         String          @default("")
+  includeEngagementPackage Boolean        @default(false)
+  engagementPackageAmount String          @default("")
+  engagementBookingAmount String          @default("")
+  engagementFinalPayment  String          @default("")
+  expiresAt               DateTime
+  sentAt                  DateTime?
+  acceptedAt              DateTime?
+  revisionRequestedAt     DateTime?
+  revisionMessage         String          @default("")
+  viewCount               Int             @default(0)
+  firstViewedAt           DateTime?
+  lastViewedAt            DateTime?
+  createdById             String
+  createdBy               User            @relation("QuotationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  events QuotationEvent[]
+  views  QuotationView[]
+
+  @@index([leadId])
+  @@index([slug])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model QuotationEvent {
+  id           String    @id @default(cuid())
+  quotationId  String
+  quotation    Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  sortOrder    Int       @default(0)
+  eventName    String
+  venue        String    @default("")
+  eventDate    DateTime
+  teamSize     String    @default("")
+  duration     String    @default("")
+  notes        String    @default("")
+
+  @@index([quotationId])
+}
+
+model QuotationView {
+  id           String    @id @default(cuid())
+  quotationId  String
+  quotation    Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  viewerKey    String    @default("")
+  userAgent    String    @default("")
+  createdAt    DateTime  @default(now())
+
+  @@index([quotationId])
   @@index([createdAt])
 }
 

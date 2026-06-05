@@ -34,7 +34,7 @@ void _bumpAllProduction(WidgetRef ref) {
   ref.invalidate(tasksProvider);
   ref.invalidate(adminOverviewProvider);
   ref.invalidate(adminTaskActivityProvider);
-  ref.invalidate(productionCalendarEntriesProvider);
+  ref.invalidate(productionCalendarWideEntriesProvider);
   ref.invalidate(editorAssignedShootsProvider);
   ref.invalidate(calendarEntriesProvider);
 }
@@ -43,7 +43,7 @@ void _bumpAssignments(WidgetRef ref) {
   ref.invalidate(tasksProvider);
   ref.invalidate(adminOverviewProvider);
   ref.invalidate(adminTaskActivityProvider);
-  ref.invalidate(productionCalendarEntriesProvider);
+  ref.invalidate(productionCalendarWideEntriesProvider);
   ref.invalidate(notificationsProvider);
 }
 

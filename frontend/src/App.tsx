@@ -17,6 +17,8 @@ import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
 import { AssignmentsBoardPage } from "@/pages/shared/AssignmentsBoardPage";
 import { AdminDeliverablesStatusPage } from "@/pages/admin/AdminDeliverablesStatusPage";
 import { AdminLeadsPage } from "@/pages/admin/AdminLeadsPage";
+import { PublicQuotationPage } from "@/pages/quotation/PublicQuotationPage";
+import { QuotationBuilderPage } from "@/pages/quotation/QuotationBuilderPage";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { RequireEditor, RequireCoordinatorRole } from "@/routes/RoleGateways";
@@ -27,11 +29,20 @@ function App() {
   return (
     <Routes>
       <Route path="/enquiry" element={<PublicEnquiryPage />} />
+      <Route path="/q/:slug" element={<PublicQuotationPage />} />
       <Route path="/login" element={<LoginChoicePage />} />
       <Route path="/login/admin" element={<LoginPage loginKind="admin" />} />
       <Route path="/login/team" element={<LoginPage loginKind="team" />} />
 
       <Route element={<RequireAuth />}>
+        <Route
+          path="/admin/quotations/builder/:leadId"
+          element={
+            <RequireRole role={Role.ADMIN}>
+              <QuotationBuilderPage />
+            </RequireRole>
+          }
+        />
         <Route element={<RealtimeSync />}>
           <Route
             path="/admin"

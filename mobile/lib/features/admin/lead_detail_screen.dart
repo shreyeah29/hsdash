@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/env.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/leads_providers.dart';
 import 'package:hsdash_mobile/models/lead.dart';
@@ -70,6 +72,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final leadAsync = ref.watch(leadDetailProvider(widget.leadId));
+    final quotationsAsync = ref.watch(leadQuotationsProvider(widget.leadId));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -132,6 +135,91 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 padding: EdgeInsets.only(top: 16),
                 child: Text('Converted to calendar entry', style: TextStyle(color: AppColors.emerald, fontWeight: FontWeight.w600)),
               ),
+            if (lead.status == 'NEGOTIATION') ...[
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final url = quotationBuilderUrl(widget.leadId);
+                    await Clipboard.setData(ClipboardData(text: url));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Builder link copied — open in browser to create quotation')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.description_outlined),
+                  label: const Text('Create quotation (web)'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            const Text('Quotations', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+            const SizedBox(height: 8),
+            quotationsAsync.when(
+              loading: () => const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: LinearProgressIndicator()),
+              error: (e, _) => Text('$e', style: const TextStyle(fontSize: 13)),
+              data: (quotes) {
+                if (quotes.isEmpty) {
+                  return const Text('No quotations yet', style: TextStyle(fontSize: 13, color: AppColors.textMuted));
+                }
+                return Column(
+                  children: quotes.map((q) {
+                    final url = quotationPublicUrl(q.slug);
+                    final viewed = q.viewCount > 0
+                        ? 'Viewed ${q.viewCount} time${q.viewCount == 1 ? '' : 's'}${q.lastViewedAt != null ? ' · Last ${q.lastViewedAt}' : ''}'
+                        : 'Not yet opened';
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text('Version ${q.version}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(q.packageAmount, style: const TextStyle(fontSize: 12))),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(viewed, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    await Clipboard.setData(ClipboardData(text: url));
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied')));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.copy, size: 16),
+                                  label: const Text('Copy link'),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    await Clipboard.setData(ClipboardData(text: quotationWhatsAppMessage(lead.displayName, url)));
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp message copied')));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.chat_outlined, size: 16),
+                                  label: const Text('WhatsApp'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
             const SizedBox(height: 24),
             const Text('Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
             const SizedBox(height: 8),

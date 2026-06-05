@@ -1,5 +1,6 @@
 import 'package:hsdash_mobile/core/api_client.dart';
 import 'package:hsdash_mobile/models/lead.dart';
+import 'package:hsdash_mobile/models/quotation.dart';
 
 class LeadsRepository {
   LeadsRepository({ApiClient? api}) : _api = api ?? ApiClient();
@@ -40,5 +41,11 @@ class LeadsRepository {
   Future<LeadDetail> convertLead(String id) async {
     final data = await _api.postJson('/admin/leads/$id/convert');
     return LeadDetail.fromJson(data['lead'] as Map<String, dynamic>);
+  }
+
+  Future<List<QuotationSummary>> fetchQuotations(String leadId) async {
+    final data = await _api.getJson('/admin/leads/$leadId/quotations');
+    final list = data['quotations'] as List<dynamic>? ?? [];
+    return list.map((e) => QuotationSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
