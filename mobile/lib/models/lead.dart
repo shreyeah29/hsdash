@@ -269,16 +269,58 @@ Color leadStatusColor(String status) {
     case 'NEW':
       return const Color(0xFF8B5CF6);
     case 'CONTACTED':
-      return const Color(0xFF60A5FA);
+      return const Color(0xFF6366F1);
     case 'NEGOTIATION':
-      return const Color(0xFFFBBF24);
+      return const Color(0xFFF59E0B);
     case 'CONFIRMED':
-      return const Color(0xFFEF4444);
+      return const Color(0xFF10B981);
     case 'LOST':
-      return const Color(0xFFFB7185);
+      return const Color(0xFFEF4444);
     case 'ARCHIVED':
-      return const Color(0xFF71717A);
+      return const Color(0xFF6B7280);
     default:
       return const Color(0xFF9EA3B0);
   }
 }
+
+IconData leadStatusIcon(String status) {
+  switch (status) {
+    case 'NEW':
+      return Icons.auto_awesome_rounded;
+    case 'CONTACTED':
+      return Icons.forum_rounded;
+    case 'NEGOTIATION':
+      return Icons.handshake_rounded;
+    case 'CONFIRMED':
+      return Icons.verified_rounded;
+    case 'LOST':
+      return Icons.heart_broken_rounded;
+    case 'ARCHIVED':
+      return Icons.inventory_2_rounded;
+    default:
+      return Icons.circle_outlined;
+  }
+}
+
+String leadStatusHint(String status) {
+  switch (status) {
+    case 'NEW':
+      return 'Fresh enquiry — make first contact';
+    case 'CONTACTED':
+      return 'Conversation started';
+    case 'NEGOTIATION':
+      return 'Quotation & terms in play';
+    case 'CONFIRMED':
+      return 'Booked — ready to convert';
+    case 'LOST':
+      return 'Marked as not proceeding';
+    case 'ARCHIVED':
+      return 'Filed away for later';
+    default:
+      return 'Update pipeline stage';
+  }
+}
+
+/// Sales funnel order — terminal states sit outside the main rail.
+const kLeadPipelineStatuses = ['NEW', 'CONTACTED', 'NEGOTIATION', 'CONFIRMED'];
+const kLeadTerminalStatuses = ['LOST', 'ARCHIVED'];

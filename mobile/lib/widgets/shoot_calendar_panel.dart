@@ -223,7 +223,7 @@ class _IosCalendarView extends ConsumerWidget {
           _monthHeader(context, ref, monthTitle),
           _weekdayRow(),
           _monthGrid(context, byDay, todayKey),
-          SizedBox(height: premiumDark ? 22 : 18),
+          SizedBox(height: premiumDark ? 8 : 12),
           Divider(height: 1, color: dividerColor),
           Padding(
             padding: EdgeInsets.fromLTRB(premiumDark ? 22 : 16, 14, premiumDark ? 22 : 16, 4),
@@ -404,16 +404,16 @@ class _IosCalendarView extends ConsumerWidget {
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final hPad = premiumDark ? 16.0 : 6.0;
     final gridWidth = MediaQuery.sizeOf(context).width - (premiumDark ? 44.0 : 12.0);
-    final cellHeight = premiumDark ? (gridWidth / 7) * 1.12 : null;
+    final cellHeight = premiumDark ? (gridWidth / 7) * 1.0 : null;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: premiumDark ? 4 : 6),
+      padding: EdgeInsets.only(bottom: premiumDark ? 0 : 4),
       child: SizedBox(
         height: premiumDark ? null : 236,
         child: GridView.builder(
           shrinkWrap: premiumDark,
           physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(hPad, 4, hPad, premiumDark ? 8 : 14),
+          padding: EdgeInsets.fromLTRB(hPad, 4, hPad, premiumDark ? 2 : 10),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             mainAxisSpacing: 4,
