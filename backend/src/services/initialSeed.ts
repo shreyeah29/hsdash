@@ -28,14 +28,14 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
     data: [
       {
         name: "Admin User",
-        email: "admin@wedding.local",
+        username: "admin",
         password: hashed,
         role: Role.ADMIN,
         isActive: true,
       },
       {
         name: "Laxman",
-        email: "laxman@wedding.local",
+        username: "laxman",
         password: hashed,
         role: Role.EDITOR,
         team: Team.PHOTO_TEAM,
@@ -44,7 +44,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Shashi",
-        email: "shashi@wedding.local",
+        username: "shashi",
         password: hashed,
         role: Role.EDITOR,
         team: Team.CINEMATIC_TEAM,
@@ -53,7 +53,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Asha",
-        email: "asha@wedding.local",
+        username: "asha",
         password: hashed,
         role: Role.EDITOR,
         team: Team.CINEMATIC_TEAM,
@@ -62,7 +62,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Anil",
-        email: "anil@wedding.local",
+        username: "anil",
         password: hashed,
         role: Role.EDITOR,
         team: Team.TRADITIONAL_TEAM,
@@ -71,7 +71,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Emmanuel",
-        email: "emmanuel@wedding.local",
+        username: "emmanuel",
         password: hashed,
         role: Role.COORDINATOR,
         team: Team.COORDINATOR_TEAM,
@@ -80,7 +80,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Venkatesh",
-        email: "venkatesh@wedding.local",
+        username: "venkatesh",
         password: hashed,
         role: Role.EDITOR,
         team: Team.PHOTO_TEAM,
@@ -89,7 +89,7 @@ export async function runInitialSeed(options: { wipeExisting: boolean }) {
       },
       {
         name: "Ravindra",
-        email: "ravindra@wedding.local",
+        username: "ravindra",
         password: hashed,
         role: Role.EDITOR,
         team: Team.ALBUM_TEAM,

@@ -11,7 +11,7 @@ declare global {
         userId: string;
         role: Role;
         team: Team | null;
-        email: string;
+        username: string;
       };
     }
   }
@@ -31,19 +31,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   void (async () => {
     try {
       const decoded = verifyAuthToken(token);
-      let email = decoded.email ?? "";
-      if (!email) {
+      let username = decoded.username ?? "";
+      if (!username) {
         const u = await prisma.user.findUnique({
           where: { id: decoded.userId },
-          select: { email: true },
+          select: { username: true },
         });
-        email = u?.email ?? "";
+        username = u?.username ?? "";
       }
       req.auth = {
         userId: decoded.userId,
         role: decoded.role,
         team: decoded.team ?? null,
-        email,
+        username,
       };
       next();
     } catch {
@@ -56,6 +56,14 @@ export function requireRole(role: Role) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(new HttpError(401, "Not authenticated", "UNAUTHENTICATED"));
     if (req.auth.role !== role) return next(new HttpError(403, "Forbidden", "FORBIDDEN"));
+    return next();
+  };
+}
+
+export function requireRoles(...roles: Role[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.auth) return next(new HttpError(401, "Not authenticated", "UNAUTHENTICATED"));
+    if (!roles.includes(req.auth.role)) return next(new HttpError(403, "Forbidden", "FORBIDDEN"));
     return next();
   };
 }

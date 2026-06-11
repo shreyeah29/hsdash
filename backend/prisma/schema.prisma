@@ -76,6 +76,11 @@ enum LeadEventType {
   OTHER
 }
 
+enum AttendanceAlertKind {
+  LATE_CLOCK_IN
+  EARLY_CLOCK_OUT
+}
+
 enum LeadActivityKind {
   CREATED
   STATUS_CHANGED
@@ -99,7 +104,8 @@ enum QuotationStatus {
 model User {
   id           String   @id @default(cuid())
   name         String
-  email        String   @unique
+  username     String   @unique
+  email        String?
   password     String
   role         Role     @default(EDITOR)
   team         Team?
@@ -117,6 +123,8 @@ model User {
   leadNotes            LeadNote[]         @relation("LeadNoteAuthor")
   leadActivities       LeadActivity[]     @relation("LeadActivityActor")
   quotationsCreated    Quotation[]        @relation("QuotationCreatedBy")
+  workShiftSessions    WorkShiftSession[]
+  attendanceAlerts     AttendanceAlert[]
 
   @@index([role])
   @@index([team])
@@ -217,6 +225,39 @@ model TaskActivity {
   @@index([taskId])
   @@index([createdAt])
   @@index([actorUserId])
+}
+
+model WorkShiftSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day        String
+  clockInAt  DateTime
+  clockOutAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  alerts AttendanceAlert[]
+
+  @@unique([userId, day])
+  @@index([day])
+}
+
+model AttendanceAlert {
+  id         String               @id @default(cuid())
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId  String?
+  session    WorkShiftSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  day        String
+  kind       AttendanceAlertKind
+  minutes    Int
+  message    String
+  occurredAt DateTime
+  createdAt  DateTime             @default(now())
+
+  @@index([day])
+  @@index([occurredAt])
 }
 
 model UserNotification {

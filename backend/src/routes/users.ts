@@ -5,27 +5,39 @@ import { prisma } from "../prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { Role, Team } from "@prisma/client";
 import { HttpError } from "../utils/httpError";
+import { normalizeUsername, usernameSchema } from "../utils/username";
 
 export const usersRouter = Router();
 
 usersRouter.use(requireAuth, requireRole(Role.ADMIN));
 
+const userSelect = {
+  id: true,
+  name: true,
+  username: true,
+  email: true,
+  role: true,
+  team: true,
+  designation: true,
+  isActive: true,
+  createdAt: true,
+} as const;
+
+async function assertUsernameAvailable(username: string, excludeId?: string) {
+  const normalized = normalizeUsername(username);
+  const existing = await prisma.user.findUnique({ where: { username: normalized } });
+  if (existing && existing.id !== excludeId) {
+    throw new HttpError(409, "Username is already taken", "USERNAME_TAKEN");
+  }
+  return normalized;
+}
+
 usersRouter.get("/", async (_req, res) => {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      team: true,
-      designation: true,
-      isActive: true,
-      createdAt: true,
-    },
+    select: userSelect,
   });
 
-  // simple assigned tasks count per team member (future: add assignee)
   const taskCounts = await prisma.task.groupBy({
     by: ["assignedTeam"],
     _count: { _all: true },
@@ -36,7 +48,7 @@ usersRouter.get("/", async (_req, res) => {
 
 const createUserSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
+  username: usernameSchema,
   password: z.string().min(8),
   role: z.nativeEnum(Role).default(Role.EDITOR),
   team: z.nativeEnum(Team).optional().nullable(),
@@ -47,27 +59,19 @@ const createUserSchema = z.object({
 usersRouter.post("/", async (req, res, next) => {
   try {
     const body = createUserSchema.parse(req.body);
+    const username = await assertUsernameAvailable(body.username);
     const password = await bcrypt.hash(body.password, 12);
     const user = await prisma.user.create({
       data: {
         name: body.name,
-        email: body.email,
+        username,
         password,
         role: body.role,
         team: body.team ?? null,
         designation: body.designation ?? null,
         isActive: body.isActive ?? true,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        team: true,
-        designation: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: userSelect,
     });
     res.status(201).json({ user });
   } catch (e) {
@@ -77,7 +81,7 @@ usersRouter.post("/", async (req, res, next) => {
 
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
-  email: z.string().email().optional(),
+  username: usernameSchema.optional(),
   password: z.string().min(8).optional(),
   role: z.nativeEnum(Role).optional(),
   team: z.nativeEnum(Team).optional().nullable(),
@@ -94,22 +98,15 @@ usersRouter.put("/:id", async (req, res, next) => {
     const id = z.string().min(1).parse(req.params.id);
     const body = updateUserSchema.parse(req.body);
 
-    const data: any = { ...body };
+    const data: Record<string, unknown> = { ...body };
     if (body.password) data.password = await bcrypt.hash(body.password, 12);
+    delete data.username;
+    if (body.username) data.username = await assertUsernameAvailable(body.username, id);
 
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        team: true,
-        designation: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: userSelect,
     });
 
     res.json({ user });
@@ -144,4 +141,3 @@ usersRouter.delete("/:id", async (req, res, next) => {
     next(e);
   }
 });
-

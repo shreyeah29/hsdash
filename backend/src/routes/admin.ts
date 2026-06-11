@@ -15,6 +15,7 @@ import {
   upcomingShootRangeKeys,
   utcStoredDayKey,
 } from "../services/dashboardStats";
+import { listAttendanceAlerts } from "../services/attendanceService";
 
 export const adminRouter = Router();
 
@@ -41,6 +42,21 @@ adminRouter.get("/task-activity", requireCoordinatorOrAdmin, async (req, res, ne
     });
 
     res.json({ activities: rows });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/attendance-alerts", requireCoordinatorOrAdmin, async (req, res, next) => {
+  try {
+    const q = z
+      .object({
+        limit: z.coerce.number().min(1).max(200).optional().default(80),
+      })
+      .parse(req.query);
+
+    const rows = await listAttendanceAlerts(q.limit);
+    res.json({ alerts: rows });
   } catch (e) {
     next(e);
   }

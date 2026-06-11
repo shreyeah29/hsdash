@@ -18,13 +18,13 @@ export const productionCalendarRouter = Router();
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const entryInclude = {
-  createdBy: { select: { id: true, name: true, email: true } },
+  createdBy: { select: { id: true, name: true, username: true } },
   event: {
     include: {
       tasks: {
         orderBy: [{ deadline: "asc" as const }],
         include: {
-          assignedTo: { select: { id: true, name: true, email: true, team: true } },
+          assignedTo: { select: { id: true, name: true, username: true, team: true } },
         },
       },
     },
@@ -33,7 +33,7 @@ const entryInclude = {
 
 /** Lighter payload for dashboard widgets (status + deadlines only). */
 const entryDashboardInclude = {
-  createdBy: { select: { id: true, name: true, email: true } },
+  createdBy: { select: { id: true, name: true, username: true } },
   event: {
     include: {
       tasks: {
@@ -105,7 +105,7 @@ async function buildAssignmentSummary(assigneeIds: Iterable<string>) {
 
   const users = await prisma.user.findMany({
     where: { id: { in: ids } },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, username: true },
   });
 
   const counts = await prisma.task.groupBy({
@@ -118,7 +118,7 @@ async function buildAssignmentSummary(assigneeIds: Iterable<string>) {
   return users.map((u) => ({
     id: u.id,
     name: u.name,
-    email: u.email,
+    username: u.username,
     taskCount: countByUser.get(u.id) ?? 0,
   }));
 }
@@ -177,14 +177,14 @@ productionCalendarRouter.get("/entries/assigned", async (req, res, next) => {
     if (to.getTime() < from.getTime()) throw new HttpError(400, "Invalid range", "BAD_REQUEST");
 
     const editorInclude = {
-      createdBy: { select: { id: true, name: true, email: true } },
+      createdBy: { select: { id: true, name: true, username: true } },
       event: {
         include: {
           tasks: {
             where: { assignedToId: auth.userId },
             orderBy: [{ deadline: "asc" as const }],
             include: {
-              assignedTo: { select: { id: true, name: true, email: true, team: true } },
+              assignedTo: { select: { id: true, name: true, username: true, team: true } },
             },
           },
         },
@@ -647,8 +647,8 @@ productionCalendarRouter.post(
 productionCalendarRouter.get("/team-members", requireCoordinatorOrAdmin, async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
-      where: { role: Role.EDITOR, isActive: true },
-      select: { id: true, name: true, email: true, team: true, designation: true },
+      where: { role: { in: [Role.EDITOR, Role.COORDINATOR] }, isActive: true },
+      select: { id: true, name: true, username: true, team: true, designation: true },
       orderBy: [{ team: "asc" }, { name: "asc" }],
     });
     res.json({ users });

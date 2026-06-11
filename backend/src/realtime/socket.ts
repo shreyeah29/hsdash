@@ -58,3 +58,8 @@ export function emitTaskRefreshToOps() {
 export function emitNotificationRefresh(userId: string) {
   emitToUser(userId, "notification:new");
 }
+
+export function emitAttendanceRefreshToOps() {
+  io?.to("role:ADMIN").emit("attendance:updated");
+  io?.to("role:COORDINATOR").emit("attendance:updated");
+}

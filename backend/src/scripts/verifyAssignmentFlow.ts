@@ -9,8 +9,8 @@ import { createEventTasksTx } from "../services/eventTasks";
 import { syncEventAssignmentsTx } from "../services/eventAssignment";
 
 async function main() {
-  const laxman = await prisma.user.findUnique({ where: { email: "laxman@wedding.local" } });
-  const admin = await prisma.user.findUnique({ where: { email: "admin@wedding.local" } });
+  const laxman = await prisma.user.findUnique({ where: { username: "laxman" } });
+  const admin = await prisma.user.findUnique({ where: { username: "admin" } });
   if (!laxman || !admin) {
     console.error("Seed users missing — run npm run seed first");
     process.exit(1);

@@ -5,6 +5,7 @@ export type AuthUser = {
   role: Role;
   team: Team | null;
   /** Present on tokens issued after this field was added; otherwise hydrated in requireAuth. */
+  username?: string;
+  /** @deprecated Legacy JWT field — use username. */
   email?: string;
 };
-
