@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
@@ -11,6 +12,8 @@ import 'package:hsdash_mobile/features/auth/workspace_profile_menu_button.dart';
 import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
 import 'package:hsdash_mobile/models/task.dart' show OverviewStats, Task;
+import 'package:hsdash_mobile/widgets/change_password_sheet.dart';
+import 'package:hsdash_mobile/widgets/change_username_sheet.dart';
 
 /// Admin dashboard home — premium cinematic visual layer only.
 class AdminHomeTab extends ConsumerWidget {
@@ -52,6 +55,12 @@ class AdminHomeTab extends ConsumerWidget {
                                     await ref.read(adminWorkspaceProvider.notifier).clear();
                                     if (context.mounted) context.go('/admin/profiles');
                                   },
+                            onChangePassword: profile == null
+                                ? null
+                                : () => _openChangePassword(context, ref),
+                            onChangeUsername: profile == null
+                                ? null
+                                : () => _openChangeUsername(context, ref),
                             onLogout: () => ref.read(authControllerProvider.notifier).logout(),
                           ),
                           const SizedBox(height: 28),
@@ -78,6 +87,47 @@ class AdminHomeTab extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+Future<void> _openChangePassword(BuildContext context, WidgetRef ref) async {
+  final ok = await showAppBottomSheet<bool>(
+    context,
+    builder: (ctx) => ChangePasswordSheet(
+      onSubmit: (current, newPassword) => ref.read(appRepositoryProvider).changePassword(
+            currentPassword: current,
+            newPassword: newPassword,
+          ),
+    ),
+  );
+  if (ok == true && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password updated — use it on your next sign-in')),
+    );
+  }
+}
+
+Future<void> _openChangeUsername(BuildContext context, WidgetRef ref) async {
+  final currentUser = ref.read(authControllerProvider).user;
+  if (currentUser == null) return;
+
+  final ok = await showAppBottomSheet<bool>(
+    context,
+    builder: (ctx) => ChangeUsernameSheet(
+      currentUsername: currentUser.username,
+      onSubmit: (currentPassword, username) async {
+        final updated = await ref.read(appRepositoryProvider).changeUsername(
+              currentPassword: currentPassword,
+              username: username,
+            );
+        ref.read(authControllerProvider.notifier).updateSessionUser(updated);
+      },
+    ),
+  );
+  if (ok == true && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Username updated — use it on your next sign-in')),
     );
   }
 }
@@ -155,12 +205,16 @@ class _EditorialHeader extends StatelessWidget {
     required this.friendlyToday,
     this.profile,
     this.onSwitchProfile,
+    this.onChangePassword,
+    this.onChangeUsername,
     this.onLogout,
   });
 
   final AdminWorkspaceProfile? profile;
   final String friendlyToday;
   final VoidCallback? onSwitchProfile;
+  final VoidCallback? onChangePassword;
+  final VoidCallback? onChangeUsername;
   final VoidCallback? onLogout;
 
   String get _greeting {
@@ -200,6 +254,8 @@ class _EditorialHeader extends StatelessWidget {
                 borderColor: AdminHomePalette.accent.withValues(alpha: 0.4),
                 menuSurfaceColor: AdminHomePalette.card,
                 onSwitchProfile: onSwitchProfile!,
+                onChangePassword: onChangePassword,
+                onChangeUsername: onChangeUsername,
                 onLogout: onLogout!,
               ),
           ],

@@ -2,14 +2,14 @@ class TeamMember {
   const TeamMember({
     required this.id,
     required this.name,
-    required this.email,
+    required this.username,
     this.team,
     this.designation,
   });
 
   final String id;
   final String name;
-  final String email;
+  final String username;
   final String? team;
   final String? designation;
 
@@ -17,7 +17,7 @@ class TeamMember {
     return TeamMember(
       id: json['id'] as String,
       name: json['name'] as String,
-      email: json['email'] as String,
+      username: json['username'] as String? ?? json['email'] as String? ?? '',
       team: json['team'] as String?,
       designation: json['designation'] as String?,
     );

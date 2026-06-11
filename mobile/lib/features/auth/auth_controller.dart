@@ -57,10 +57,10 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<bool> login(String email, String password, {UserRole? expectedRole, bool teamPortal = false}) async {
+  Future<bool> login(String username, String password, {UserRole? expectedRole, bool teamPortal = false}) async {
     state = state.copyWith(clearError: true);
     try {
-      final user = await _repo.login(email: email, password: password);
+      final user = await _repo.login(username: username, password: password);
       if (expectedRole != null && user.role != expectedRole) {
         await _repo.logout();
         final msg = expectedRole == UserRole.admin
@@ -89,6 +89,11 @@ class AuthController extends Notifier<AuthState> {
     await _repo.logout();
     await ref.read(adminWorkspaceProvider.notifier).clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  void updateSessionUser(User user) {
+    if (state.status != AuthStatus.authenticated) return;
+    state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 }
 

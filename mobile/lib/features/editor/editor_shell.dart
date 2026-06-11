@@ -9,7 +9,9 @@ import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/tasks_list_tab.dart';
+import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/widgets/wedding_deliverables.dart';
+import 'package:hsdash_mobile/widgets/work_shift_panel.dart';
 
 class EditorShell extends ConsumerStatefulWidget {
   const EditorShell({super.key, required this.user});
@@ -71,10 +73,12 @@ class _TodayTab extends ConsumerWidget {
       onRefresh: () async {
         invalidateTaskCaches(ref);
         ref.invalidate(notificationsProvider);
+        ref.invalidate(workShiftTodayProvider);
       },
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          const WorkShiftPanel(),
           DashboardHero(
             badge: greetingForHour(hour),
             title: 'Hey $firstName',

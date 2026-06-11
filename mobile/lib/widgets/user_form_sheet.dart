@@ -25,7 +25,7 @@ class UserFormSheet extends StatefulWidget {
 class _UserFormSheetState extends State<UserFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
-  late final TextEditingController _email;
+  late final TextEditingController _username;
   late final TextEditingController _password;
   late final TextEditingController _designation;
   late String _role;
@@ -38,7 +38,7 @@ class _UserFormSheetState extends State<UserFormSheet> {
     super.initState();
     final f = widget.initial;
     _name = TextEditingController(text: f.name);
-    _email = TextEditingController(text: f.email);
+    _username = TextEditingController(text: f.username);
     _password = TextEditingController(text: f.password ?? '');
     _designation = TextEditingController(text: f.designation ?? '');
     _role = f.role;
@@ -49,7 +49,7 @@ class _UserFormSheetState extends State<UserFormSheet> {
   @override
   void dispose() {
     _name.dispose();
-    _email.dispose();
+    _username.dispose();
     _password.dispose();
     _designation.dispose();
     super.dispose();
@@ -81,7 +81,7 @@ class _UserFormSheetState extends State<UserFormSheet> {
       await widget.onSave(
         UserFormData(
           name: _name.text.trim(),
-          email: _email.text.trim(),
+          username: _username.text.trim(),
           role: _role,
           password: _password.text.isEmpty ? null : _password.text,
           team: _needsTeam ? _team : null,
@@ -160,11 +160,13 @@ class _UserFormSheetState extends State<UserFormSheet> {
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
+                controller: _username,
                 autocorrect: false,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (v) => v == null || !v.contains('@') ? 'Valid email required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'e.g. laxman123',
+                ),
+                validator: validateUsername,
               ),
               const SizedBox(height: 12),
               TextFormField(

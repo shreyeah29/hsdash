@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/core/realtime_client.dart';
 import 'package:hsdash_mobile/core/token_storage.dart';
+import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
@@ -27,6 +28,10 @@ void handleRealtimeEvent(WidgetRef ref, String event) {
       _bumpAssignments(ref);
     case 'notification:new':
       ref.invalidate(notificationsProvider);
+    case 'attendance:updated':
+      ref.invalidate(workShiftTodayProvider);
+      ref.invalidate(attendanceAlertsProvider);
+      ref.invalidate(adminTaskActivityProvider);
   }
 }
 

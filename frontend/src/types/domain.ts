@@ -33,7 +33,8 @@ export type TaskPriority = (typeof TaskPriority)[keyof typeof TaskPriority];
 export type User = {
   id: string;
   name: string;
-  email: string;
+  username: string;
+  email?: string | null;
   role: Role;
   team: Team | null;
   designation: string | null;

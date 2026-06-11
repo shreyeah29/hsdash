@@ -36,6 +36,16 @@ int daysBetweenKeys(String fromKey, String toKey) {
 
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/// Sunday-start week containing [date].
+DateTime startOfWeek(DateTime date) {
+  final local = DateTime(date.year, date.month, date.day);
+  return local.subtract(Duration(days: local.weekday % 7));
+}
+
+List<DateTime> weekDaysFrom(DateTime weekStart) {
+  return List.generate(7, (i) => weekStart.add(Duration(days: i)));
+}
+
 const deliverableDeadlineRules = [
   ('Hard drives', 60),
   ('Sneak peak', 7),
@@ -55,8 +65,31 @@ Map<String, List<T>> groupOpenTasksByDeadlineDay<T>(
   final map = <String, List<T>>{};
   for (final t in tasks) {
     if (statusOf(t) == 'COMPLETED') continue;
-    final key = calendarDayKeyFromIso(deadlineOf(t));
+    final key = runwayCalendarDayKey(
+      deadlineIso: deadlineOf(t),
+      status: statusOf(t),
+    );
     map.putIfAbsent(key, () => []).add(t);
   }
   return map;
+}
+
+/// Calendar day an open deliverable appears on — overdue tasks roll forward to today.
+String runwayCalendarDayKey({required String deadlineIso, required String status}) {
+  if (status == 'COMPLETED') return calendarDayKeyFromIso(deadlineIso);
+  if (taskDelayDays(deadlineIso) > 0) return localDayKey(DateTime.now());
+  return calendarDayKeyFromIso(deadlineIso);
+}
+
+/// Whole days past the original deadline (0 if not overdue).
+int taskDelayDays(String deadlineIso) {
+  final dueKey = calendarDayKeyFromIso(deadlineIso);
+  final todayKey = localDayKey(DateTime.now());
+  final days = daysBetweenKeys(dueKey, todayKey);
+  return days > 0 ? days : 0;
+}
+
+bool isTaskOverdue(String deadlineIso, {String? status}) {
+  if (status == 'COMPLETED') return false;
+  return taskDelayDays(deadlineIso) > 0;
 }

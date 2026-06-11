@@ -2,6 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/shoot_time_utils.dart';
 
+/// Black / white time picker with purple selection — no pink or lavender tints.
+Theme wrapShootTimePicker(BuildContext context, Widget? child) {
+  const ink = Color(0xFF111111);
+  const muted = Color(0xFF6B7280);
+  const line = Color(0xFFE5E5E5);
+  const dialFill = Color(0xFFF5F5F5);
+
+  return Theme(
+    data: Theme.of(context).copyWith(
+      useMaterial3: true,
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.violet,
+        onPrimary: Colors.white,
+        secondary: AppColors.violet,
+        onSecondary: Colors.white,
+        surface: Colors.white,
+        onSurface: ink,
+        onSurfaceVariant: muted,
+        outline: line,
+        surfaceContainerHighest: dialFill,
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: Colors.white,
+        dialBackgroundColor: dialFill,
+        dialHandColor: AppColors.violet,
+        dialTextColor: ink,
+        entryModeIconColor: muted,
+        hourMinuteShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: line),
+        ),
+        dayPeriodShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: line),
+        ),
+        dayPeriodBorderSide: const BorderSide(color: line),
+        hourMinuteColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.violet;
+          return Colors.white;
+        }),
+        hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return ink;
+        }),
+        dayPeriodColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.violet;
+          return Colors.white;
+        }),
+        dayPeriodTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return ink;
+        }),
+        helpTextStyle: const TextStyle(color: muted, fontWeight: FontWeight.w500),
+        hourMinuteTextStyle: const TextStyle(fontSize: 52, fontWeight: FontWeight.w400, color: ink),
+        dayPeriodTextStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: AppColors.violet),
+      ),
+    ),
+    child: MediaQuery(
+      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+      child: child ?? const SizedBox.shrink(),
+    ),
+  );
+}
+
 /// Tap-to-pick time using the system time picker (mobile-friendly).
 class ShootTimeField extends StatelessWidget {
   const ShootTimeField({
@@ -20,12 +91,7 @@ class ShootTimeField extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: shootPartsToTimeOfDay(parts),
-      builder: (ctx, child) {
-        return MediaQuery(
-          data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: false),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
+      builder: wrapShootTimePicker,
     );
     if (picked == null) return;
     onChanged(formatShootTime(timeOfDayToShootParts(picked)));

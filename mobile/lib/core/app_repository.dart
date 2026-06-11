@@ -35,9 +35,9 @@ class AppRepository {
   final ProductionCalendarRepository _productionCalendar;
   final UsersRepository _users;
 
-  Future<User> login({required String email, required String password}) async {
+  Future<User> login({required String username, required String password}) async {
     final data = await _api.postJson('/auth/login', body: {
-      'email': email.trim(),
+      'username': username.trim(),
       'password': password,
     });
 
@@ -68,6 +68,29 @@ class AppRepository {
       await _api.postJson('/auth/logout');
     } catch (_) {}
     await _tokenStorage.clear();
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _api.postJson('/auth/change-password', body: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<User> changeUsername({
+    required String currentPassword,
+    required String username,
+  }) async {
+    final data = await _api.postJson('/auth/change-username', body: {
+      'currentPassword': currentPassword,
+      'username': username.trim(),
+    });
+    final userJson = data['user'] as Map<String, dynamic>?;
+    if (userJson == null) throw ApiException('Username change response missing user');
+    return User.fromJson(userJson);
   }
 
   Future<AdminOverview> fetchAdminOverview() => _admin.fetchOverview();

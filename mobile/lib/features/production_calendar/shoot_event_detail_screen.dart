@@ -268,8 +268,9 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(times.$1, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                  if (times.$2.isNotEmpty) Text(times.$2, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  Text(times.$1, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  if (times.$2.isNotEmpty)
+                    Text(times.$2, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                 ],
               ),
             ],

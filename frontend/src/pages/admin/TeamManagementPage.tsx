@@ -28,7 +28,7 @@ async function fetchUsers() {
 type UserForm = {
   id?: string;
   name: string;
-  email: string;
+  username: string;
   password?: string;
   role: string;
   team: string;
@@ -79,7 +79,7 @@ export function TeamManagementPage() {
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [form, setForm] = useState<UserForm>({
     name: "",
-    email: "",
+    username: "",
     password: "",
     role: Role.EDITOR,
     team: Team.PHOTO_TEAM,
@@ -107,7 +107,7 @@ export function TeamManagementPage() {
     mutationFn: async () => {
       const { data } = await api.post("/users", {
         name: form.name,
-        email: form.email,
+        username: form.username,
         password: form.password,
         role: form.role,
         team: form.role === Role.ADMIN ? null : form.team,
@@ -126,7 +126,7 @@ export function TeamManagementPage() {
     mutationFn: async () => {
       const { data } = await api.put(`/users/${form.id}`, {
         name: form.name,
-        email: form.email,
+        username: form.username,
         password: form.password ? form.password : undefined,
         role: form.role,
         team: form.role === Role.ADMIN ? null : form.team,
@@ -160,7 +160,7 @@ export function TeamManagementPage() {
     setMode("create");
     setForm({
       name: "",
-      email: "",
+      username: "",
       password: "",
       role: Role.EDITOR,
       team: Team.PHOTO_TEAM,
@@ -175,7 +175,7 @@ export function TeamManagementPage() {
     setForm({
       id: u.id,
       name: u.name,
-      email: u.email,
+      username: u.username,
       password: "",
       role: u.role,
       team: u.team ?? Team.PHOTO_TEAM,
@@ -188,7 +188,7 @@ export function TeamManagementPage() {
   const needsTeam = form.role === Role.EDITOR || form.role === Role.COORDINATOR;
   const canSubmit =
     !!form.name &&
-    !!form.email &&
+    !!form.username &&
     (mode === "edit" || (form.password && form.password.length >= 8)) &&
     (form.role === Role.ADMIN || (needsTeam && !!form.team));
 
@@ -249,7 +249,7 @@ export function TeamManagementPage() {
                       </div>
                       <div className="min-w-0 space-y-1">
                         <p className="truncate text-[17px] font-semibold tracking-tight text-zinc-900">{u.name}</p>
-                        <p className="truncate text-sm text-zinc-600">{u.email}</p>
+                        <p className="truncate text-sm text-zinc-600">@{u.username}</p>
                       </div>
                     </div>
                     <span
@@ -315,12 +315,11 @@ export function TeamManagementPage() {
               <Input placeholder="Full name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <div className="text-xs font-medium text-zinc-600">Email</div>
+              <div className="text-xs font-medium text-zinc-600">Username</div>
               <Input
-                type="email"
-                placeholder="you@studio.com"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="e.g. laxman123"
+                value={form.username}
+                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
               />
             </div>
             <div className="space-y-1">

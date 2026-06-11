@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/core/task_utils.dart';
+import 'package:hsdash_mobile/features/auth/auth_controller.dart';
+import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_providers.dart';
+import 'package:hsdash_mobile/widgets/work_shift_panel.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_widgets.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
@@ -24,25 +27,73 @@ class EmmanuelTodayPendingTab extends ConsumerWidget {
     return RefreshIndicator(
       color: LaxmanPalette.black,
       backgroundColor: LaxmanPalette.white,
-      onRefresh: () async => invalidateProductionCaches(ref),
+      onRefresh: () async {
+        invalidateProductionCaches(ref);
+        ref.invalidate(workShiftTodayProvider);
+      },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         slivers: [
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+              child: WorkShiftPanel(style: WorkShiftPanelStyle.monochrome),
+            ),
+          ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('TODAY', style: LaxmanType.sectionHead('')),
-                  const SizedBox(height: 8),
-                  Text('Hard drives', style: LaxmanType.display('Hard drives', size: 36)),
-                  const SizedBox(height: 8),
-                  Text(
-                    openCount == 0
-                        ? 'All hard drives tasks are complete.'
-                        : '$openCount pending — due 60 days after each event.',
-                    style: LaxmanType.body('', size: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('TODAY', style: LaxmanType.sectionHead('')),
+                        const SizedBox(height: 8),
+                        Text('Hard drives', style: LaxmanType.display('Hard drives', size: 36)),
+                        const SizedBox(height: 8),
+                        Text(
+                          openCount == 0
+                              ? 'All hard drives tasks are complete.'
+                              : '$openCount pending — due 60 days after each event.',
+                          style: LaxmanType.body('', size: 15),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    tooltip: 'Account',
+                    offset: const Offset(0, 40),
+                    color: LaxmanPalette.white,
+                    surfaceTintColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: LaxmanPalette.black),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'logout') {
+                        ref.read(authControllerProvider.notifier).logout();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'logout',
+                        height: 48,
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, size: 20, color: Colors.red.shade400),
+                            const SizedBox(width: 12),
+                            Text('Log out', style: LaxmanType.body('', size: 14)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.logout_rounded, color: LaxmanPalette.black, size: 22),
+                    ),
                   ),
                 ],
               ),

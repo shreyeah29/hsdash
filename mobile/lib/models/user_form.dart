@@ -4,7 +4,7 @@ import 'package:hsdash_mobile/models/user.dart';
 class UserFormData {
   const UserFormData({
     required this.name,
-    required this.email,
+    required this.username,
     required this.role,
     this.password,
     this.team,
@@ -13,7 +13,7 @@ class UserFormData {
   });
 
   final String name;
-  final String email;
+  final String username;
   final String role;
   final String? password;
   final String? team;
@@ -25,7 +25,7 @@ class UserFormData {
   Map<String, dynamic> toCreateJson() {
     return {
       'name': name,
-      'email': email,
+      'username': username,
       'password': password,
       'role': role,
       'team': needsTeam ? team : null,
@@ -37,7 +37,7 @@ class UserFormData {
   Map<String, dynamic> toUpdateJson() {
     final map = <String, dynamic>{
       'name': name,
-      'email': email,
+      'username': username,
       'role': role,
       'team': needsTeam ? team : null,
       'designation': needsTeam && designation != null && designation!.isNotEmpty ? designation : null,
@@ -52,7 +52,7 @@ class UserFormData {
   factory UserFormData.fromUser(User user) {
     return UserFormData(
       name: user.name,
-      email: user.email,
+      username: user.username,
       role: _roleToApi(user.role),
       team: user.team,
       designation: user.designation ?? '',
@@ -86,4 +86,16 @@ abstract final class UserRoleApi {
   };
 
   static const values = [admin, coordinator, editor];
+}
+
+/// Letters, numbers, underscore — 3–32 chars (matches API).
+String? validateUsername(String? value) {
+  final v = value?.trim() ?? '';
+  if (v.isEmpty) return 'Username required';
+  if (v.length < 3) return 'Use at least 3 characters';
+  if (v.length > 32) return 'Use at most 32 characters';
+  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) {
+    return 'Letters, numbers, and underscores only';
+  }
+  return null;
 }

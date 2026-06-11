@@ -17,7 +17,8 @@ class User {
   const User({
     required this.id,
     required this.name,
-    required this.email,
+    required this.username,
+    this.email,
     required this.role,
     this.team,
     this.designation,
@@ -26,7 +27,8 @@ class User {
 
   final String id;
   final String name;
-  final String email;
+  final String username;
+  final String? email;
   final UserRole role;
   final String? team;
   final String? designation;
@@ -36,11 +38,25 @@ class User {
     return User(
       id: json['id']?.toString() ?? '',
       name: json['name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
+      username: json['username'] as String? ?? json['email'] as String? ?? '',
+      email: json['email'] as String?,
       role: parseRole(json['role']?.toString()),
       team: json['team']?.toString(),
       designation: json['designation'] as String?,
       isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  User copyWith({String? username}) {
+    return User(
+      id: id,
+      name: name,
+      username: username ?? this.username,
+      email: email,
+      role: role,
+      team: team,
+      designation: designation,
+      isActive: isActive,
     );
   }
 

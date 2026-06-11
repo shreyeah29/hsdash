@@ -72,15 +72,15 @@ cd backend && npm run seed
 
 Accounts:
 
-- Admin: `admin@wedding.local`
+- Admin: `admin`
 - Team members:
-  - `laxman@wedding.local`
-  - `shashi@wedding.local`
-  - `asha@wedding.local`
-  - `anil@wedding.local`
-  - `emmanuel@wedding.local`
-  - `venkatesh@wedding.local`
-  - `ravindra@wedding.local`
+  - `laxman`
+  - `shashi`
+  - `asha`
+  - `anil`
+  - `emmanuel`
+  - `venkatesh`
+  - `ravindra`
 
 ### Render deployment
 

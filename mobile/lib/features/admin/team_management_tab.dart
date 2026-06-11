@@ -61,7 +61,7 @@ class _TeamManagementTabState extends ConsumerState<TeamManagementTab> {
               TextField(
                 onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
                 decoration: InputDecoration(
-                  hintText: 'Search by name or email',
+                  hintText: 'Search by name or username',
                   prefixIcon: const Icon(Icons.search, size: 22),
                   filled: true,
                   fillColor: Colors.white,
@@ -107,7 +107,9 @@ class _TeamManagementTabState extends ConsumerState<TeamManagementTab> {
   List<User> _filterUsers(List<User> list) {
     if (_query.isEmpty) return list;
     return list
-        .where((u) => u.name.toLowerCase().contains(_query) || u.email.toLowerCase().contains(_query))
+        .where((u) =>
+            u.name.toLowerCase().contains(_query) ||
+            u.username.toLowerCase().contains(_query))
         .toList();
   }
 
@@ -120,7 +122,7 @@ class _TeamManagementTabState extends ConsumerState<TeamManagementTab> {
         forCreate: true,
         initial: const UserFormData(
           name: '',
-          email: '',
+          username: '',
           role: UserRoleApi.editor,
           team: StudioTeam.photo,
         ),
@@ -329,7 +331,7 @@ class _TeamMemberTile extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    user.email,
+                    user.username,
                     style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

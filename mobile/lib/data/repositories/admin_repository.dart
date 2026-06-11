@@ -2,6 +2,7 @@ import 'package:hsdash_mobile/core/api_client.dart';
 import 'package:hsdash_mobile/models/admin_overview.dart';
 import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/task_activity.dart';
+import 'package:hsdash_mobile/models/attendance_alert.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
 
 /// Admin APIs — see `API.md` → Admin section.
@@ -28,6 +29,13 @@ class AdminRepository {
     final data = await _api.getJson('/admin/task-activity', query: {'limit': limit.clamp(1, 200)});
     final list = data['activities'] as List<dynamic>? ?? [];
     return list.map((e) => TaskActivity.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// `GET /admin/attendance-alerts?limit=`
+  Future<List<AttendanceAlert>> fetchAttendanceAlerts({int limit = 80}) async {
+    final data = await _api.getJson('/admin/attendance-alerts', query: {'limit': limit.clamp(1, 200)});
+    final list = data['alerts'] as List<dynamic>? ?? [];
+    return list.map((e) => AttendanceAlert.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   /// `POST /admin/clear-production-data`

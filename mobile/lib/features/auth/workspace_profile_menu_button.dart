@@ -9,6 +9,8 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
     required this.profile,
     required this.onSwitchProfile,
     required this.onLogout,
+    this.onChangePassword,
+    this.onChangeUsername,
     this.size = 56,
     this.borderColor,
     this.menuSurfaceColor,
@@ -17,6 +19,8 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
   final AdminWorkspaceProfile profile;
   final VoidCallback onSwitchProfile;
   final VoidCallback onLogout;
+  final VoidCallback? onChangePassword;
+  final VoidCallback? onChangeUsername;
   final double size;
   final Color? borderColor;
   final Color? menuSurfaceColor;
@@ -42,6 +46,10 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
         switch (value) {
           case 'switch':
             onSwitchProfile();
+          case 'password':
+            onChangePassword?.call();
+          case 'username':
+            onChangeUsername?.call();
           case 'logout':
             onLogout();
         }
@@ -61,6 +69,36 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
             ],
           ),
         ),
+        if (onChangePassword != null)
+          PopupMenuItem<String>(
+            value: 'password',
+            height: 48,
+            child: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 20, color: darkMenu ? const Color(0xFF8B5CF6) : AppColors.violet),
+                const SizedBox(width: 12),
+                Text(
+                  'Change password',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+                ),
+              ],
+            ),
+          ),
+        if (onChangeUsername != null)
+          PopupMenuItem<String>(
+            value: 'username',
+            height: 48,
+            child: Row(
+              children: [
+                Icon(Icons.alternate_email_rounded, size: 20, color: darkMenu ? const Color(0xFF8B5CF6) : AppColors.violet),
+                const SizedBox(width: 12),
+                Text(
+                  'Change username',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+                ),
+              ],
+            ),
+          ),
         PopupMenuItem<String>(
           value: 'logout',
           height: 48,

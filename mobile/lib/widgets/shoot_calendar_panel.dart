@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
+import 'package:hsdash_mobile/core/shoot_export.dart';
 import 'package:hsdash_mobile/core/shoot_time_utils.dart';
+import 'package:hsdash_mobile/core/spreadsheet_export.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
@@ -206,14 +208,27 @@ class _IosCalendarView extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Production calendar',
-                    style: AdminHomeTypography.inter(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                      height: 1.12,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Production calendar',
+                          style: AdminHomeTypography.inter(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                            height: 1.12,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Export Excel',
+                        onPressed: entries.isEmpty
+                            ? null
+                            : () => _exportShoots(context, entries),
+                        icon: const Icon(Icons.ios_share_rounded, color: AdminHomePalette.textSecondary),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -308,6 +323,16 @@ class _IosCalendarView extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _exportShoots(BuildContext context, List<ShootCalendarEntry> allEntries) async {
+    final stamp = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    await shareSpreadsheet(
+      context: context,
+      filename: 'shoot-calendar-$stamp.csv',
+      columns: shootExportColumns,
+      rows: buildShootExportRows(allEntries),
     );
   }
 
@@ -595,6 +620,27 @@ class _AgendaTile extends StatelessWidget {
 
   bool get _mono => monochromeEditorial;
 
+  TextStyle _timeStyle(bool premiumDark) {
+    if (premiumDark) {
+      return AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w600);
+    }
+    return TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 14,
+      color: _mono ? LaxmanPalette.black : AppColors.textPrimary,
+    );
+  }
+
+  TextStyle _teamLineStyle(bool premiumDark) {
+    if (premiumDark) {
+      return AdminHomeTypography.inter(fontSize: 12, color: AdminHomePalette.textSecondary.withValues(alpha: 0.9));
+    }
+    return TextStyle(
+      fontSize: 12,
+      color: _mono ? LaxmanPalette.black.withValues(alpha: 0.5) : AppColors.textMuted,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final times = splitShootTimes(entry.startTime, entry.endTime);
@@ -652,32 +698,35 @@ class _AgendaTile extends StatelessWidget {
                                 color: _mono ? LaxmanPalette.black.withValues(alpha: 0.55) : AppColors.textMuted,
                               ),
                       ),
+                    if (entry.photoTeam != null && entry.photoTeam!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Photo · ${entry.photoTeam!.trim()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _teamLineStyle(premiumDark),
+                      ),
+                    ],
+                    if (entry.videoTeam != null && entry.videoTeam!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Video · ${entry.videoTeam!.trim()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _teamLineStyle(premiumDark),
+                      ),
+                    ],
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    times.$1,
-                    style: premiumDark
-                        ? AdminHomeTypography.inter(fontSize: 14, fontWeight: FontWeight.w600)
-                        : TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: _mono ? LaxmanPalette.black : AppColors.textPrimary,
-                          ),
-                  ),
-                  if (times.$2.isNotEmpty)
-                    Text(
-                      times.$2,
-                      style: premiumDark
-                          ? AdminHomeTypography.inter(fontSize: 13, color: AdminHomePalette.textSecondary)
-                          : TextStyle(
-                              fontSize: 13,
-                              color: _mono ? LaxmanPalette.black.withValues(alpha: 0.55) : AppColors.textMuted,
-                            ),
-                    ),
+                  Text(times.$1, style: _timeStyle(premiumDark)),
+                  if (times.$2.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(times.$2, style: _timeStyle(premiumDark)),
+                  ],
                 ],
               ),
               Icon(

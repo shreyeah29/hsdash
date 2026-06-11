@@ -18,6 +18,24 @@ String greetingForHour(int hour) {
   return (date: date, hint: 'In $days days', tone: 'zinc');
 }
 
+/// Runway label for deadline calendar rows.
+String runwayStatusLabel(Task task) {
+  final delay = taskDelayDays(task.deadline);
+  if (delay > 0 && task.status != 'COMPLETED') {
+    return 'DELAYED · ${delay}d';
+  }
+  return switch (task.status) {
+    'IN_PROGRESS' => 'IN PROGRESS',
+    'PENDING' => 'PENDING',
+    'DELAYED' => 'DELAYED',
+    'COMPLETED' => 'DONE',
+    _ => task.status,
+  };
+}
+
+bool runwayStatusIsDelayed(Task task) =>
+    task.status != 'COMPLETED' && taskDelayDays(task.deadline) > 0;
+
 Map<String, List<Task>> groupTasksByWedding(List<Task> tasks) {
   final map = <String, List<Task>>{};
   for (final t in tasks) {

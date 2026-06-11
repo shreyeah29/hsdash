@@ -32,6 +32,7 @@ class RealtimeClient {
     listen('production:cleared');
     listen('assignment:updated');
     listen('notification:new');
+    listen('attendance:updated');
 
     _socket = socket;
   }

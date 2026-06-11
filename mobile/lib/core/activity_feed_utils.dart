@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
+import 'package:hsdash_mobile/models/attendance_alert.dart';
 import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/models/task_activity.dart';
 import 'package:hsdash_mobile/models/tasks_query.dart';
@@ -8,11 +9,11 @@ import 'package:hsdash_mobile/models/team_member.dart';
 
 enum ActivityPeriodFilter { today, week, month, all }
 
-enum ActivityTypeFilter { all, assigned, started, completed, delayed }
+enum ActivityTypeFilter { all, assigned, started, completed, delayed, attendance }
 
 enum ActivityViewMode { team, event, timeline }
 
-enum OpsActivityKind { assigned, started, completed, delayed }
+enum OpsActivityKind { assigned, started, completed, delayed, attendance }
 
 enum MemberHealthStatus { available, busy, delayed, noActivity }
 
@@ -58,6 +59,21 @@ class OpsActivityEntry {
     );
   }
 
+  factory OpsActivityEntry.fromAttendance(AttendanceAlert alert) {
+    return OpsActivityEntry(
+      id: alert.id,
+      taskId: '',
+      eventId: '',
+      kind: OpsActivityKind.attendance,
+      timestamp: alert.occurredAt,
+      memberId: alert.userId,
+      memberName: alert.userName,
+      memberTeam: alert.userTeam,
+      eventName: 'Attendance',
+      taskName: alert.message,
+    );
+  }
+
   factory OpsActivityEntry.fromTaskAssignment(Task task) {
     final created = task.createdAtLocal ?? DateTime.fromMillisecondsSinceEpoch(0);
     return OpsActivityEntry(
@@ -94,6 +110,8 @@ Color opsKindColor(OpsActivityKind kind) {
       return AppColors.emerald;
     case OpsActivityKind.delayed:
       return AppColors.rose;
+    case OpsActivityKind.attendance:
+      return AppColors.amber;
   }
 }
 
@@ -107,6 +125,8 @@ String opsKindLabel(OpsActivityKind kind) {
       return 'Completed';
     case OpsActivityKind.delayed:
       return 'Delayed';
+    case OpsActivityKind.attendance:
+      return 'Attendance';
   }
 }
 
@@ -289,9 +309,26 @@ String memberRoleLabel(TeamMember? roster, String? teamKey) {
   return teamLabel(teamKey);
 }
 
+String _resolveMemberName({
+  required String memberId,
+  required TeamMember? roster,
+  required List<OpsActivityEntry> memberEntries,
+  required List<Task> memberTasks,
+}) {
+  if (roster != null && roster.name.isNotEmpty) return roster.name;
+  for (final e in memberEntries) {
+    if (e.memberName != 'Unknown' && e.memberName != 'Unassigned') return e.memberName;
+  }
+  for (final t in memberTasks) {
+    if (t.assigneeName != null && t.assigneeName!.isNotEmpty) return t.assigneeName!;
+  }
+  return memberEntries.firstOrNull?.memberName ?? 'Unknown';
+}
+
 List<OpsActivityEntry> buildOpsEntries({
   required List<TaskActivity> activities,
   required List<Task> tasks,
+  List<AttendanceAlert> attendanceAlerts = const [],
 }) {
   final activityTaskIds = activities.map((a) => a.taskId).toSet();
   final entries = activities.map(OpsActivityEntry.fromActivity).toList();
@@ -301,6 +338,10 @@ List<OpsActivityEntry> buildOpsEntries({
     if (activityTaskIds.contains(task.id)) continue;
     if (task.createdAtLocal == null) continue;
     entries.add(OpsActivityEntry.fromTaskAssignment(task));
+  }
+
+  for (final alert in attendanceAlerts) {
+    entries.add(OpsActivityEntry.fromAttendance(alert));
   }
 
   entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -323,6 +364,7 @@ List<OpsActivityEntry> applyOpsFilters(
         ActivityTypeFilter.started => e.kind == OpsActivityKind.started,
         ActivityTypeFilter.completed => e.kind == OpsActivityKind.completed,
         ActivityTypeFilter.delayed => e.kind == OpsActivityKind.delayed,
+        ActivityTypeFilter.attendance => e.kind == OpsActivityKind.attendance,
         ActivityTypeFilter.all => true,
       };
       if (!match) return false;
@@ -381,8 +423,13 @@ OpsDashboardData buildOpsDashboard({
   required List<Task> tasks,
   required OpsDashboardFilters filters,
   List<TeamMember> roster = const [],
+  List<AttendanceAlert> attendanceAlerts = const [],
 }) {
-  final allEntries = buildOpsEntries(activities: activities, tasks: tasks);
+  final allEntries = buildOpsEntries(
+    activities: activities,
+    tasks: tasks,
+    attendanceAlerts: attendanceAlerts,
+  );
   final filtered = applyOpsFilters(allEntries, filters);
 
   final rosterById = {for (final m in roster) m.id: m};
@@ -406,19 +453,14 @@ OpsDashboardData buildOpsDashboard({
   }
 
   final memberOptions = memberIds.map((id) {
-    String name = rosterById[id]?.name ?? 'Unknown';
-    for (final e in allEntries) {
-      if (e.memberId == id) {
-        name = e.memberName;
-        break;
-      }
-    }
-    for (final t in tasks) {
-      if (t.assignedToId == id && t.assigneeName != null) {
-        name = t.assigneeName!;
-        break;
-      }
-    }
+    final memberTasks = tasks.where((t) => t.assignedToId == id).toList();
+    final memberEntries = allEntries.where((e) => e.memberId == id).toList();
+    final name = _resolveMemberName(
+      memberId: id,
+      roster: rosterById[id],
+      memberEntries: memberEntries,
+      memberTasks: memberTasks,
+    );
     return (id: id, label: name);
   }).toList()
     ..sort((a, b) => a.label.compareTo(b.label));
@@ -450,7 +492,12 @@ OpsDashboardData buildOpsDashboard({
     members.add(
       MemberOpsGroup(
         memberId: id,
-        memberName: rosterById[id]?.name ?? memberEntries.firstOrNull?.memberName ?? 'Unknown',
+        memberName: _resolveMemberName(
+          memberId: id,
+          roster: rosterById[id],
+          memberEntries: memberEntries,
+          memberTasks: memberTasks,
+        ),
         roleLabel: memberRoleLabel(rosterById[id], teamKey),
         openTasks: openCount,
         startedInPeriod: started,
@@ -510,6 +557,8 @@ OpsDashboardData buildOpsDashboard({
         completed.add(e.memberName);
       case OpsActivityKind.delayed:
         delayedMembers.add(e.memberName);
+      case OpsActivityKind.attendance:
+        break;
     }
 
     eventsMap[e.eventId] = EventOpsGroup(

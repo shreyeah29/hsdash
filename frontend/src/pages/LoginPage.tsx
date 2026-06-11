@@ -16,7 +16,11 @@ import { Spotlight } from "@/components/premium/Spotlight";
 import { Input } from "@/components/ui/input";
 
 const schema = z.object({
-  email: z.string().email(),
+  username: z
+    .string()
+    .min(3, "At least 3 characters")
+    .max(32)
+    .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, and underscores only"),
   password: z.string().min(1),
 });
 
@@ -32,7 +36,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
 
   const title = loginKind === "admin" ? "Principal access" : "Crew access";
@@ -89,7 +93,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
       await logout();
       setError("This account cannot access the staff portal.");
     } catch {
-      setError("Invalid email or password.");
+      setError("Invalid username or password.");
     }
   }
 
@@ -120,8 +124,8 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
 
                   <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-zinc-800">Email</label>
-                      <Input {...form.register("email")} autoComplete="email" placeholder="you@studio.com" />
+                      <label className="text-xs font-medium text-zinc-800">Username</label>
+                      <Input {...form.register("username")} autoComplete="username" placeholder="e.g. laxman" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-zinc-800">Password</label>

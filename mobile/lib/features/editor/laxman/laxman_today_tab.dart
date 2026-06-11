@@ -4,8 +4,10 @@ import 'package:hsdash_mobile/core/task_utils.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/editor/laxman/monochrome_today_shared.dart';
+import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
 import 'package:hsdash_mobile/models/user.dart';
+import 'package:hsdash_mobile/widgets/work_shift_panel.dart';
 
 class LaxmanTodayTab extends ConsumerWidget {
   const LaxmanTodayTab({super.key, required this.user});
@@ -25,6 +27,7 @@ class LaxmanTodayTab extends ConsumerWidget {
       onRefresh: () async {
         invalidateTaskCaches(ref);
         ref.invalidate(notificationsProvider);
+        ref.invalidate(workShiftTodayProvider);
       },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -36,6 +39,7 @@ class LaxmanTodayTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   MonochromeTodayHeader(greeting: greetingForHour(hour), firstName: firstName),
+                  const WorkShiftPanel(style: WorkShiftPanelStyle.monochrome),
                   tasks.when(
                     loading: () => const Padding(
                       padding: EdgeInsets.symmetric(vertical: 64),

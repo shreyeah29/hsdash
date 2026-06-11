@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/core/leads_export.dart';
+import 'package:hsdash_mobile/core/spreadsheet_export.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:hsdash_mobile/features/admin/lead_detail_screen.dart';
 import 'package:hsdash_mobile/features/admin/leads_providers.dart';
 import 'package:hsdash_mobile/models/lead.dart';
+import 'package:intl/intl.dart';
 
 class AdminLeadsTab extends ConsumerStatefulWidget {
   const AdminLeadsTab({super.key});
@@ -49,6 +52,11 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
                             Text('Leads', style: AdminHomePalette.editorialTitle.copyWith(fontSize: 28)),
                           ],
                         ),
+                      ),
+                      IconButton(
+                        tooltip: 'Export Excel',
+                        onPressed: () => _exportLeads(context),
+                        icon: const Icon(Icons.ios_share_rounded, color: AdminHomePalette.textSecondary),
                       ),
                       IconButton(
                         onPressed: () {
@@ -202,6 +210,25 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportLeads(BuildContext context) async {
+    try {
+      final allLeads = await ref.read(leadsRepositoryProvider).fetchLeads();
+      if (!context.mounted) return;
+      final stamp = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      await shareSpreadsheet(
+        context: context,
+        filename: 'leads-$stamp.csv',
+        columns: leadsExportColumns,
+        rows: buildLeadsExportRows(allLeads),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $e')),
+      );
+    }
   }
 }
 

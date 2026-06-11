@@ -1,23 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/activity_feed_utils.dart';
+import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:intl/intl.dart';
 
-/// Visual tokens for the activity screen.
+/// Light / dark visual tokens for activity screens.
+class OpsThemeData {
+  const OpsThemeData({
+    required this.bg,
+    required this.group,
+    required this.divider,
+    required this.textPrimary,
+    required this.textMuted,
+    required this.segTrack,
+    required this.segSelected,
+    required this.inputFill,
+    required this.emptyIconBg,
+    required this.cardBorder,
+    this.cardShadow,
+    this.borderedGroups = false,
+  });
+
+  final Color bg;
+  final Color group;
+  final Color divider;
+  final Color textPrimary;
+  final Color textMuted;
+  final Color segTrack;
+  final Color segSelected;
+  final Color inputFill;
+  final Color emptyIconBg;
+  final Color cardBorder;
+  final List<BoxShadow>? cardShadow;
+  final bool borderedGroups;
+
+  static const light = OpsThemeData(
+    bg: Color(0xFFF2F2F7),
+    group: Colors.white,
+    divider: Color(0xFFE5E5EA),
+    textPrimary: AppColors.textPrimary,
+    textMuted: AppColors.textMuted,
+    segTrack: Color(0xFFE5E5EA),
+    segSelected: Colors.white,
+    inputFill: Color(0xFFE5E5EA),
+    emptyIconBg: Colors.white,
+    cardBorder: Color(0x00000000),
+    cardShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4))],
+    borderedGroups: false,
+  );
+
+  static final dark = OpsThemeData(
+    bg: AdminHomePalette.background,
+    group: AdminHomePalette.card,
+    divider: AdminHomePalette.textSecondary.withValues(alpha: 0.18),
+    textPrimary: AdminHomePalette.text,
+    textMuted: AdminHomePalette.textSecondary,
+    segTrack: AdminHomePalette.surface,
+    segSelected: AdminHomePalette.card,
+    inputFill: AdminHomePalette.card,
+    emptyIconBg: AdminHomePalette.card,
+    cardBorder: AdminHomePalette.textSecondary.withValues(alpha: 0.12),
+    cardShadow: null,
+    borderedGroups: true,
+  );
+}
+
+class OpsTheme extends InheritedWidget {
+  const OpsTheme({super.key, required this.data, required super.child});
+
+  final OpsThemeData data;
+
+  static OpsThemeData of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<OpsTheme>()?.data ?? OpsThemeData.light;
+  }
+
+  @override
+  bool updateShouldNotify(OpsTheme oldWidget) => data != oldWidget.data;
+}
+
+/// Indicator colours — unchanged across themes.
 abstract final class OpsStyle {
-  static const bg = Color(0xFFF2F2F7);
-  static const group = Colors.white;
-  static const divider = Color(0xFFE5E5EA);
   static const blue = Color(0xFF007AFF);
   static const green = Color(0xFF34C759);
 
   static BorderRadius get groupRadius => BorderRadius.circular(12);
 
-  static BoxDecoration groupBox({Color? accent}) => BoxDecoration(
-        color: group,
-        borderRadius: groupRadius,
-        border: accent != null ? Border.all(color: accent.withValues(alpha: 0.15)) : null,
-      );
+  static BoxDecoration groupBox(BuildContext context, {Color? accent}) {
+    final t = OpsTheme.of(context);
+    return BoxDecoration(
+      color: t.group,
+      borderRadius: groupRadius,
+      border: accent != null
+          ? Border.all(color: accent.withValues(alpha: 0.15))
+          : (t.borderedGroups ? Border.all(color: t.cardBorder) : null),
+    );
+  }
+
+  // Legacy accessors — prefer OpsTheme.of(context)
+  static Color bg(BuildContext context) => OpsTheme.of(context).bg;
+  static Color group(BuildContext context) => OpsTheme.of(context).group;
+  static Color divider(BuildContext context) => OpsTheme.of(context).divider;
 }
 
 String memberInitials(String name) {
@@ -112,6 +194,7 @@ IconData feedKindIcon(OpsActivityKind kind) {
     OpsActivityKind.started => Icons.play_circle_outline_rounded,
     OpsActivityKind.completed => Icons.check_circle_outline_rounded,
     OpsActivityKind.delayed => Icons.error_outline_rounded,
+    OpsActivityKind.attendance => Icons.schedule_rounded,
   };
 }
 
@@ -139,15 +222,17 @@ class OpsFeedActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     final color = opsKindColor(entry.kind);
     final icon = feedKindIcon(entry.kind);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.group,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4))],
+        border: t.borderedGroups ? Border.all(color: t.cardBorder) : null,
+        boxShadow: t.cardShadow,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -180,22 +265,22 @@ class OpsFeedActivityCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(opsKindLabel(entry.kind), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
-                                Text(DateFormat('h:mm a').format(entry.timestamp), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                Text(DateFormat('h:mm a').format(entry.timestamp), style: TextStyle(fontSize: 11, color: t.textMuted)),
                               ],
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(entry.taskName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.3)),
+                      Text(entry.taskName, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.3, color: t.textPrimary)),
                       const SizedBox(height: 4),
-                      Text(entry.eventName ?? 'Wedding', style: const TextStyle(fontSize: 14, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
+                      Text(entry.eventName ?? 'Wedding', style: TextStyle(fontSize: 14, color: t.textMuted, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 10),
                       Row(
                         children: [
                           OpsAvatar(name: entry.memberName, size: 26),
                           const SizedBox(width: 8),
-                          Text(entry.memberName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                          Text(entry.memberName, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: t.textPrimary)),
                         ],
                       ),
                     ],
@@ -218,6 +303,7 @@ class OpsFeedDaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -227,9 +313,9 @@ class OpsFeedDaySection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
             child: Row(
               children: [
-                Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: -0.2, color: t.textPrimary)),
                 const SizedBox(width: 8),
-                Text('${entries.length}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                Text('${entries.length}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.textMuted)),
               ],
             ),
           ),
@@ -249,6 +335,7 @@ class OpsFeedTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     final sections = groupFeedByDay(entries);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -258,7 +345,7 @@ class OpsFeedTimeline extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Center(
-              child: Text('$remaining more · scroll to load', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              child: Text('$remaining more · scroll to load', style: TextStyle(fontSize: 12, color: t.textMuted)),
             ),
           ),
       ],
@@ -276,6 +363,7 @@ class OpsFeedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     final color = opsKindColor(entry.kind);
     return Column(
       children: [
@@ -292,7 +380,7 @@ class OpsFeedRow extends StatelessWidget {
                   children: [
                     RichText(
                       text: TextSpan(
-                        style: const TextStyle(fontSize: 14, height: 1.35, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 14, height: 1.35, color: t.textPrimary),
                         children: [
                           TextSpan(text: entry.memberName, style: const TextStyle(fontWeight: FontWeight.w600)),
                           TextSpan(text: ' ${opsKindLabel(entry.kind).toLowerCase()} ', style: TextStyle(color: color, fontWeight: FontWeight.w600)),
@@ -301,15 +389,15 @@ class OpsFeedRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(entry.eventName ?? 'Wedding', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                    Text(entry.eventName ?? 'Wedding', style: TextStyle(fontSize: 13, color: t.textMuted)),
                   ],
                 ),
               ),
-              Text(formatFeedTime(entry.timestamp), style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
+              Text(formatFeedTime(entry.timestamp), style: TextStyle(fontSize: 12, color: t.textMuted, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
-        if (showDivider) const Divider(height: 1, indent: 66, endIndent: 16, color: OpsStyle.divider),
+        if (showDivider) Divider(height: 1, indent: 66, endIndent: 16, color: t.divider),
       ],
     );
   }
@@ -335,6 +423,7 @@ class OpsPersonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Column(
       children: [
         Material(
@@ -351,21 +440,21 @@ class OpsPersonRow extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2)),
+                        Text(name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2, color: t.textPrimary)),
                         const SizedBox(height: 2),
-                        Text('$role · $openTasks open', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                        Text('$role · $openTasks open', style: TextStyle(fontSize: 13, color: t.textMuted)),
                         const SizedBox(height: 2),
-                        Text(formatLastActivity(lastActivity), style: TextStyle(fontSize: 12, color: AppColors.textMuted.withValues(alpha: 0.85))),
+                        Text(formatLastActivity(lastActivity), style: TextStyle(fontSize: 12, color: t.textMuted.withValues(alpha: 0.85))),
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted.withValues(alpha: 0.5)),
+                  Icon(Icons.chevron_right, size: 20, color: t.textMuted.withValues(alpha: 0.5)),
                 ],
               ),
             ),
           ),
         ),
-        if (showDivider) const Divider(height: 1, indent: 70, endIndent: 16, color: OpsStyle.divider),
+        if (showDivider) Divider(height: 1, indent: 70, endIndent: 16, color: t.divider),
       ],
     );
   }
@@ -389,6 +478,7 @@ class OpsEventRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Column(
       children: [
         Material(
@@ -414,19 +504,19 @@ class OpsEventRow extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(eventName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2)),
+                        Text(eventName, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2, color: t.textPrimary)),
                         const SizedBox(height: 2),
-                        Text('$activityCount updates · $memberCount people', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                        Text('$activityCount updates · $memberCount people', style: TextStyle(fontSize: 13, color: t.textMuted)),
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted.withValues(alpha: 0.5)),
+                  Icon(Icons.chevron_right, size: 20, color: t.textMuted.withValues(alpha: 0.5)),
                 ],
               ),
             ),
           ),
         ),
-        if (showDivider) const Divider(height: 1, indent: 68, endIndent: 16, color: OpsStyle.divider),
+        if (showDivider) Divider(height: 1, indent: 68, endIndent: 16, color: t.divider),
       ],
     );
   }
@@ -440,6 +530,7 @@ class OpsGroupedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Column(
@@ -449,10 +540,16 @@ class OpsGroupedSection extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 8),
             child: Text(
               title.toUpperCase(),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 0.6),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: t.textMuted, letterSpacing: 0.6),
             ),
           ),
-          ClipRRect(borderRadius: OpsStyle.groupRadius, child: child),
+          ClipRRect(
+            borderRadius: OpsStyle.groupRadius,
+            child: DecoratedBox(
+              decoration: OpsStyle.groupBox(context),
+              child: child,
+            ),
+          ),
         ],
       ),
     );
@@ -468,6 +565,7 @@ class OpsEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -478,14 +576,14 @@ class OpsEmptyState extends StatelessWidget {
               width: 56,
               height: 56,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, size: 28, color: AppColors.textMuted.withValues(alpha: 0.4)),
+              decoration: BoxDecoration(color: t.emptyIconBg, borderRadius: BorderRadius.circular(16)),
+              child: Icon(icon, size: 28, color: t.textMuted.withValues(alpha: 0.4)),
             ),
             const SizedBox(height: 16),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t.textPrimary)),
             if (subtitle != null) ...[
               const SizedBox(height: 6),
-              Text(subtitle!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.4)),
+              Text(subtitle!, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: t.textMuted, height: 1.4)),
             ],
           ],
         ),
@@ -503,23 +601,25 @@ class OpsPeriodBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(color: const Color(0xFFE5E5EA), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: t.segTrack, borderRadius: BorderRadius.circular(10)),
         child: Row(
           children: [
-            _seg('Today', ActivityPeriodFilter.today),
-            _seg('7 days', ActivityPeriodFilter.week),
-            _seg('30 days', ActivityPeriodFilter.month),
+            _seg(context, 'Today', ActivityPeriodFilter.today),
+            _seg(context, '7 days', ActivityPeriodFilter.week),
+            _seg(context, '30 days', ActivityPeriodFilter.month),
           ],
         ),
       ),
     );
   }
 
-  Widget _seg(String label, ActivityPeriodFilter value) {
+  Widget _seg(BuildContext context, String label, ActivityPeriodFilter value) {
+    final t = OpsTheme.of(context);
     final selected = period == value;
     return Expanded(
       child: GestureDetector(
@@ -529,9 +629,11 @@ class OpsPeriodBar extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
+            color: selected ? t.segSelected : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: selected ? const [BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 1))] : null,
+            boxShadow: selected && !t.borderedGroups
+                ? const [BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 1))]
+                : null,
           ),
           alignment: Alignment.center,
           child: Text(
@@ -539,7 +641,7 @@ class OpsPeriodBar extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? AppColors.textPrimary : AppColors.textMuted,
+              color: selected ? t.textPrimary : t.textMuted,
             ),
           ),
         ),
@@ -566,6 +668,7 @@ class OpsSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Row(
@@ -574,13 +677,13 @@ class OpsSearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(fontSize: 15),
+              style: TextStyle(fontSize: 15, color: t.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Search',
-                hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.65)),
-                prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textMuted.withValues(alpha: 0.65)),
+                hintStyle: TextStyle(color: t.textMuted.withValues(alpha: 0.65)),
+                prefixIcon: Icon(Icons.search, size: 20, color: t.textMuted.withValues(alpha: 0.65)),
                 filled: true,
-                fillColor: const Color(0xFFE5E5EA).withValues(alpha: 0.65),
+                fillColor: t.inputFill,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
@@ -593,7 +696,7 @@ class OpsSearchBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Material(
-            color: filterActive ? accent.withValues(alpha: 0.12) : const Color(0xFFE5E5EA).withValues(alpha: 0.65),
+            color: filterActive ? accent.withValues(alpha: 0.12) : t.inputFill,
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
               onTap: onFilterTap,
@@ -601,7 +704,7 @@ class OpsSearchBar extends StatelessWidget {
               child: SizedBox(
                 width: 44,
                 height: 44,
-                child: Icon(Icons.tune_rounded, size: 20, color: filterActive ? accent : AppColors.textMuted),
+                child: Icon(Icons.tune_rounded, size: 20, color: filterActive ? accent : t.textMuted),
               ),
             ),
           ),
@@ -619,6 +722,7 @@ class OpsPipelineStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     final color = opsKindColor(entry.kind);
     return IntrinsicHeight(
       child: Row(
@@ -634,7 +738,7 @@ class OpsPipelineStep extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 ),
-                if (!isLast) Expanded(child: Container(width: 2, color: OpsStyle.divider)),
+                if (!isLast) Expanded(child: Container(width: 2, color: t.divider)),
               ],
             ),
           ),
@@ -649,7 +753,7 @@ class OpsPipelineStep extends StatelessWidget {
                     '${opsKindLabel(entry.kind)} · ${DateFormat('h:mm a').format(entry.timestamp)}',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
                   ),
-                  Text('${entry.eventName ?? 'Event'} · ${entry.taskName}', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                  Text('${entry.eventName ?? 'Event'} · ${entry.taskName}', style: TextStyle(fontSize: 13, color: t.textMuted)),
                 ],
               ),
             ),

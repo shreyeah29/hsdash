@@ -27,18 +27,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   static const _teamBg = 'assets/images/login_team_bg.jpg';
 
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
+  final _username = TextEditingController();
   final _password = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
 
   bool get _isAdmin => widget.portal == LoginPortal.admin;
 
+  /// `emmanuel@wedding.local` → `emmanuel` for legacy logins.
+  static String _loginIdentifier(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.contains('@')) return trimmed.split('@').first.trim().toLowerCase();
+    return trimmed.toLowerCase();
+  }
+
   Color get _accent => _isAdmin ? AppColors.violet : AppColors.emerald;
 
   @override
   void dispose() {
-    _email.dispose();
+    _username.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -47,7 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final ok = await ref.read(authControllerProvider.notifier).login(
-          _email.text.trim(),
+          _loginIdentifier(_username.text),
           _password.text,
           expectedRole: _isAdmin ? UserRole.admin : null,
           teamPortal: !_isAdmin,
@@ -154,10 +161,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
                           _AuthField(
-                            controller: _email,
-                            label: 'Email',
-                            hint: 'you@studio.com',
-                            keyboardType: TextInputType.emailAddress,
+                            controller: _username,
+                            label: 'Username',
+                            hint: 'e.g. laxman',
                             autocorrect: false,
                           ),
                           const SizedBox(height: 14),

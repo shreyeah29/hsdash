@@ -41,18 +41,15 @@ class _CoordinatorShellState extends ConsumerState<CoordinatorShell> {
           tabIndex: _tab,
           onTabChanged: (i) => setState(() => _tab = i),
           accent: LaxmanPalette.black,
-          onLogout: () => ref.read(authControllerProvider.notifier).logout(),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: 'Today'),
             NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
-            NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Weddings'),
             NavigationDestination(icon: Icon(Icons.timeline_outlined), selectedIcon: Icon(Icons.timeline), label: 'Activity'),
             NavigationDestination(icon: Icon(Icons.work_outline), selectedIcon: Icon(Icons.work), label: 'Work'),
           ],
           children: [
             const EmmanuelTodayPendingTab(),
             const ShootCalendarPanel(mode: ShootCalendarMode.coordinator, monochrome: true),
-            WeddingsArchiveTab(accent: LaxmanPalette.black, canEdit: false, canActivate: true),
             AdminActivityTab(
               accent: LaxmanPalette.black,
               excludeMemberId: widget.user.id,

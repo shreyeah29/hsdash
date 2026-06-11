@@ -84,16 +84,32 @@ class ApiClient {
   }
 
   ApiException _wrap(DioException e) {
+    final status = e.response?.statusCode;
     final data = e.response?.data;
     if (data is Map && data['message'] is String) {
-      return ApiException(data['message'] as String, statusCode: e.response?.statusCode);
+      return ApiException(data['message'] as String, statusCode: status);
     }
     if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
       return ApiException(
         'Could not reach the server. Check API_URL and your connection.',
-        statusCode: e.response?.statusCode,
+        statusCode: status,
       );
     }
-    return ApiException(e.message ?? 'Request failed', statusCode: e.response?.statusCode);
+    if (status == 404) {
+      return ApiException(
+        'This action is not available on the server yet. Update the backend or point the app to a newer API.',
+        statusCode: status,
+      );
+    }
+    if (status == 401) {
+      return ApiException('Session expired or invalid. Sign in again.', statusCode: status);
+    }
+    if (status == 403) {
+      return ApiException('You do not have permission for this action.', statusCode: status);
+    }
+    if (status != null && status >= 500) {
+      return ApiException('Server error. Try again in a moment.', statusCode: status);
+    }
+    return ApiException('Request failed. Please try again.', statusCode: status);
   }
 }

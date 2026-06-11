@@ -4,6 +4,7 @@ import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/activity_feed_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_providers.dart';
+import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/tasks/tasks_providers.dart';
 import 'package:hsdash_mobile/models/team_member.dart';
@@ -17,12 +18,14 @@ class AdminActivityTab extends ConsumerStatefulWidget {
     this.accent = AppColors.violet,
     this.excludeMemberId,
     this.monochrome = false,
+    this.premiumDark = false,
   });
 
   final Color accent;
   /// When set, this member's actions are hidden (coordinator team feed).
   final String? excludeMemberId;
   final bool monochrome;
+  final bool premiumDark;
 
   @override
   ConsumerState<AdminActivityTab> createState() => _AdminActivityTabState();
@@ -69,6 +72,8 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
 
   bool get _filtersActive => _eventId != null || _memberId != null || _type != ActivityTypeFilter.all;
 
+  OpsThemeData get _theme => widget.premiumDark ? OpsThemeData.dark : OpsThemeData.light;
+
   OpsDashboardFilters get _filters => OpsDashboardFilters(
         period: _period,
         eventId: _eventId,
@@ -81,6 +86,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
   Future<void> _refresh() async {
     ref.invalidate(adminActivityFeedProvider);
     ref.invalidate(adminTaskActivityProvider);
+    ref.invalidate(attendanceAlertsProvider);
     ref.invalidate(tasksProvider);
     ref.invalidate(teamMembersProvider);
   }
@@ -95,7 +101,9 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
     await showAppBottomSheet<void>(
       context,
       builder: (ctx) {
-        return StatefulBuilder(
+        return OpsTheme(
+          data: _theme,
+          child: StatefulBuilder(
           builder: (ctx, setSheet) {
             return Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.paddingOf(ctx).bottom + 20),
@@ -104,10 +112,10 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
-                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider(ctx), borderRadius: BorderRadius.circular(2))),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text('Filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _theme.textPrimary)),
                   const SizedBox(height: 16),
                   _SheetDropdown<String?>(
                     label: 'Event',
@@ -140,6 +148,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                       DropdownMenuItem(value: ActivityTypeFilter.started, child: Text('Started')),
                       DropdownMenuItem(value: ActivityTypeFilter.completed, child: Text('Completed')),
                       DropdownMenuItem(value: ActivityTypeFilter.delayed, child: Text('Delayed')),
+                      DropdownMenuItem(value: ActivityTypeFilter.attendance, child: Text('Attendance')),
                     ],
                     onChanged: (v) => setSheet(() => type = v ?? ActivityTypeFilter.all),
                   ),
@@ -183,28 +192,34 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
               ),
             );
           },
+        ),
         );
       },
     );
   }
 
   void _openMemberDetail(MemberOpsGroup member) {
+    const sheetTheme = OpsThemeData.light;
     showAppBottomSheet<void>(
       context,
-      backgroundColor: OpsStyle.bg,
+      backgroundColor: sheetTheme.bg,
       builder: (ctx) {
-        return DraggableScrollableSheet(
+        return OpsTheme(
+          data: sheetTheme,
+          child: DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.55,
           minChildSize: 0.35,
           maxChildSize: 0.9,
           builder: (_, scroll) {
-            return ListView(
+            return ColoredBox(
+              color: sheetTheme.bg,
+              child: ListView(
               controller: scroll,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
               children: [
                 Center(
-                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: sheetTheme.divider, borderRadius: BorderRadius.circular(2))),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -215,8 +230,8 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(member.memberName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
-                          Text(member.roleLabel, style: const TextStyle(fontSize: 14, color: AppColors.textMuted)),
+                          Text(member.memberName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: sheetTheme.textPrimary)),
+                          Text(member.roleLabel, style: TextStyle(fontSize: 14, color: sheetTheme.textMuted)),
                         ],
                       ),
                     ),
@@ -239,12 +254,12 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Container(
                         padding: const EdgeInsets.all(14),
-                        decoration: OpsStyle.groupBox(),
+                        decoration: OpsStyle.groupBox(ctx),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(t.eventName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                            Text(t.taskName, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                            Text(t.eventName, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: sheetTheme.textPrimary)),
+                            Text(t.taskName, style: TextStyle(fontSize: 13, color: sheetTheme.textMuted)),
                             const SizedBox(height: 10),
                             ...t.steps.asMap().entries.map(
                                   (e) => OpsPipelineStep(entry: e.value, isLast: e.key == t.steps.length - 1),
@@ -255,8 +270,10 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
                     ),
                   ),
               ],
+            ),
             );
           },
+        ),
         );
       },
     );
@@ -265,9 +282,11 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
   void _openEventDetail(EventOpsGroup event) {
     showAppBottomSheet<void>(
       context,
-      backgroundColor: OpsStyle.bg,
+      backgroundColor: _theme.bg,
       builder: (ctx) {
-        return DraggableScrollableSheet(
+        return OpsTheme(
+          data: _theme,
+          child: DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.6,
           minChildSize: 0.35,
@@ -278,26 +297,24 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
               padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
               children: [
                 Center(
-                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider, borderRadius: BorderRadius.circular(2))),
+                  child: Container(width: 36, height: 4, decoration: BoxDecoration(color: OpsStyle.divider(ctx), borderRadius: BorderRadius.circular(2))),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                  child: Text(event.eventName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+                  child: Text(event.eventName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: _theme.textPrimary)),
                 ),
                 OpsGroupedSection(
                   title: 'Activity',
-                  child: ColoredBox(
-                    color: OpsStyle.group,
-                    child: Column(
-                      children: event.entries.asMap().entries.map((e) {
-                        return OpsFeedRow(entry: e.value, showDivider: e.key < event.entries.length - 1);
-                      }).toList(),
-                    ),
+                  child: Column(
+                    children: event.entries.asMap().entries.map((e) {
+                      return OpsFeedRow(entry: e.value, showDivider: e.key < event.entries.length - 1);
+                    }).toList(),
                   ),
                 ),
               ],
             );
           },
+        ),
         );
       },
     );
@@ -307,9 +324,12 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
   Widget build(BuildContext context) {
     final feed = ref.watch(adminActivityFeedProvider);
     final roster = ref.watch(teamMembersProvider);
+    final theme = _theme;
 
-    return ColoredBox(
-      color: OpsStyle.bg,
+    return OpsTheme(
+      data: theme,
+      child: ColoredBox(
+      color: theme.bg,
       child: feed.when(
         loading: () => Center(child: CircularProgressIndicator(color: widget.accent, strokeWidth: 2.5)),
         error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: ErrorPanel(message: '$e', onRetry: _refresh)),
@@ -320,6 +340,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
             tasks: data.tasks,
             filters: _filters,
             roster: rosterList,
+            attendanceAlerts: data.attendanceAlerts,
           );
 
           return Column(
@@ -348,8 +369,9 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
               TabBar(
                 controller: _tabs,
                 labelColor: widget.accent,
-                unselectedLabelColor: AppColors.textMuted,
+                unselectedLabelColor: theme.textMuted,
                 indicatorColor: widget.accent,
+                dividerColor: theme.divider,
                 indicatorWeight: 2.5,
                 labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -378,6 +400,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
             ],
           );
         },
+      ),
       ),
     );
   }
@@ -468,21 +491,18 @@ class _PeopleTab extends StatelessWidget {
         children: [
           OpsGroupedSection(
             title: 'Team',
-            child: ColoredBox(
-              color: OpsStyle.group,
-              child: Column(
-                children: members.asMap().entries.map((e) {
-                  final m = e.value;
-                  return OpsPersonRow(
-                    name: m.memberName,
-                    role: m.roleLabel,
-                    openTasks: m.openTasks,
-                    lastActivity: m.lastActivity,
-                    showDivider: e.key < members.length - 1,
-                    onTap: () => onMemberTap(m),
-                  );
-                }).toList(),
-              ),
+            child: Column(
+              children: members.asMap().entries.map((e) {
+                final m = e.value;
+                return OpsPersonRow(
+                  name: m.memberName,
+                  role: m.roleLabel,
+                  openTasks: m.openTasks,
+                  lastActivity: m.lastActivity,
+                  showDivider: e.key < members.length - 1,
+                  onTap: () => onMemberTap(m),
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -520,21 +540,18 @@ class _WeddingsTab extends StatelessWidget {
         children: [
           OpsGroupedSection(
             title: 'Weddings',
-            child: ColoredBox(
-              color: OpsStyle.group,
-              child: Column(
-                children: events.asMap().entries.map((e) {
-                  final ev = e.value;
-                  final people = {...ev.assignedMembers, ...ev.startedMembers, ...ev.completedMembers}.length;
-                  return OpsEventRow(
-                    eventName: ev.eventName,
-                    activityCount: ev.entries.length,
-                    memberCount: people,
-                    showDivider: e.key < events.length - 1,
-                    onTap: () => onEventTap(ev),
-                  );
-                }).toList(),
-              ),
+            child: Column(
+              children: events.asMap().entries.map((e) {
+                final ev = e.value;
+                final people = {...ev.assignedMembers, ...ev.startedMembers, ...ev.completedMembers}.length;
+                return OpsEventRow(
+                  eventName: ev.eventName,
+                  activityCount: ev.entries.length,
+                  memberCount: people,
+                  showDivider: e.key < events.length - 1,
+                  onTap: () => onEventTap(ev),
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -552,15 +569,16 @@ class _DetailStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Expanded(
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: OpsStyle.groupBox(),
+        decoration: OpsStyle.groupBox(context),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color ?? AppColors.textPrimary)),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color ?? t.textPrimary)),
+            Text(label, style: TextStyle(fontSize: 12, color: t.textMuted)),
           ],
         ),
       ),
@@ -578,17 +596,20 @@ class _SheetDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = OpsTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.textMuted)),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
           value: value,
           isExpanded: true,
+          dropdownColor: t.group,
+          style: TextStyle(fontSize: 15, color: t.textPrimary),
           decoration: InputDecoration(
             filled: true,
-            fillColor: OpsStyle.bg,
+            fillColor: t.inputFill,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
