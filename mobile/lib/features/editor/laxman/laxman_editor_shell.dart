@@ -10,7 +10,7 @@ import 'package:hsdash_mobile/features/editor/laxman/laxman_widgets.dart';
 import 'package:hsdash_mobile/features/realtime/realtime_sync.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
-/// Monochrome editorial shell — preview for Laxman only.
+/// Monochrome editorial shell — shared by all team editors.
 class LaxmanEditorShell extends ConsumerStatefulWidget {
   const LaxmanEditorShell({super.key, required this.user});
 

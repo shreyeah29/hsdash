@@ -246,43 +246,46 @@ class LaxmanNotificationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: unread ? LaxmanPalette.black : Colors.transparent,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 22, 0, 22),
+        child: IntrinsicHeight(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(width: unread ? 4 : 1, color: LaxmanPalette.black),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: LaxmanType.bodyLarge(title).copyWith(
-                        color: unread ? LaxmanPalette.white : LaxmanPalette.black,
-                        fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
-                      ),
-                    ),
-                    if (body != null && body!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        body!,
-                        style: LaxmanType.body(body!, size: 14).copyWith(
-                          color: unread ? LaxmanPalette.white : LaxmanPalette.black,
-                          fontWeight: FontWeight.w400,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 22, 4, 22),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: LaxmanType.bodyLarge(title).copyWith(
+                                fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                              ),
+                            ),
+                            if (body != null && body!.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(body!, style: LaxmanType.body(body!, size: 14)),
+                            ],
+                          ],
                         ),
                       ),
+                      if (unread && onMarkRead != null)
+                        IconButton(
+                          onPressed: onMarkRead,
+                          icon: const Icon(Icons.check, color: LaxmanPalette.black),
+                        ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-              if (unread && onMarkRead != null)
-                IconButton(
-                  onPressed: onMarkRead,
-                  icon: const Icon(Icons.check, color: LaxmanPalette.white),
-                ),
             ],
           ),
         ),
