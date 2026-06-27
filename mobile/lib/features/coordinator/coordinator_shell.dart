@@ -104,7 +104,7 @@ class _HomeTab extends ConsumerWidget {
             title: 'Orchestrate shoots',
             subtitle: 'Activate shoots from the calendar, assign editors there, then track team work on Activity.',
             accent: AppColors.amber,
-            background: Color(0xFFFFFBEB),
+            background: AppColors.violetLight,
           ),
           const SizedBox(height: 20),
           deliverables.when(

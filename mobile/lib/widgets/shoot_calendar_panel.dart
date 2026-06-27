@@ -7,6 +7,7 @@ import 'package:hsdash_mobile/core/shoot_export.dart';
 import 'package:hsdash_mobile/core/shoot_time_utils.dart';
 import 'package:hsdash_mobile/core/spreadsheet_export.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/production_calendar_providers.dart';
 import 'package:hsdash_mobile/features/production_calendar/shoot_event_detail_screen.dart';
@@ -18,7 +19,9 @@ import 'package:intl/intl.dart';
 enum ShootCalendarMode { admin, coordinator }
 
 const _weekdayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const _weekdayHeaderColor = Color(0xFFE4E4E7);
+
+Color _weekdayHeaderColor() =>
+    AdminHomePalette.isStudio ? const Color(0xFF9EA3B0) : AdminHomePalette.textSecondary;
 
 /// iOS Calendar–style shoots: month grid + day agenda + event detail.
 class ShootCalendarPanel extends ConsumerStatefulWidget {
@@ -48,6 +51,7 @@ class _ShootCalendarPanelState extends ConsumerState<ShootCalendarPanel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget._premiumDark) watchAdminPalette(ref);
     final month = ref.watch(productionCalendarMonthProvider);
     final entries = ref.watch(productionCalendarEntriesProvider);
     final premium = widget._premiumDark;
@@ -96,11 +100,10 @@ class _ShootCalendarPanelState extends ConsumerState<ShootCalendarPanel> {
     if (!premium && !mono) return body;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: mono ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
-      child: ColoredBox(
-        color: mono ? LaxmanPalette.white : AdminHomePalette.background,
-        child: body,
-      ),
+      value: mono
+          ? SystemUiOverlayStyle.dark
+          : (AdminHomePalette.lightStatusBar ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark),
+      child: body,
     );
   }
 
@@ -197,28 +200,19 @@ class _IosCalendarView extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'SHOOTS',
-                    style: AdminHomeTypography.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2.2,
-                      color: AdminHomePalette.textSecondary,
-                    ),
+                    style: AdminHomePalette.sectionTitle,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           'Production calendar',
-                          style: AdminHomeTypography.inter(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                            height: 1.12,
-                          ),
+                          style: AdminHomePalette.pageTitle,
                         ),
                       ),
                       IconButton(
@@ -226,7 +220,7 @@ class _IosCalendarView extends ConsumerWidget {
                         onPressed: entries.isEmpty
                             ? null
                             : () => _exportShoots(context, entries),
-                        icon: const Icon(Icons.ios_share_rounded, color: AdminHomePalette.textSecondary),
+                        icon: Icon(Icons.ios_share_rounded, color: AdminHomePalette.textSecondary),
                       ),
                     ],
                   ),
@@ -273,6 +267,7 @@ class _IosCalendarView extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.event_available,
@@ -410,11 +405,11 @@ class _IosCalendarView extends ConsumerWidget {
                     style: premiumDark
                         ? AdminHomeTypography.inter(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: _weekdayHeaderColor,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: _weekdayHeaderColor(),
                           )
-                        : const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                        : const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                   ),
                 ),
               ),
@@ -653,6 +648,102 @@ class _AgendaTile extends StatelessWidget {
     final borderColor = premiumDark
         ? AdminHomePalette.textSecondary.withValues(alpha: 0.18)
         : (_mono ? LaxmanPalette.black.withValues(alpha: 0.12) : AppColors.border);
+    final usePremiumCards = premiumDark && !AdminHomePalette.isStudio;
+
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 4,
+          margin: const EdgeInsets.only(top: 4, right: 12),
+          height: 44,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                entry.clientName,
+                style: premiumDark
+                    ? AdminHomePalette.editorialTitle.copyWith(fontSize: 17)
+                    : TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: _mono ? LaxmanPalette.black : AppColors.textPrimary,
+                      ),
+              ),
+              if (subtitle.isNotEmpty)
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: premiumDark
+                      ? AdminHomePalette.editorialMeta.copyWith(fontSize: 13)
+                      : TextStyle(
+                          fontSize: 13,
+                          color: _mono ? LaxmanPalette.black.withValues(alpha: 0.55) : AppColors.textMuted,
+                        ),
+                ),
+              if (entry.photoTeam != null && entry.photoTeam!.trim().isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Photo · ${entry.photoTeam!.trim()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _teamLineStyle(premiumDark),
+                ),
+              ],
+              if (entry.videoTeam != null && entry.videoTeam!.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Video · ${entry.videoTeam!.trim()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _teamLineStyle(premiumDark),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(times.$1, style: _timeStyle(premiumDark)),
+            if (times.$2.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(times.$2, style: _timeStyle(premiumDark)),
+            ],
+          ],
+        ),
+        Icon(
+          Icons.chevron_right,
+          color: premiumDark
+              ? AdminHomePalette.textSecondary
+              : (_mono ? LaxmanPalette.black.withValues(alpha: 0.45) : AppColors.textMuted),
+          size: 20,
+        ),
+      ],
+    );
+
+    if (usePremiumCards) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AdminHomePalette.radiusCard),
+            child: AdminHomeSurface(
+              padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+              child: row,
+            ),
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: premiumDark ? Colors.transparent : (_mono ? LaxmanPalette.white : Colors.white),
@@ -663,81 +754,7 @@ class _AgendaTile extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: borderColor)),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 4,
-                margin: const EdgeInsets.only(top: 4, right: 12),
-                height: 44,
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.clientName,
-                      style: premiumDark
-                          ? AdminHomeTypography.inter(fontSize: 16, fontWeight: FontWeight.w600)
-                          : TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: _mono ? LaxmanPalette.black : AppColors.textPrimary,
-                            ),
-                    ),
-                    if (subtitle.isNotEmpty)
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: premiumDark
-                            ? AdminHomeTypography.inter(fontSize: 13, color: AdminHomePalette.textSecondary)
-                            : TextStyle(
-                                fontSize: 13,
-                                color: _mono ? LaxmanPalette.black.withValues(alpha: 0.55) : AppColors.textMuted,
-                              ),
-                      ),
-                    if (entry.photoTeam != null && entry.photoTeam!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Photo · ${entry.photoTeam!.trim()}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _teamLineStyle(premiumDark),
-                      ),
-                    ],
-                    if (entry.videoTeam != null && entry.videoTeam!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Video · ${entry.videoTeam!.trim()}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _teamLineStyle(premiumDark),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(times.$1, style: _timeStyle(premiumDark)),
-                  if (times.$2.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(times.$2, style: _timeStyle(premiumDark)),
-                  ],
-                ],
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: premiumDark
-                    ? AdminHomePalette.textSecondary
-                    : (_mono ? LaxmanPalette.black.withValues(alpha: 0.45) : AppColors.textMuted),
-                size: 20,
-              ),
-            ],
-          ),
+          child: row,
         ),
       ),
     );

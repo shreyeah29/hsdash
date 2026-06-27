@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
@@ -9,7 +10,7 @@ abstract final class WeddingsArchiveStyle {
   static bool isPremiumDark(Color accent) => accent != LaxmanPalette.black;
 
   static Color background(Color accent) =>
-      isPremiumDark(accent) ? AdminHomePalette.background : const Color(0xFFF8F9FC);
+      isPremiumDark(accent) ? AdminHomePalette.background : PremiumLight.background;
 
   static Color textPrimary(Color accent) =>
       isPremiumDark(accent) ? AdminHomePalette.text : AppColors.textPrimary;

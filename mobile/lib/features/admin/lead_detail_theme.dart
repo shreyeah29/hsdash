@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 
-/// Premium CRM visual tokens — Attio / Linear / Mercury inspired.
+/// Premium CRM visual tokens — warm luxury light.
 abstract final class LeadDetailPalette {
-  static const background = Color(0xFFF7F8FC);
-  static const backgroundTop = Color(0xFFFAFBFF);
-  static const backgroundBottom = Color(0xFFF4F6FC);
-  static const surface = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE8EAF2);
-  static const text = Color(0xFF111827);
-  static const textSecondary = Color(0xFF6B7280);
-  static const labelColor = Color(0xFF8B95A7);
-  static const accent = Color(0xFF8B5CF6);
-  static const accentSoft = Color(0xFFF3EEFF);
-  static const success = Color(0xFF10B981);
-  static const warning = Color(0xFFF59E0B);
-  static const danger = Color(0xFFEF4444);
-  static const mutedFill = Color(0xFFF4F6FC);
+  static const background = PremiumLight.background;
+  static const backgroundTop = PremiumLight.background;
+  static const backgroundBottom = PremiumLight.surface;
+  static const surface = PremiumLight.card;
+  static const border = PremiumLight.border;
+  static const text = PremiumLight.textPrimary;
+  static const textSecondary = PremiumLight.textSecondary;
+  static const labelColor = PremiumLight.textMuted;
+  static const accent = PremiumLight.accent;
+  static const accentSecondary = PremiumLight.accentSecondary;
+  static const accentSoft = PremiumLight.secondaryButton;
+  static const success = PremiumLight.success;
+  static const warning = PremiumLight.warning;
+  static const danger = PremiumLight.error;
+  static const mutedFill = PremiumLight.surface;
 
-  static const cardRadius = 20.0;
+  static const cardRadius = PremiumLight.radiusCard;
   static const pagePaddingH = 24.0;
-  static const sectionGap = 28.0;
+  static const sectionGap = PremiumLight.sectionGap;
 
   static LinearGradient get pageGradient => const LinearGradient(
         begin: Alignment.topCenter,
@@ -28,74 +29,29 @@ abstract final class LeadDetailPalette {
         colors: [backgroundTop, backgroundBottom],
       );
 
-  static List<BoxShadow> get cardShadow => [
-        BoxShadow(
-          color: text.withValues(alpha: 0.04),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-        ),
-        BoxShadow(
-          color: text.withValues(alpha: 0.02),
-          blurRadius: 6,
-          offset: const Offset(0, 2),
-        ),
-      ];
+  static List<BoxShadow> get cardShadow => PremiumLight.cardShadow;
 
-  static TextStyle get leadName => AdminHomeTypography.inter(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-        color: text,
-        height: 1.15,
-      );
+  static TextStyle get leadName => PremiumLight.pageTitle.copyWith(fontSize: 28);
 
-  static TextStyle get sectionTitle => AdminHomeTypography.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.2,
-        color: textSecondary,
-      );
-
-  static TextStyle get fieldLabel => AdminHomeTypography.inter(
+  static TextStyle get sectionTitle => PremiumLight.label.copyWith(
         fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: labelColor,
-      );
-
-  static TextStyle get fieldValue => AdminHomeTypography.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: text,
-        height: 1.35,
-      );
-
-  static TextStyle get body => AdminHomeTypography.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: text,
-        height: 1.45,
-      );
-
-  static TextStyle get meta => AdminHomeTypography.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
         color: textSecondary,
-        height: 1.4,
       );
 
-  static TextStyle get caption => AdminHomeTypography.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        color: labelColor,
-        letterSpacing: 0.2,
-      );
+  static TextStyle get fieldLabel => PremiumLight.caption.copyWith(fontSize: 12);
 
-  static TextStyle get quotationValue => AdminHomeTypography.inter(
+  static TextStyle get fieldValue => PremiumLight.cardTitle.copyWith(fontSize: 16);
+
+  static TextStyle get body => PremiumLight.body.copyWith(fontSize: 15);
+
+  static TextStyle get meta => PremiumLight.bodySecondary;
+
+  static TextStyle get caption => PremiumLight.caption;
+
+  static TextStyle get quotationValue => PremiumLight.cardTitle.copyWith(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.3,
-        color: text,
-        height: 1.25,
       );
 
   static InputDecoration borderlessField({required String hint}) {

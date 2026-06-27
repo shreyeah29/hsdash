@@ -123,7 +123,7 @@ class ShootExistingClientPicker extends StatelessWidget {
                 final isSel = selected?.id == p.id;
                 return ListTile(
                   tileColor: Colors.white,
-                  selectedTileColor: const Color(0xFFF0EDFF),
+                  selectedTileColor: AppColors.violetLight,
                   title: Text(p.displayLabel, style: TextStyle(fontWeight: isSel ? FontWeight.w700 : FontWeight.w600)),
                   subtitle: p.city.isNotEmpty ? Text(p.city, style: const TextStyle(fontSize: 12)) : null,
                   trailing: isSel ? const Icon(Icons.check_circle, color: AppColors.violet) : null,
@@ -161,7 +161,7 @@ class ShootClientPrefillSummary extends StatelessWidget {
       duration: const Duration(milliseconds: 220),
       child: Material(
         key: ValueKey(profile.id),
-        color: const Color(0xFFF0EDFF),
+        color: AppColors.violetLight,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(14),

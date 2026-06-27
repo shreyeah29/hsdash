@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 
-/// Cream & gold editorial theme — matches web QuotationBuilderPage.
+/// Warm editorial quotation builder — aligned with premium light system.
 abstract final class QuotationBuilderPalette {
-  static const background = Color(0xFFFAF7F2);
-  static const text = Color(0xFF2C2C2C);
-  static const textMuted = Color(0xFF888888);
-  static const accent = Color(0xFFB8965A);
-  static const border = Color(0xFFE8DFD0);
-  static const borderInput = Color(0xFFD4C4A8);
-  static const surface = Color(0xFFFFFFFF);
-  static const buttonDark = Color(0xFF2C2C2C);
-  static const danger = Color(0xFFDC2626);
+  static const background = PremiumLight.background;
+  static const text = PremiumLight.textPrimary;
+  static const textMuted = PremiumLight.textMuted;
+  static const accent = PremiumLight.accent;
+  static const border = PremiumLight.border;
+  static const borderInput = PremiumLight.borderInput;
+  static const surface = PremiumLight.card;
+  static const buttonDark = PremiumLight.textPrimary;
+  static const danger = PremiumLight.error;
 
   static const pagePaddingH = 24.0;
 
   static TextStyle get serifTitle => GoogleFonts.cormorantGaramond(
         fontSize: 32,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w400,
         color: text,
         height: 1.15,
         letterSpacing: -0.3,
@@ -26,51 +26,33 @@ abstract final class QuotationBuilderPalette {
 
   static TextStyle get serifTitleMd => GoogleFonts.cormorantGaramond(
         fontSize: 28,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w400,
         color: text,
         height: 1.2,
       );
 
   static TextStyle get serifValue => GoogleFonts.cormorantGaramond(
         fontSize: 20,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w500,
         color: text,
         height: 1.25,
       );
 
-  static TextStyle get eyebrow => AdminHomeTypography.inter(
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 2.5,
-        color: accent,
-      );
+  static TextStyle get eyebrow => PremiumLight.label.copyWith(color: accent);
 
-  static TextStyle get fieldLabel => AdminHomeTypography.inter(
-        fontSize: 10,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 2.0,
+  static TextStyle get fieldLabel => PremiumLight.label.copyWith(
+        fontSize: 11,
+        letterSpacing: 1.4,
         color: textMuted,
       );
 
-  static TextStyle get body => AdminHomeTypography.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: text,
-        height: 1.45,
-      );
+  static TextStyle get body => PremiumLight.body.copyWith(fontWeight: FontWeight.w400);
 
-  static TextStyle get meta => AdminHomeTypography.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: textMuted,
-        height: 1.4,
-      );
+  static TextStyle get meta => PremiumLight.bodySecondary;
 
-  static TextStyle get stepLabel => AdminHomeTypography.inter(
-        fontSize: 9,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 1.2,
-        color: textMuted,
+  static TextStyle get stepLabel => PremiumLight.caption.copyWith(
+        fontSize: 11,
+        letterSpacing: 1.0,
       );
 
   static TextStyle get stepLabelActive => stepLabel.copyWith(
@@ -78,19 +60,16 @@ abstract final class QuotationBuilderPalette {
         fontWeight: FontWeight.w600,
       );
 
-  /// Step nav — larger than footer labels for readability on small screens.
-  static TextStyle get stepNavLabel => AdminHomeTypography.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.4,
-        color: textMuted,
+  static TextStyle get stepNavLabel => PremiumLight.caption.copyWith(
+        fontSize: 12,
+        letterSpacing: 0.3,
         height: 1.2,
       );
 
   static TextStyle get stepNavLabelActive => stepNavLabel.copyWith(
         color: text,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
+        letterSpacing: 0.4,
       );
 
   static InputDecoration underlineField({String? hint}) {
@@ -98,7 +77,7 @@ abstract final class QuotationBuilderPalette {
       hintText: hint,
       hintStyle: body.copyWith(color: textMuted.withValues(alpha: 0.75)),
       filled: false,
-      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
       border: const UnderlineInputBorder(borderSide: BorderSide(color: borderInput)),
       enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: borderInput)),
       focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: accent, width: 1.5)),
@@ -109,7 +88,7 @@ abstract final class QuotationBuilderPalette {
   static ThemeData get datePickerTheme => ThemeData.light().copyWith(
         colorScheme: const ColorScheme.light(
           primary: accent,
-          onPrimary: Colors.white,
+          onPrimary: PremiumLight.onAccent,
           surface: surface,
           onSurface: text,
         ),
@@ -120,7 +99,7 @@ class QuotationBuilderSurface extends StatelessWidget {
   const QuotationBuilderSurface({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(22),
   });
 
   final Widget child;
@@ -132,9 +111,10 @@ class QuotationBuilderSurface extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: QuotationBuilderPalette.surface.withValues(alpha: 0.65),
+        color: QuotationBuilderPalette.surface,
         border: Border.all(color: QuotationBuilderPalette.border),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(PremiumLight.radiusCard),
+        boxShadow: PremiumLight.cardShadow,
       ),
       child: child,
     );
@@ -149,17 +129,22 @@ class QuotationBuilderBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: QuotationBuilderPalette.accent.withValues(alpha: 0.08),
+        color: PremiumLight.secondaryButton,
         border: Border.all(color: QuotationBuilderPalette.border),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(PremiumLight.radiusButton),
       ),
       child: Row(
         children: [
-          Icon(Icons.copy_all_rounded, size: 16, color: QuotationBuilderPalette.accent),
+          Icon(Icons.copy_all_rounded, size: 18, color: QuotationBuilderPalette.accent),
           const SizedBox(width: 12),
-          Expanded(child: Text(message, style: QuotationBuilderPalette.meta.copyWith(color: QuotationBuilderPalette.text))),
+          Expanded(
+            child: Text(
+              message,
+              style: QuotationBuilderPalette.meta.copyWith(color: QuotationBuilderPalette.text),
+            ),
+          ),
         ],
       ),
     );

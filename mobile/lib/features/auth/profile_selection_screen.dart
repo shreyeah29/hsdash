@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_controller.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_profile.dart';
 import 'package:hsdash_mobile/widgets/hswf_logo.dart';
@@ -67,9 +68,9 @@ class _ProfileSelectionScreenState extends ConsumerState<ProfileSelectionScreen>
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0F),
+        backgroundColor: PremiumLight.background,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -150,10 +151,9 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             'Choose a profile',
-            style: TextStyle(
+            style: PremiumLight.bodySecondary.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.72),
               letterSpacing: 0.2,
             ),
           ),
@@ -176,19 +176,23 @@ class _AmbientBackground extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF0F0F18), Color(0xFF1A1028), Color(0xFF0A0A0F)],
+              colors: [
+                PremiumLight.background,
+                PremiumLight.surface,
+                PremiumLight.background,
+              ],
             ),
           ),
         ),
         Positioned(
           top: -80,
           left: -60,
-          child: _GlowOrb(color: const Color(0xFF7C3AED).withValues(alpha: 0.35), size: 280),
+          child: _GlowOrb(color: PremiumLight.accent.withValues(alpha: 0.18), size: 280),
         ),
         Positioned(
           bottom: -100,
           right: -40,
-          child: _GlowOrb(color: const Color(0xFF06B6D4).withValues(alpha: 0.22), size: 320),
+          child: _GlowOrb(color: PremiumLight.accentSecondary.withValues(alpha: 0.14), size: 320),
         ),
         ...List.generate(18, (i) => _FloatingParticle(index: i)),
       ],
@@ -266,7 +270,7 @@ class _FloatingParticleState extends State<_FloatingParticle> with SingleTickerP
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.5),
+          color: PremiumLight.accent.withValues(alpha: 0.35),
           shape: BoxShape.circle,
         ),
       ),
@@ -336,8 +340,8 @@ class _ProfileCardState extends State<_ProfileCard> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(_avatarRadius),
                         border: Border.all(
-                          color: highlighted ? accent : Colors.white.withValues(alpha: 0.45),
-                          width: highlighted ? 2.5 : 2,
+                          color: highlighted ? accent : PremiumLight.border,
+                          width: highlighted ? 2.5 : 1.5,
                         ),
                       ),
                       child: ClipRRect(
@@ -396,12 +400,12 @@ class _ProfileCardState extends State<_ProfileCard> {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: PremiumLight.cardTitle.copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: PremiumLight.textPrimary,
                     height: 1.2,
-                    letterSpacing: 0.3,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ],

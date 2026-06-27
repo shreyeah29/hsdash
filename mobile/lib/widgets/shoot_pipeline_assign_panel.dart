@@ -87,14 +87,14 @@ class ShootPipelineAssignPanel extends ConsumerWidget {
               highlightColor: AppColors.violet.withValues(alpha: 0.06),
               listTileTheme: const ListTileThemeData(
                 tileColor: Colors.white,
-                selectedTileColor: Color(0xFFF0EDFF),
+                selectedTileColor: AppColors.violetLight,
                 iconColor: AppColors.textPrimary,
               ),
             ),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
               childrenPadding: const EdgeInsets.only(top: 4, bottom: 4),
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.card,
               collapsedBackgroundColor: Colors.white,
               shape: const RoundedRectangleBorder(),
               collapsedShape: const RoundedRectangleBorder(),

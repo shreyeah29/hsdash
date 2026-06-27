@@ -236,10 +236,10 @@ class _ShootFormScreenState extends ConsumerState<ShootFormScreen> {
     final profiles = _clientProfiles;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit shoot details' : 'Add shoot details'),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),

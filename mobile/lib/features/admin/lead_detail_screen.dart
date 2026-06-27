@@ -614,7 +614,7 @@ class _TimelineEntry extends StatelessWidget {
     if (kind.contains('QUOTATION')) return LeadDetailPalette.warning;
     if (kind == 'STATUS_CHANGED') return LeadDetailPalette.accent;
     if (kind == 'CONVERTED') return LeadDetailPalette.success;
-    if (kind == 'NOTE_ADDED') return const Color(0xFF6366F1);
+    if (kind == 'NOTE_ADDED') return LeadDetailPalette.accentSecondary;
     return LeadDetailPalette.textSecondary;
   }
 }

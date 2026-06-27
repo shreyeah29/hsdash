@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 
 /// Bouncing scroll on iOS and Android (Material defaults to clamping on Android).
@@ -40,7 +41,7 @@ const appLightChromeOverlayStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
   statusBarIconBrightness: Brightness.dark,
   statusBarBrightness: Brightness.light,
-  systemNavigationBarColor: Colors.white,
+  systemNavigationBarColor: PremiumLight.background,
   systemNavigationBarIconBrightness: Brightness.dark,
 );
 
@@ -52,7 +53,7 @@ class FrostedGlass extends StatelessWidget {
     this.borderRadius = 22,
     this.blurSigma = 20,
     this.padding,
-    this.tint = const Color(0x61000000),
+    this.tint = const Color(0xE8FFFFFF),
     this.borderColor,
   });
 
@@ -66,7 +67,7 @@ class FrostedGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(borderRadius);
-    final border = borderColor ?? Colors.white.withValues(alpha: 0.22);
+    final border = borderColor ?? PremiumLight.border;
 
     return ClipRRect(
       borderRadius: radius,
@@ -92,7 +93,7 @@ Future<T?> showAppBottomSheet<T>(
   BuildContext context, {
   required Widget Function(BuildContext context) builder,
   bool isDismissible = true,
-  Color backgroundColor = Colors.white,
+  Color backgroundColor = PremiumLight.card,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -100,9 +101,10 @@ Future<T?> showAppBottomSheet<T>(
     useSafeArea: true,
     isDismissible: isDismissible,
     backgroundColor: backgroundColor,
-    barrierColor: Colors.black54,
+    barrierColor: PremiumLight.textPrimary.withValues(alpha: 0.35),
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(PremiumLight.radiusCard)),
+      side: BorderSide(color: PremiumLight.border),
     ),
     builder: builder,
   );
@@ -119,11 +121,14 @@ Future<bool?> showAppConfirmDialog(
   return showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: PremiumLight.card,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-      content: Text(message, style: const TextStyle(color: AppColors.textMuted, height: 1.4)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(PremiumLight.radiusCard),
+        side: const BorderSide(color: PremiumLight.border),
+      ),
+      title: Text(title, style: PremiumLight.sectionHeading.copyWith(fontSize: 20)),
+      content: Text(message, style: PremiumLight.bodySecondary),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(cancelLabel)),
         TextButton(

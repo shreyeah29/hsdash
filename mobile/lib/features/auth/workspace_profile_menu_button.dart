@@ -29,7 +29,7 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final surface = menuSurfaceColor ?? Colors.white;
     final darkMenu = surface.computeLuminance() < 0.35;
-    final labelColor = darkMenu ? const Color(0xFFF4F4F5) : const Color(0xFF18181B);
+    final labelColor = darkMenu ? const Color(0xFFF4F4F5) : AppColors.textPrimary;
 
     return PopupMenuButton<String>(
       tooltip: '${profile.label} — account',

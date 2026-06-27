@@ -5,6 +5,7 @@ import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/weddings_archive_index.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_theme.dart';
 import 'package:hsdash_mobile/features/production_calendar/shoot_event_detail_screen.dart';
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_providers.dart';
@@ -123,6 +124,7 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (_premium) watchAdminPalette(ref);
     final entries = ref.watch(weddingsArchiveEntriesProvider);
     final index = ref.watch(weddingsArchiveIndexProvider);
     final bg = WeddingsArchiveStyle.background(widget.accent);

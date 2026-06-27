@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/core/calendar_utils.dart';
 import 'package:hsdash_mobile/core/leads_export.dart';
 import 'package:hsdash_mobile/core/spreadsheet_export.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
 import 'package:hsdash_mobile/features/admin/lead_detail_screen.dart';
 import 'package:hsdash_mobile/features/admin/leads_providers.dart';
 import 'package:hsdash_mobile/models/lead.dart';
 import 'package:intl/intl.dart';
+
+const _segments = <(String?, String)>[
+  (null, 'All'),
+  ('NEW', 'New'),
+  ('CONTACTED', 'Contacted'),
+  ('NEGOTIATION', 'Negotiation'),
+  ('CONFIRMED', 'Confirmed'),
+];
 
 class AdminLeadsTab extends ConsumerStatefulWidget {
   const AdminLeadsTab({super.key});
@@ -18,138 +28,117 @@ class AdminLeadsTab extends ConsumerStatefulWidget {
 
 class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
   String? _statusFilter;
+  String _search = '';
+  final _searchController = TextEditingController();
+
+  LeadsListQuery get _query => LeadsListQuery(status: _statusFilter, search: _search);
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final stats = ref.watch(leadStatsProvider);
-    final leads = ref.watch(leadsListProvider(_statusFilter));
+    watchAdminPalette(ref);
+    final leads = ref.watch(leadsListProvider(_query));
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: ColoredBox(
-        color: AdminHomePalette.background,
-        child: RefreshIndicator(
+      value: AdminHomePalette.lightStatusBar ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: RefreshIndicator(
           color: AdminHomePalette.accent,
           backgroundColor: AdminHomePalette.card,
-          onRefresh: () async {
-            ref.invalidate(leadStatsProvider);
-            ref.invalidate(leadsListProvider(_statusFilter));
-          },
+          onRefresh: () async => ref.invalidate(leadsListProvider(_query)),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 16, 22, 8),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('CRM', style: AdminHomePalette.editorialLabel),
-                            const SizedBox(height: 6),
-                            Text('Leads', style: AdminHomePalette.editorialTitle.copyWith(fontSize: 28)),
-                          ],
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('CRM', style: AdminHomePalette.sectionTitle.copyWith(fontSize: 11)),
+                                const SizedBox(height: 6),
+                                Text('Leads', style: AdminHomePalette.pageTitle.copyWith(fontSize: 30)),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Manage enquiries and bookings.',
+                                  style: AdminHomePalette.editorialMeta.copyWith(
+                                    fontSize: 14,
+                                    color: AdminHomePalette.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Export Excel',
+                            onPressed: () => _exportLeads(context),
+                            icon: Icon(Icons.ios_share_rounded, color: AdminHomePalette.textMuted, size: 22),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      TextField(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _search = v.trim()),
+                        style: AdminHomeTypography.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: AdminHomePalette.text,
+                        ),
+                        cursorColor: AdminHomePalette.accent,
+                        decoration: InputDecoration(
+                          hintText: 'Search client, event or phone',
+                          hintStyle: AdminHomeTypography.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: AdminHomePalette.textMuted,
+                          ),
+                          prefixIcon: Icon(Icons.search_rounded, size: 22, color: AdminHomePalette.textMuted),
+                          filled: true,
+                          fillColor: AdminHomePalette.surface,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: AdminHomePalette.cardBorder),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: AdminHomePalette.cardBorder),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: AdminHomePalette.accent, width: 1.5),
+                          ),
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Export Excel',
-                        onPressed: () => _exportLeads(context),
-                        icon: const Icon(Icons.ios_share_rounded, color: AdminHomePalette.textSecondary),
+                      const SizedBox(height: 16),
+                      _PipelineSegmentedControl(
+                        selected: _statusFilter,
+                        onChanged: (v) => setState(() => _statusFilter = v),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          ref.invalidate(leadStatsProvider);
-                          ref.invalidate(leadsListProvider(_statusFilter));
-                        },
-                        icon: const Icon(Icons.refresh_rounded, color: AdminHomePalette.textSecondary),
-                      ),
+                      const SizedBox(height: 18),
                     ],
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: stats.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
-                  ),
-                  error: (e, _) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    child: AdminHomeSurface(
-                      child: Text('$e', style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text)),
-                    ),
-                  ),
-                  data: (s) => Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
-                    child: AdminHomeSurface(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _MetricCell(label: 'Total', value: '${s.total}', highlight: true),
-                            _MetricDivider(),
-                            _MetricCell(label: 'New', value: '${s.newCount}'),
-                            _MetricDivider(),
-                            _MetricCell(label: 'Contacted', value: '${s.contacted}'),
-                            _MetricDivider(),
-                            _MetricCell(label: 'Negotiation', value: '${s.negotiation}'),
-                            _MetricDivider(),
-                            _MetricCell(label: 'Confirmed', value: '${s.confirmed}'),
-                            _MetricDivider(),
-                            _MetricCell(label: 'Lost', value: '${s.lost}'),
-                            _MetricDivider(),
-                            _MetricCell(label: 'Conversion', value: '${s.conversionRate}%'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: Row(
-                    children: [
-                      _FilterPill(label: 'All', selected: _statusFilter == null, onTap: () => setState(() => _statusFilter = null)),
-                      for (final s in ['NEW', 'CONTACTED', 'NEGOTIATION', 'CONFIRMED', 'LOST', 'ARCHIVED'])
-                        _FilterPill(
-                          label: leadStatusLabel(s),
-                          color: leadStatusColor(s),
-                          selected: _statusFilter == s,
-                          onTap: () => setState(() => _statusFilter = s),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: Row(
-                    children: [
-                      Text('PIPELINE', style: AdminHomePalette.sectionTitle),
-                      const Spacer(),
-                      leads.maybeWhen(
-                        data: (list) => Text(
-                          '${list.length} lead${list.length == 1 ? '' : 's'}',
-                          style: AdminHomePalette.statLabel,
-                        ),
-                        orElse: () => const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 14)),
               leads.when(
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2)),
+                loading: () => SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(color: AdminHomePalette.accent, strokeWidth: 2),
+                  ),
                 ),
                 error: (e, _) => SliverFillRemaining(
                   child: Center(
@@ -167,35 +156,27 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
                         child: Padding(
                           padding: const EdgeInsets.all(32),
                           child: Text(
-                            'No leads yet.\nNew enquiries will appear here.',
+                            _search.isNotEmpty
+                                ? 'No leads match your search.'
+                                : 'No leads yet.\nNew enquiries will appear here.',
                             textAlign: TextAlign.center,
-                            style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.text.withValues(alpha: 0.7)),
+                            style: AdminHomePalette.editorialMeta.copyWith(color: AdminHomePalette.textMuted),
                           ),
                         ),
                       ),
                     );
                   }
                   return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 32),
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 88),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, i) {
                           final lead = list[i];
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
+                            padding: EdgeInsets.only(bottom: i < list.length - 1 ? 10 : 0),
                             child: _LeadCard(
                               lead: lead,
-                              statusColor: leadStatusColor(lead.status),
-                              onTap: () async {
-                                ref.read(leadDetailBundleProvider(lead.id).future);
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => LeadDetailScreen(leadId: lead.id, preview: lead),
-                                  ),
-                                );
-                                ref.invalidate(leadsListProvider(_statusFilter));
-                                ref.invalidate(leadStatsProvider);
-                              },
+                              onTap: () => _openLead(context, ref, lead),
                             ),
                           );
                         },
@@ -212,6 +193,17 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
     );
   }
 
+  Future<void> _openLead(BuildContext context, WidgetRef ref, LeadSummary lead) async {
+    ref.read(leadDetailBundleProvider(lead.id).future);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LeadDetailScreen(leadId: lead.id, preview: lead),
+      ),
+    );
+    ref.invalidate(leadsListProvider(_query));
+    ref.invalidate(leadStatsProvider);
+  }
+
   Future<void> _exportLeads(BuildContext context) async {
     try {
       final allLeads = await ref.read(leadsRepositoryProvider).fetchLeads();
@@ -225,104 +217,109 @@ class _AdminLeadsTabState extends ConsumerState<AdminLeadsTab> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 }
 
-class _MetricCell extends StatelessWidget {
-  const _MetricCell({required this.label, required this.value, this.highlight = false});
+class _PipelineSegmentedControl extends StatelessWidget {
+  const _PipelineSegmentedControl({required this.selected, required this.onChanged});
 
-  final String label;
-  final String value;
-  final bool highlight;
+  final String? selected;
+  final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AdminHomePalette.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AdminHomePalette.cardBorder),
+      ),
+      child: Row(
         children: [
-          Text(
-            value,
-            style: AdminHomePalette.statValue.copyWith(
-              fontSize: 22,
-              color: highlight ? AdminHomePalette.accent : AdminHomePalette.text,
+          for (var i = 0; i < _segments.length; i++) ...[
+            Expanded(
+              child: _Segment(
+                label: _segments[i].$2,
+                status: _segments[i].$1,
+                selected: selected == _segments[i].$1,
+                onTap: () => onChanged(_segments[i].$1),
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(label.toUpperCase(), style: AdminHomePalette.statLabel),
+          ],
         ],
       ),
     );
   }
 }
 
-class _MetricDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 36,
-      color: AdminHomePalette.textSecondary.withValues(alpha: 0.15),
-    );
-  }
-}
-
-class _FilterPill extends StatelessWidget {
-  const _FilterPill({
+class _Segment extends StatelessWidget {
+  const _Segment({
     required this.label,
+    required this.status,
     required this.selected,
     required this.onTap,
-    this.color,
   });
 
   final String label;
+  final String? status;
   final bool selected;
   final VoidCallback onTap;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final accent = color ?? AdminHomePalette.accent;
+    final statusColor = status != null ? leadStatusColor(status!) : null;
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: selected ? accent.withValues(alpha: 0.18) : AdminHomePalette.card.withValues(alpha: 0.85),
-              border: Border.all(
-                color: selected ? accent.withValues(alpha: 0.5) : AdminHomePalette.textSecondary.withValues(alpha: 0.12),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
+        decoration: BoxDecoration(
+          color: selected ? AdminHomePalette.card : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: selected && !AdminHomePalette.isStudio
+              ? AdminHomePalette.elevationDeep
+              : (selected
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (statusColor != null) ...[
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AdminHomeTypography.inter(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                  color: selected ? AdminHomePalette.text : AdminHomePalette.textSecondary,
+                ),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (color != null) ...[
-                  _StatusIndicator(color: accent, size: 7),
-                  const SizedBox(width: 7),
-                ],
-                Text(
-                  label,
-                  style: AdminHomeTypography.inter(
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? accent : AdminHomePalette.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -330,123 +327,173 @@ class _FilterPill extends StatelessWidget {
 }
 
 class _LeadCard extends StatelessWidget {
-  const _LeadCard({
-    required this.lead,
-    required this.statusColor,
-    required this.onTap,
-  });
+  const _LeadCard({required this.lead, required this.onTap});
 
   final LeadSummary lead;
-  final Color statusColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = _formatEventDate(lead.eventDate);
-    final location = lead.eventLocation.isNotEmpty ? lead.eventLocation : leadStatusLabel(lead.source);
+    final pipeline = leadStatusLabel(lead.status);
+    final followUp = _followUpLabel(lead);
+    final eventDate = _formatEventDate(lead.eventDate);
+    final location = lead.eventLocation.trim().isNotEmpty ? lead.eventLocation.trim() : '—';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         child: Ink(
-          padding: const EdgeInsets.fromLTRB(10, 11, 14, 11),
+          padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: AdminHomePalette.card.withValues(alpha: 0.88),
-            border: Border.all(color: AdminHomePalette.textSecondary.withValues(alpha: 0.1)),
+            borderRadius: BorderRadius.circular(20),
+            color: AdminHomePalette.card,
+            border: Border.all(color: AdminHomePalette.cardBorder),
+            boxShadow: AdminHomePalette.elevationDeep,
           ),
-          child: Row(
-            children: [
-              _StatusIndicator(color: statusColor, size: 8, barHeight: 32),
-              const SizedBox(width: 10),
-              if (dateLabel != null) ...[
-                SizedBox(
-                  width: 34,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _PipelineBar(status: lead.status),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(dateLabel.$1, style: AdminHomePalette.scheduleTime.copyWith(fontSize: 16, height: 1)),
-                      Text(dateLabel.$2, style: AdminHomePalette.statLabel.copyWith(fontSize: 8)),
+                      Text(
+                        lead.displayName.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AdminHomeTypography.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                          color: AdminHomePalette.text,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        [_eventTypeLabel(lead.eventType), location, if (eventDate != null) eventDate]
+                            .join('  ·  '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AdminHomeTypography.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AdminHomePalette.textSecondary,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Text(
+                            pipeline,
+                            style: AdminHomeTypography.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AdminHomePalette.text,
+                            ),
+                          ),
+                          if (followUp.isNotEmpty) ...[
+                            Text(
+                              '  ·  ',
+                              style: TextStyle(color: AdminHomePalette.textMuted.withValues(alpha: 0.6)),
+                            ),
+                            Flexible(
+                              child: Text(
+                                followUp,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AdminHomeTypography.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AdminHomePalette.textMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 28,
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  color: AdminHomePalette.textSecondary.withValues(alpha: 0.15),
-                ),
               ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lead.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AdminHomeTypography.inter(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: -0.2),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${lead.phoneNumber} · $location',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AdminHomePalette.editorialMeta.copyWith(fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, size: 18, color: AdminHomePalette.textSecondary.withValues(alpha: 0.45)),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-
-  (String, String)? _formatEventDate(String iso) {
-    try {
-      final d = DateTime.parse(iso);
-      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-      return (d.day.toString().padLeft(2, '0'), months[d.month - 1]);
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
-class _StatusIndicator extends StatelessWidget {
-  const _StatusIndicator({required this.color, this.size = 8, this.barHeight});
+class _PipelineBar extends StatelessWidget {
+  const _PipelineBar({required this.status});
 
-  final Color color;
-  final double size;
-  final double? barHeight;
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    if (barHeight != null) {
-      return Container(
-        width: 3,
-        height: barHeight,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(2),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 6)],
-        ),
-      );
-    }
-
     return Container(
-      width: size,
-      height: size,
+      width: 3,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 5)],
+        color: _pipelineIndicatorColor(status),
+        borderRadius: BorderRadius.circular(2),
       ),
     );
+  }
+}
+
+Color _pipelineIndicatorColor(String status) => leadStatusColor(status);
+
+String _eventTypeLabel(String type) {
+  switch (type) {
+    case 'WEDDING':
+      return 'Wedding';
+    case 'CORPORATE':
+      return 'Corporate';
+    case 'BIRTHDAY':
+      return 'Birthday';
+    default:
+      if (type.isEmpty) return 'Event';
+      return type[0].toUpperCase() + type.substring(1).toLowerCase();
+  }
+}
+
+String? _formatEventDate(String iso) {
+  if (iso.trim().isEmpty) return null;
+  try {
+    return formatFriendlyDay(iso.contains('T') ? calendarDayKeyFromIso(iso) : iso);
+  } catch (_) {
+    return null;
+  }
+}
+
+String _followUpLabel(LeadSummary lead) {
+  if (lead.status == 'CONFIRMED' || lead.status == 'LOST' || lead.status == 'ARCHIVED') {
+    return '';
+  }
+
+  final created = DateTime.tryParse(lead.createdAt)?.toLocal();
+  if (created == null) return 'Follow up soon';
+
+  final today = DateTime.now();
+  final createdDay = DateTime(created.year, created.month, created.day);
+  final elapsed = DateTime(today.year, today.month, today.day).difference(createdDay).inDays;
+
+  switch (lead.status) {
+    case 'NEW':
+      if (elapsed <= 0) return 'Follow up today';
+      if (elapsed == 1) return 'Follow up today';
+      return 'Follow up overdue';
+    case 'CONTACTED':
+      return elapsed >= 2 ? 'Follow up tomorrow' : 'Follow up this week';
+    case 'NEGOTIATION':
+      return 'Follow up tomorrow';
+    default:
+      return 'Follow up soon';
   }
 }

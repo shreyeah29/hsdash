@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/activity_feed_utils.dart';
+import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_providers.dart';
 import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
@@ -72,7 +74,12 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
 
   bool get _filtersActive => _eventId != null || _memberId != null || _type != ActivityTypeFilter.all;
 
-  OpsThemeData get _theme => widget.premiumDark ? OpsThemeData.dark : OpsThemeData.light;
+  OpsThemeData get _theme {
+    if (widget.premiumDark) {
+      return AdminHomePalette.isStudio ? OpsThemeData.dark : OpsThemeData.wedding;
+    }
+    return OpsThemeData.wedding;
+  }
 
   OpsDashboardFilters get _filters => OpsDashboardFilters(
         period: _period,
@@ -199,7 +206,7 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
   }
 
   void _openMemberDetail(MemberOpsGroup member) {
-    const sheetTheme = OpsThemeData.light;
+    final sheetTheme = OpsThemeData.light;
     showAppBottomSheet<void>(
       context,
       backgroundColor: sheetTheme.bg,
@@ -322,16 +329,18 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
 
   @override
   Widget build(BuildContext context) {
+    if (widget.premiumDark) watchAdminPalette(ref);
     final feed = ref.watch(adminActivityFeedProvider);
     final roster = ref.watch(teamMembersProvider);
     final theme = _theme;
+    final accent = widget.premiumDark ? AdminHomePalette.accent : widget.accent;
 
     return OpsTheme(
       data: theme,
       child: ColoredBox(
       color: theme.bg,
       child: feed.when(
-        loading: () => Center(child: CircularProgressIndicator(color: widget.accent, strokeWidth: 2.5)),
+        loading: () => Center(child: CircularProgressIndicator(color: accent, strokeWidth: 2.5)),
         error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: ErrorPanel(message: '$e', onRetry: _refresh)),
         data: (data) {
           final rosterList = roster.maybeWhen(data: (m) => m, orElse: () => <TeamMember>[]);

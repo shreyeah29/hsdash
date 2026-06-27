@@ -141,10 +141,10 @@ class _ShootEventDetailScreenState extends ConsumerState<ShootEventDetailScreen>
     final relatedAsync = ref.watch(clientRelatedShootsProvider(clientKey));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(e.clientName),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),

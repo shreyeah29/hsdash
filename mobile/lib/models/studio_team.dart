@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
 /// Production teams — matches backend `Team` enum and `Task.assignedTeam`.
@@ -55,17 +56,17 @@ abstract final class StudioTeam {
   static Color accentFor(String? team) {
     switch (team) {
       case photo:
-        return const Color(0xFF7C3AED);
+        return PremiumLight.accent;
       case cinematic:
-        return const Color(0xFF0891B2);
+        return PremiumLight.info;
       case traditional:
-        return const Color(0xFFD97706);
+        return PremiumLight.warning;
       case album:
-        return const Color(0xFF059669);
+        return PremiumLight.success;
       case coordinator:
-        return const Color(0xFFEA580C);
+        return PremiumLight.accentSecondary;
       default:
-        return const Color(0xFF71717A);
+        return PremiumLight.textMuted;
     }
   }
 

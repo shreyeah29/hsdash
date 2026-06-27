@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/config/theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
 import 'package:hsdash_mobile/models/user.dart';
 
-class DashboardShell extends StatelessWidget {
+class DashboardShell extends ConsumerWidget {
   const DashboardShell({
     super.key,
     required this.tabIndex,
     required this.onTabChanged,
     required this.destinations,
-    required this.accent,
     required this.children,
+    this.accent = AppColors.violet,
     this.user,
     this.titles,
     this.onLogout,
     this.showHeader = false,
     this.premiumDarkTabIndices,
+    this.adminPalette,
+    this.useAdminTheme = false,
   });
 
   final int tabIndex;
@@ -28,26 +32,30 @@ class DashboardShell extends StatelessWidget {
   final List<String>? titles;
   final VoidCallback? onLogout;
   final bool showHeader;
-  /// Tab indices that use cinematic dark chrome (e.g. admin home + deadlines).
   final Set<int>? premiumDarkTabIndices;
-
-  static const _premiumHomeBg = Color(0xFF0B0D11);
-  static const _premiumNavBarBg = Color(0xFF06080C);
-  static const _premiumNavIcon = Color(0xFFF4F4F5);
-  static const _premiumNavIconMuted = Color(0xFFD4D4D8);
-  static const _premiumNavLabelMuted = Color(0xFFB8BEC9);
+  final AdminPaletteTokens? adminPalette;
+  final bool useAdminTheme;
 
   @override
-  Widget build(BuildContext context) {
-    final premiumHome = premiumDarkTabIndices?.contains(tabIndex) ?? false;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = useAdminTheme ? ref.watch(adminPaletteProvider) : adminPalette;
+    final adminThemed = palette != null && (premiumDarkTabIndices?.contains(tabIndex) ?? false);
+    final shellBg = adminThemed
+        ? Colors.transparent
+        : (premiumDarkTabIndices?.contains(tabIndex) ?? false)
+            ? const Color(0xFF0B0D11)
+            : AppColors.surface;
+    final shellAccent = adminThemed ? palette.accent : accent;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: premiumHome ? SystemUiOverlayStyle.light : appLightChromeOverlayStyle,
+      value: adminThemed
+          ? (palette.lightStatusBar ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          : appLightChromeOverlayStyle,
       child: Scaffold(
-        backgroundColor: premiumHome ? _premiumHomeBg : AppColors.surface,
+        backgroundColor: shellBg,
         appBar: showHeader && user != null && titles != null && onLogout != null
             ? AppBar(
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.card,
                 surfaceTintColor: Colors.transparent,
                 centerTitle: false,
                 title: Column(
@@ -65,7 +73,7 @@ class DashboardShell extends StatelessWidget {
                 ],
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(3),
-                  child: Container(height: 3, color: accent.withValues(alpha: 0.85)),
+                  child: Container(height: 3, color: shellAccent.withValues(alpha: 0.85)),
                 ),
               )
             : null,
@@ -81,45 +89,76 @@ class DashboardShell extends StatelessWidget {
                   child: IconButton(
                     tooltip: 'Log out',
                     onPressed: onLogout,
-                    icon: Icon(Icons.logout_rounded, color: premiumHome ? _premiumNavIconMuted : AppColors.textMuted),
+                    icon: Icon(
+                      Icons.logout_rounded,
+                      color: adminThemed ? palette.textSecondary : AppColors.textMuted,
+                    ),
                   ),
                 ),
             ],
           ),
         ),
         bottomNavigationBar: Theme(
-          data: premiumHome
+          data: adminThemed
               ? Theme.of(context).copyWith(
                   navigationBarTheme: NavigationBarThemeData(
-                    backgroundColor: _premiumNavBarBg,
-                    indicatorColor: const Color(0xFF8B5CF6).withValues(alpha: 0.32),
+                    backgroundColor: palette.navBar,
+                    indicatorColor: palette.isStudio
+                        ? palette.navIndicator
+                        : palette.accent.withValues(alpha: 0.14),
                     surfaceTintColor: Colors.transparent,
                     shadowColor: Colors.transparent,
                     elevation: 0,
                     height: 64,
                     labelTextStyle: WidgetStateProperty.resolveWith((states) {
                       final selected = states.contains(WidgetState.selected);
+                      if (palette.isStudio) {
+                        return TextStyle(
+                          fontSize: 11,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          color: selected ? palette.text : palette.textSecondary,
+                        );
+                      }
                       return TextStyle(
                         fontSize: 11,
                         fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                        color: selected ? _premiumNavIcon : _premiumNavLabelMuted,
+                        color: selected ? palette.text : palette.textSecondary,
                       );
                     }),
                     iconTheme: WidgetStateProperty.resolveWith((states) {
                       final selected = states.contains(WidgetState.selected);
                       return IconThemeData(
-                        color: selected ? _premiumNavIcon : _premiumNavIconMuted,
+                        color: selected
+                            ? palette.accent
+                            : (palette.isStudio ? palette.textSecondary : palette.text.withValues(alpha: 0.72)),
                         size: 24,
                       );
                     }),
                   ),
                 )
               : Theme.of(context),
-          child: NavigationBar(
-            selectedIndex: tabIndex,
-            onDestinationSelected: onTabChanged,
-            destinations: destinations,
-          ),
+          child: adminThemed
+              ? DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: palette.isStudio
+                            ? palette.border.withValues(alpha: 0.45)
+                            : palette.border,
+                      ),
+                    ),
+                  ),
+                  child: NavigationBar(
+                    selectedIndex: tabIndex,
+                    onDestinationSelected: onTabChanged,
+                    destinations: destinations,
+                  ),
+                )
+              : NavigationBar(
+                  selectedIndex: tabIndex,
+                  onDestinationSelected: onTabChanged,
+                  destinations: destinations,
+                ),
         ),
       ),
     );
@@ -262,6 +301,7 @@ class ErrorPanel extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Could not load data', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),

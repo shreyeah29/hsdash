@@ -274,7 +274,7 @@ class _AuthField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white, width: 1.2),
         ),
-        errorStyle: const TextStyle(color: Color(0xFFFDA4AF)),
+        errorStyle: TextStyle(color: AppColors.rose),
         suffixIcon: onToggleObscure != null
             ? IconButton(
                 icon: Icon(

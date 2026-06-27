@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 
 class LeadSummary {
   const LeadSummary({
@@ -267,19 +268,19 @@ String leadStatusLabel(String status) {
 Color leadStatusColor(String status) {
   switch (status) {
     case 'NEW':
-      return const Color(0xFF8B5CF6);
+      return PremiumLight.info;
     case 'CONTACTED':
-      return const Color(0xFF6366F1);
+      return PremiumLight.accentSecondary;
     case 'NEGOTIATION':
-      return const Color(0xFFF59E0B);
+      return PremiumLight.warning;
     case 'CONFIRMED':
-      return const Color(0xFF10B981);
+      return PremiumLight.success;
     case 'LOST':
-      return const Color(0xFFEF4444);
+      return PremiumLight.error;
     case 'ARCHIVED':
-      return const Color(0xFF6B7280);
+      return PremiumLight.textMuted;
     default:
-      return const Color(0xFF9EA3B0);
+      return PremiumLight.textMuted;
   }
 }
 

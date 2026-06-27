@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/core/activity_feed_utils.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
@@ -34,19 +35,19 @@ class OpsThemeData {
   final List<BoxShadow>? cardShadow;
   final bool borderedGroups;
 
-  static const light = OpsThemeData(
-    bg: Color(0xFFF2F2F7),
-    group: Colors.white,
-    divider: Color(0xFFE5E5EA),
-    textPrimary: AppColors.textPrimary,
-    textMuted: AppColors.textMuted,
-    segTrack: Color(0xFFE5E5EA),
-    segSelected: Colors.white,
-    inputFill: Color(0xFFE5E5EA),
-    emptyIconBg: Colors.white,
-    cardBorder: Color(0x00000000),
-    cardShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4))],
-    borderedGroups: false,
+  static final light = OpsThemeData(
+    bg: PremiumLight.background,
+    group: PremiumLight.card,
+    divider: PremiumLight.divider,
+    textPrimary: PremiumLight.textPrimary,
+    textMuted: PremiumLight.textMuted,
+    segTrack: PremiumLight.surface,
+    segSelected: PremiumLight.card,
+    inputFill: PremiumLight.surface,
+    emptyIconBg: PremiumLight.elevated,
+    cardBorder: PremiumLight.border,
+    cardShadow: PremiumLight.cardShadow,
+    borderedGroups: true,
   );
 
   static final dark = OpsThemeData(
@@ -63,6 +64,21 @@ class OpsThemeData {
     cardShadow: null,
     borderedGroups: true,
   );
+
+  static OpsThemeData get wedding => OpsThemeData(
+        bg: AdminHomePalette.background,
+        group: AdminHomePalette.elevated,
+        divider: AdminHomePalette.divider,
+        textPrimary: AdminHomePalette.text,
+        textMuted: AdminHomePalette.textMuted,
+        segTrack: AdminHomePalette.surface,
+        segSelected: AdminHomePalette.card,
+        inputFill: AdminHomePalette.surface,
+        emptyIconBg: AdminHomePalette.card,
+        cardBorder: AdminHomePalette.cardBorder,
+        cardShadow: AdminHomePalette.elevationDeep,
+        borderedGroups: true,
+      );
 }
 
 class OpsTheme extends InheritedWidget {
@@ -78,10 +94,10 @@ class OpsTheme extends InheritedWidget {
   bool updateShouldNotify(OpsTheme oldWidget) => data != oldWidget.data;
 }
 
-/// Indicator colours — unchanged across themes.
+/// Indicator colours — warm semantic tones.
 abstract final class OpsStyle {
-  static const blue = Color(0xFF007AFF);
-  static const green = Color(0xFF34C759);
+  static const blue = PremiumLight.info;
+  static const green = PremiumLight.success;
 
   static BorderRadius get groupRadius => BorderRadius.circular(12);
 
@@ -110,12 +126,12 @@ String memberInitials(String name) {
 
 Color avatarColorForName(String name) {
   const palette = [
-    Color(0xFF5856D6),
-    Color(0xFF007AFF),
-    Color(0xFF34C759),
-    Color(0xFFFF9500),
-    Color(0xFFAF52DE),
-    Color(0xFFFF2D55),
+    PremiumLight.accent,
+    PremiumLight.accentSecondary,
+    PremiumLight.info,
+    PremiumLight.success,
+    PremiumLight.warning,
+    PremiumLight.textSecondary,
   ];
   var hash = 0;
   for (final c in name.codeUnits) {

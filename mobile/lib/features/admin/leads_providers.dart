@@ -9,9 +9,29 @@ final leadStatsProvider = FutureProvider.autoDispose<LeadStats>((ref) async {
   return ref.read(leadsRepositoryProvider).fetchStats();
 });
 
-final leadsListProvider = FutureProvider.autoDispose.family<List<LeadSummary>, String?>((ref, statusFilter) async {
-  return ref.read(leadsRepositoryProvider).fetchLeads(status: statusFilter);
+final leadsListProvider =
+    FutureProvider.autoDispose.family<List<LeadSummary>, LeadsListQuery>((ref, query) async {
+  return ref.read(leadsRepositoryProvider).fetchLeads(
+        status: query.status,
+        search: query.search.isEmpty ? null : query.search,
+      );
 });
+
+/// Filters for the admin leads list.
+class LeadsListQuery {
+  const LeadsListQuery({this.status, this.search = ''});
+
+  final String? status;
+  final String search;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LeadsListQuery && other.status == status && other.search == search;
+
+  @override
+  int get hashCode => Object.hash(status, search);
+}
 
 final leadDetailProvider = FutureProvider.autoDispose.family<LeadDetail, String>((ref, id) async {
   return ref.read(leadsRepositoryProvider).fetchLead(id);

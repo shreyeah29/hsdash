@@ -1,123 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 
+/// App-wide color aliases — mapped to the premium light palette.
 class AppColors {
-  static const violet = Color(0xFF7C3AED);
-  static const violetLight = Color(0xFFF5F3FF);
-  static const cyan = Color(0xFF06B6D4);
-  static const surface = Color(0xFFFAFAFA);
-  static const border = Color(0xFFE4E4E7);
-  static const textPrimary = Color(0xFF18181B);
-  static const textMuted = Color(0xFF71717A);
-  static const rose = Color(0xFFE11D48);
-  static const amber = Color(0xFFD97706);
-  static const orange = Color(0xFFEA580C);
-  static const emerald = Color(0xFF059669);
+  static const background = PremiumLight.background;
+  static const surface = PremiumLight.surface;
+  static const card = PremiumLight.card;
+  static const elevated = PremiumLight.elevated;
+  static const border = PremiumLight.border;
+  static const divider = PremiumLight.divider;
+  static const textPrimary = PremiumLight.textPrimary;
+  static const textSecondary = PremiumLight.textSecondary;
+  static const textMuted = PremiumLight.textMuted;
+
+  /// Primary accent (warm bronze) — replaces legacy violet.
+  static const violet = PremiumLight.accent;
+  static const violetLight = PremiumLight.secondaryButton;
+  static const cyan = PremiumLight.info;
+  static const rose = PremiumLight.error;
+  static const amber = PremiumLight.warning;
+  static const orange = PremiumLight.warning;
+  static const emerald = PremiumLight.success;
 }
 
 ThemeData buildAppTheme() {
   final base = ThemeData(
     useMaterial3: true,
-    // Match iOS Material styling on Android (nav, buttons, ink, typography).
     platform: TargetPlatform.iOS,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.violet,
-      primary: AppColors.violet,
-      surface: AppColors.surface,
+    brightness: Brightness.light,
+    colorScheme: const ColorScheme.light(
+      primary: PremiumLight.accent,
+      onPrimary: PremiumLight.onAccent,
+      secondary: PremiumLight.accentSecondary,
+      surface: PremiumLight.background,
+      onSurface: PremiumLight.textPrimary,
+      error: PremiumLight.error,
     ),
-    scaffoldBackgroundColor: AppColors.surface,
+    scaffoldBackgroundColor: PremiumLight.background,
+    dividerColor: PremiumLight.divider,
+    textTheme: PremiumLight.textTheme,
   );
 
   return base.copyWith(
-    appBarTheme: const AppBarTheme(
-      toolbarHeight: 44,
+    appBarTheme: AppBarTheme(
+      toolbarHeight: 48,
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
-      centerTitle: true,
-      titleTextStyle: TextStyle(
+      backgroundColor: PremiumLight.background,
+      foregroundColor: PremiumLight.textPrimary,
+      centerTitle: false,
+      titleTextStyle: PremiumLight.inter(
         fontSize: 17,
         fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
+        color: PremiumLight.textPrimary,
       ),
+      iconTheme: const IconThemeData(color: PremiumLight.textPrimary, size: 24),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      height: 65,
-      backgroundColor: Colors.white,
+      height: 68,
+      backgroundColor: PremiumLight.background,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: AppColors.violet.withValues(alpha: 0.15),
+      indicatorColor: PremiumLight.accent.withValues(alpha: 0.12),
+      elevation: 0,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
-        return TextStyle(
+        return PremiumLight.inter(
           fontSize: 11,
           fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-          color: selected ? AppColors.violet : AppColors.textMuted,
+          color: selected ? PremiumLight.accent : PremiumLight.textSecondary,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return IconThemeData(
-          size: 22,
-          color: selected ? AppColors.violet : AppColors.textMuted,
+          size: 24,
+          color: selected ? PremiumLight.accent : PremiumLight.textPrimary.withValues(alpha: 0.72),
         );
       }),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      titleTextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-      contentTextStyle: const TextStyle(color: AppColors.textMuted, height: 1.4),
-    ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: PremiumLight.card,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.circular(PremiumLight.radiusCard),
+        side: const BorderSide(color: PremiumLight.border),
+      ),
+      titleTextStyle: PremiumLight.sectionHeading.copyWith(fontSize: 20),
+      contentTextStyle: PremiumLight.bodySecondary,
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: PremiumLight.card,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(PremiumLight.radiusCard)),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
-      color: Colors.white,
+      color: PremiumLight.card,
       surfaceTintColor: Colors.transparent,
-      elevation: 12,
+      elevation: 8,
+      shadowColor: PremiumLight.textPrimary.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(PremiumLight.radiusCard),
+        side: const BorderSide(color: PremiumLight.border),
       ),
     ),
-    // System fonts only — avoids runtime font downloads that can hang/fail on device.
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.violet,
-        foregroundColor: Colors.white,
+    inputDecorationTheme: PremiumLight.inputTheme,
+    filledButtonTheme: FilledButtonThemeData(style: PremiumLight.filledButton),
+    elevatedButtonTheme: ElevatedButtonThemeData(style: PremiumLight.filledButton),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: PremiumLight.accent,
+        backgroundColor: PremiumLight.secondaryButton,
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PremiumLight.radiusButton)),
+        textStyle: PremiumLight.inter(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: PremiumLight.accent,
+        textStyle: PremiumLight.inter(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: PremiumLight.card,
       elevation: 0,
+      shadowColor: PremiumLight.textPrimary.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(PremiumLight.radiusCard),
+        side: const BorderSide(color: PremiumLight.border),
       ),
+    ),
+    dividerTheme: const DividerThemeData(color: PremiumLight.divider, thickness: 1),
+    iconTheme: const IconThemeData(color: PremiumLight.textSecondary, size: 24),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: PremiumLight.textPrimary,
+      contentTextStyle: PremiumLight.inter(fontSize: 14, fontWeight: FontWeight.w500, color: PremiumLight.card),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: PremiumLight.accent),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: PremiumLight.accent,
+      foregroundColor: PremiumLight.onAccent,
+      elevation: 0,
     ),
   );
 }
