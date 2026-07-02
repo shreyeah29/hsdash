@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hsdash_mobile/app.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
+import 'package:hsdash_mobile/features/splash/splash_video_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,5 +21,12 @@ void main() {
       ),
     );
   };
-  runApp(const ProviderScope(child: HsDashApp()));
+  runApp(
+    const ProviderScope(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: SplashVideoScreen(),
+      ),
+    ),
+  );
 }
