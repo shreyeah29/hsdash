@@ -154,7 +154,7 @@ export type ShootCalendarMode = "admin" | "coordinator";
 export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
   const canMutate = mode === "admin";
   const coordinatorMode = mode === "coordinator";
-  const calendarPath = coordinatorMode ? "/coordinator/shoot-calendar" : "/admin/production-calendar";
+  const calendarPath = coordinatorMode ? "/coordinator/shoot-calendar" : "/admin/shoots";
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const now = new Date();

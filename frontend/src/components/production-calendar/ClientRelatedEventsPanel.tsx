@@ -12,7 +12,7 @@ type Props = {
   className?: string;
 };
 
-export function ClientRelatedEventsPanel({ entry, calendarPath = "/admin/production-calendar", className }: Props) {
+export function ClientRelatedEventsPanel({ entry, calendarPath = "/admin/shoots", className }: Props) {
   const { data: all = [], isLoading } = useWideRangeCalendarEntries();
   const related = useMemo(() => shootsForSameClient(all, entry), [all, entry]);
   const others = related.filter((r) => r.id !== entry.id).length;

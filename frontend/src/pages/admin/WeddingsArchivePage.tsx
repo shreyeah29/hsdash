@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, ChevronRight, Heart } from "lucide-react";
-import { GlassPanel } from "@/components/premium/GlassPanel";
-import { GradientShimmerText } from "@/components/premium/GradientShimmerText";
-import { Spotlight } from "@/components/premium/Spotlight";
-import { Button } from "@/components/ui/button";
+import { AdminSurface } from "@/components/admin/AdminSurface";
+import { AdminButton, useAdminPalette } from "@/components/admin/AdminUi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDisplayDate } from "@/lib/calendarUtils";
 import { WeddingsArchiveIndex, monthLabel } from "@/lib/weddingsArchiveIndex";
@@ -14,6 +11,7 @@ import { ClientRelatedEventsPanel } from "@/components/production-calendar/Clien
 import type { ShootCalendarEntry } from "@/types/domain";
 
 export function WeddingsArchivePage() {
+  const palette = useAdminPalette();
   const navigate = useNavigate();
   const { data: entries = [], isLoading } = useWideRangeCalendarEntries();
   const index = useMemo(() => WeddingsArchiveIndex.fromEntries(entries), [entries]);
@@ -48,42 +46,50 @@ export function WeddingsArchivePage() {
   }, [weddingKey, year, month, index]);
 
   const weddingGroup =
-    year != null && month != null && weddingKey != null
-      ? index.weddingGroup(year, month, weddingKey)
-      : null;
+    year != null && month != null && weddingKey != null ? index.weddingGroup(year, month, weddingKey) : null;
+
+  const subtitle =
+    depth === 0
+      ? "Browse by year, then month and client."
+      : depth === 1
+        ? `Pick a month for ${year}.`
+        : depth === 2
+          ? "Select a client or couple."
+          : "Tap an event for details.";
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-      <Spotlight className="rounded-3xl border border-zinc-200/80" glowColor="rgba(167, 139, 250, 0.08)">
-        <div className="flex flex-col gap-4 px-1 py-1 md:px-2 md:py-2">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            {depth > 0 ? (
-              <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 px-2" onClick={popLevel}>
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back
-              </Button>
-            ) : null}
-            <span className="truncate">{breadcrumbs.join(" · ")}</span>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600">Past productions</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-              <GradientShimmerText>{pageTitle}</GradientShimmerText>
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-              Browse weddings by year and month — same archive as the mobile app.
-            </p>
-          </div>
-        </div>
-      </Spotlight>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        {depth > 0 ? (
+          <AdminButton variant="ghost" onClick={popLevel}>
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </AdminButton>
+        ) : null}
+        <span className="text-xs" style={{ color: palette.textSecondary }}>
+          {breadcrumbs.join(" · ")}
+        </span>
+      </div>
 
-      <GlassPanel className="p-6 md:p-8">
+      <div>
+        <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: palette.text }}>
+          {pageTitle}
+        </h2>
+        <p className="mt-1 text-sm" style={{ color: palette.textSecondary }}>
+          {subtitle}
+        </p>
+      </div>
+
+      <AdminSurface>
         {isLoading ? (
-          <p className="py-16 text-center text-sm text-zinc-600">Loading archive…</p>
+          <p className="py-16 text-center text-sm" style={{ color: palette.textSecondary }}>
+            Loading archive…
+          </p>
         ) : entries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-14 text-center">
-            <p className="text-sm font-medium text-zinc-900">No shoots in archive yet</p>
-            <p className="mt-2 text-sm text-zinc-600">Import data or log shoots on the production calendar.</p>
+          <div className="rounded-2xl border border-dashed px-6 py-14 text-center" style={{ borderColor: palette.border }}>
+            <p className="text-sm font-medium" style={{ color: palette.text }}>
+              No shoots in archive yet
+            </p>
           </div>
         ) : depth === 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -91,16 +97,19 @@ export function WeddingsArchivePage() {
               <button
                 key={y}
                 type="button"
-                className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-5 text-left shadow-sm transition hover:border-violet-200 hover:bg-violet-50/30"
+                className="group flex items-center justify-between rounded-[22px] border px-5 py-5 text-left transition"
+                style={{ backgroundColor: palette.card, borderColor: palette.border }}
                 onClick={() => setYear(y)}
               >
                 <div>
-                  <div className="text-2xl font-semibold text-zinc-900">{y}</div>
-                  <div className="mt-1 text-xs text-zinc-600">
-                    {index.weddingCountForYear(y)} weddings · {index.monthsForYear(y).length} active months
+                  <div className="text-2xl font-bold" style={{ color: palette.text }}>
+                    {y}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: palette.textSecondary }}>
+                    {index.weddingCountForYear(y)} weddings
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 text-zinc-400 transition group-hover:text-violet-600" />
+                <ChevronRight className="h-5 w-5" style={{ color: palette.textSecondary }} />
               </button>
             ))}
           </div>
@@ -110,118 +119,99 @@ export function WeddingsArchivePage() {
               <button
                 key={m}
                 type="button"
-                className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 to-white px-4 py-4 text-left transition hover:border-violet-200 hover:shadow-sm"
+                className="rounded-[22px] border px-4 py-4 text-left transition"
+                style={{
+                  backgroundColor: palette.card,
+                  borderColor: `${palette.accent}44`,
+                  backgroundImage: `linear-gradient(135deg, ${palette.accent}18, ${palette.card})`,
+                }}
                 onClick={() => setMonth(m)}
               >
-                <div className="font-serif text-lg font-semibold text-zinc-900">{monthLabel(m)}</div>
-                <div className="mt-1 text-xs text-zinc-600">
-                  {index.weddingCountForMonth(year, m)} weddings · {index.eventCountForMonth(year, m)} events
+                <div className="text-lg font-semibold" style={{ color: palette.text }}>
+                  {monthLabel(m)}
+                </div>
+                <div className="mt-1 text-xs" style={{ color: palette.textSecondary }}>
+                  {index.weddingCountForMonth(year, m)} weddings
                 </div>
               </button>
             ))}
           </div>
         ) : depth === 2 && year != null && month != null ? (
-          <ul className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white">
+          <ul className="divide-y rounded-2xl border" style={{ borderColor: palette.border, backgroundColor: palette.card }}>
             {index.weddingsForMonth(year, month).map((g) => (
               <li key={g.key}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left hover:bg-zinc-50"
+                  className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left"
                   onClick={() => setWeddingKey(g.key)}
                 >
                   <div className="min-w-0">
-                    <div className="truncate font-medium text-zinc-900">{g.displayName}</div>
-                    <div className="mt-0.5 text-xs text-zinc-600">
+                    <div className="truncate font-semibold" style={{ color: palette.text }}>
+                      {g.displayName}
+                    </div>
+                    <div className="mt-0.5 text-xs" style={{ color: palette.textSecondary }}>
                       {g.events.length} event{g.events.length === 1 ? "" : "s"}
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
+                  <ChevronRight className="h-4 w-4 shrink-0" style={{ color: palette.textSecondary }} />
                 </button>
               </li>
             ))}
           </ul>
         ) : weddingGroup ? (
-          <ul className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white">
+          <ul className="divide-y rounded-2xl border" style={{ borderColor: palette.border, backgroundColor: palette.card }}>
             {weddingGroup.events.map((e) => (
               <li key={e.id}>
                 <button
                   type="button"
-                  className="flex w-full items-start gap-4 px-4 py-4 text-left hover:bg-violet-50/40"
+                  className="flex w-full items-start gap-4 px-4 py-4 text-left"
                   onClick={() => setDetailEntry(e)}
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50">
-                    <Calendar className="h-5 w-5 text-violet-600" />
+                  <Heart className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                  <div className="min-w-0 text-left">
+                    <div className="font-medium" style={{ color: palette.text }}>
+                      {e.eventName || e.clientName}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-2 text-xs" style={{ color: palette.textSecondary }}>
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatDisplayDate(e.day)}
+                      </span>
+                      {e.venue ? <span>{e.venue}</span> : null}
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-zinc-900">{e.eventName?.trim() || "Shoot"}</div>
-                    <div className="mt-0.5 text-sm text-zinc-600">{formatDisplayDate(e.day)}</div>
-                    {e.venue ? <div className="mt-0.5 truncate text-xs text-zinc-500">{e.venue}</div> : null}
-                  </div>
-                  <ChevronRight className="mt-3 h-4 w-4 shrink-0 text-zinc-400" />
                 </button>
               </li>
             ))}
           </ul>
         ) : null}
-      </GlassPanel>
+      </AdminSurface>
 
       <Dialog open={!!detailEntry} onOpenChange={(open) => !open && setDetailEntry(null)}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
           {detailEntry ? (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-violet-600" />
-                  {detailEntry.eventName?.trim() || "Shoot details"}
-                </DialogTitle>
+                <DialogTitle style={{ color: palette.text }}>{detailEntry.clientName}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Client</div>
-                  <div className="mt-1 font-medium text-zinc-900">{detailEntry.clientName}</div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Date</div>
-                    <div className="mt-1 text-zinc-800">{formatDisplayDate(detailEntry.day)}</div>
-                  </div>
-                  {detailEntry.startTime || detailEntry.endTime ? (
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Time</div>
-                      <div className="mt-1 text-zinc-800">
-                        {detailEntry.startTime || "—"} – {detailEntry.endTime || "—"}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-                {detailEntry.venue ? (
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Venue</div>
-                    <div className="mt-1 text-zinc-800">{detailEntry.venue}</div>
-                  </div>
-                ) : null}
-                <ClientRelatedEventsPanel entry={detailEntry} />
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="premium"
-                    className="rounded-xl"
-                    onClick={() => {
-                      const day = detailEntry.day.includes("T") ? detailEntry.day.slice(0, 10) : detailEntry.day;
-                      navigate(`/admin/production-calendar?day=${day}`);
-                    }}
-                  >
-                    Open on calendar
-                  </Button>
-                  <Button type="button" variant="glass" className="rounded-xl" onClick={() => setDetailEntry(null)}>
-                    Close
-                  </Button>
-                </div>
-              </div>
+              <p className="text-sm" style={{ color: palette.textSecondary }}>
+                {detailEntry.eventName} · {formatDisplayDate(detailEntry.day)}
+              </p>
+              <ClientRelatedEventsPanel entry={detailEntry} />
+              <AdminButton
+                className="w-full"
+                onClick={() => {
+                  const day = detailEntry.day.slice(0, 10);
+                  setDetailEntry(null);
+                  navigate(`/admin/shoots?day=${day}`);
+                }}
+              >
+                Open on shoot calendar
+              </AdminButton>
             </>
           ) : null}
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

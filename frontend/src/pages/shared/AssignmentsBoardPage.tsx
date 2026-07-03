@@ -46,7 +46,7 @@ export type AssignmentsBoardMode = "admin" | "coordinator";
 /** Route deliverables to editors — updates crew dashboards and notifications immediately. */
 export function AssignmentsBoardPage({ mode }: { mode: AssignmentsBoardMode }) {
   const isAdmin = mode === "admin";
-  const calendarPath = isAdmin ? "/admin/production-calendar" : "/coordinator/shoot-calendar";
+  const calendarPath = isAdmin ? "/admin/shoots" : "/coordinator/shoot-calendar";
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("ALL");

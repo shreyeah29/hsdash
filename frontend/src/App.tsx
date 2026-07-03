@@ -3,9 +3,12 @@ import { PublicEnquiryPage } from "@/pages/PublicEnquiryPage";
 import { LoginChoicePage } from "@/pages/LoginChoicePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
+import { AdminSectionLayout } from "@/layouts/AdminSectionLayout";
 import { TeamLayout } from "@/layouts/TeamLayout";
 import { CoordinatorLayout } from "@/layouts/CoordinatorLayout";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminDeadlinesPage } from "@/pages/admin/AdminDeadlinesPage";
+import { AdminShootsPage } from "@/pages/admin/AdminShootsPage";
 import { TasksPage } from "@/pages/shared/TasksPage";
 import { TeamManagementPage } from "@/pages/admin/TeamManagementPage";
 import { AdminNotificationsPage } from "@/pages/admin/AdminNotificationsPage";
@@ -15,7 +18,6 @@ import { CoordinatorDashboardPage } from "@/pages/team/CoordinatorDashboardPage"
 import { ShootCalendarPage } from "@/pages/shared/ShootCalendarPage";
 import { CoordinatorTasksPage } from "@/pages/team/CoordinatorTasksPage";
 import { AssignmentsBoardPage } from "@/pages/shared/AssignmentsBoardPage";
-import { AdminDeliverablesStatusPage } from "@/pages/admin/AdminDeliverablesStatusPage";
 import { AdminLeadsPage } from "@/pages/admin/AdminLeadsPage";
 import { PublicQuotationPage } from "@/pages/quotation/PublicQuotationPage";
 import { QuotationBuilderPage } from "@/pages/quotation/QuotationBuilderPage";
@@ -54,15 +56,48 @@ function App() {
           >
             <Route index element={<AdminDashboardPage />} />
             <Route path="leads" element={<AdminLeadsPage />} />
-            <Route path="activity" element={<AdminNotificationsPage />} />
-            <Route path="notifications" element={<Navigate to="/admin/activity" replace />} />
-            <Route path="weddings-archive" element={<WeddingsArchivePage />} />
-            <Route path="production-calendar" element={<ShootCalendarPage mode="admin" />} />
-            <Route path="deliverables-status" element={<AdminDeliverablesStatusPage />} />
+            <Route path="deadlines" element={<AdminDeadlinesPage />} />
+            <Route path="shoots" element={<AdminShootsPage />} />
+            <Route path="production-calendar" element={<Navigate to="/admin/shoots" replace />} />
+            <Route path="deliverables-status" element={<Navigate to="/admin/deadlines" replace />} />
+            <Route path="tasks" element={<Navigate to="/admin/deadlines" replace />} />
             <Route path="assignments" element={<AssignmentsBoardPage mode="admin" />} />
             <Route path="assign-deliverables" element={<Navigate to="/admin/assignments" replace />} />
-            <Route path="tasks" element={<Navigate to="/admin/deliverables-status" replace />} />
-            <Route path="team" element={<TeamManagementPage />} />
+          </Route>
+
+          <Route
+            path="/admin/weddings"
+            element={
+              <RequireRole role={Role.ADMIN}>
+                <AdminSectionLayout title="Weddings" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<WeddingsArchivePage />} />
+          </Route>
+          <Route path="/admin/weddings-archive" element={<Navigate to="/admin/weddings" replace />} />
+
+          <Route
+            path="/admin/activity"
+            element={
+              <RequireRole role={Role.ADMIN}>
+                <AdminSectionLayout title="Activity" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<AdminNotificationsPage />} />
+          </Route>
+          <Route path="/admin/notifications" element={<Navigate to="/admin/activity" replace />} />
+
+          <Route
+            path="/admin/team"
+            element={
+              <RequireRole role={Role.ADMIN}>
+                <AdminSectionLayout title="Team" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<TeamManagementPage />} />
           </Route>
 
           <Route element={<RequireCoordinatorRole />}>
