@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, Outlet } from "react-router-dom";
+import { AdminNavBar } from "@/components/admin/AdminNavBar";
 import { AdminPageBackground } from "@/components/admin/AdminPageBackground";
 import { useAdminThemeStore } from "@/store/adminTheme";
 import { adminCssVars } from "@/lib/adminTheme";
@@ -11,14 +12,15 @@ export function AdminSectionLayout({ title }: { title: string }) {
   return (
     <div className="min-h-screen" style={adminCssVars(palette) as React.CSSProperties}>
       <AdminPageBackground className="min-h-screen">
+        <AdminNavBar />
         <header
-          className="sticky top-0 z-20 border-b backdrop-blur-md"
+          className="sticky top-[4.5rem] z-20 border-b backdrop-blur-md md:top-[5rem]"
           style={{
             borderColor: studio ? `${palette.border}38` : palette.border,
             backgroundColor: studio ? `${palette.background}d9` : `${palette.background}f2`,
           }}
         >
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-4 md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-3 md:px-8">
             <Link
               to="/admin"
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors"

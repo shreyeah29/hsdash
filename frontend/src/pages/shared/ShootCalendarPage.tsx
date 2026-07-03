@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
+import { AdminSurface } from "@/components/admin/AdminSurface";
 import { ShootCalendarExportTab } from "@/components/admin/ShootCalendarExportTab";
+import { useAdminThemeStore } from "@/store/adminTheme";
 import { ClientRelatedEventsPanel } from "@/components/production-calendar/ClientRelatedEventsPanel";
 import {
   emptyShootClientForm,
@@ -148,11 +150,38 @@ type FormState = ShootClientFormState;
 
 const emptyForm = emptyShootClientForm;
 
+function ShootPanel({
+  admin,
+  children,
+  className,
+  shine = true,
+}: {
+  admin: boolean;
+  children: ReactNode;
+  className?: string;
+  shine?: boolean;
+}) {
+  if (admin) return <AdminSurface className={className}>{children}</AdminSurface>;
+  return (
+    <GlassPanel shine={shine} className={className}>
+      {children}
+    </GlassPanel>
+  );
+}
+
 export type ShootCalendarMode = "admin" | "coordinator";
 
 /** Shoot operations calendar — admin edits logistics; coordinator reviews and unlocks post-production. */
-export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
+export function ShootCalendarPage({
+  mode,
+  embedded = false,
+}: {
+  mode: ShootCalendarMode;
+  embedded?: boolean;
+}) {
   const canMutate = mode === "admin";
+  const adminThemed = canMutate;
+  const palette = useAdminThemeStore((s) => s.palette);
   const coordinatorMode = mode === "coordinator";
   const calendarPath = coordinatorMode ? "/coordinator/shoot-calendar" : "/admin/shoots";
   const qc = useQueryClient();
@@ -361,15 +390,18 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
   const assignmentsLink = coordinatorMode ? "/coordinator/assignments" : "/admin/assignments";
 
-  const surfaceMuted = coordinatorMode ? "text-zinc-600" : "text-zinc-600";
-  const heading = "text-zinc-900";
+  const headingStyle = adminThemed ? { color: palette.text } : undefined;
+  const mutedStyle = adminThemed ? { color: palette.textSecondary } : undefined;
+  const headingClass = adminThemed ? "" : "text-zinc-900";
+  const mutedClass = adminThemed ? "" : "text-zinc-600";
 
   return (
     <div className="space-y-8">
+      {!embedded ? (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-600">Shoot logistics</p>
-        <h1 className={cn("text-3xl font-semibold tracking-tight md:text-4xl", heading)}>Production calendar</h1>
-        <p className={cn("text-sm leading-relaxed md:text-[15px]", surfaceMuted)}>
+        <p className={cn("text-[11px] font-semibold uppercase tracking-[0.22em]", mutedClass)} style={mutedStyle}>Shoot logistics</p>
+        <h1 className={cn("text-3xl font-semibold tracking-tight md:text-4xl", headingClass)} style={headingStyle}>Production calendar</h1>
+        <p className={cn("text-sm leading-relaxed md:text-[15px]", mutedClass)} style={mutedStyle}>
           {canMutate ? (
             <>
               Create the shoot on the calendar first. Editors are notified only when you or Emmanuel assign them to deliverables — not when the shoot row is saved.
@@ -386,9 +418,13 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
           )}
         </p>
       </motion.div>
+      ) : null}
 
       {canMutate ? (
-        <div className="flex gap-2 border-b border-zinc-200 pb-1">
+        <div
+          className={cn("flex gap-2 border-b pb-1", adminThemed ? "" : "border-zinc-200")}
+          style={adminThemed ? { borderColor: palette.border } : undefined}
+        >
           {(
             [
               ["calendar", "Calendar"],
@@ -401,10 +437,21 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               onClick={() => setActiveTab(id)}
               className={cn(
                 "rounded-t-xl px-4 py-2 text-sm font-medium transition-colors",
-                activeTab === id
+                !adminThemed && activeTab === id
                   ? "bg-white text-violet-800 shadow-sm ring-1 ring-zinc-200"
-                  : "text-zinc-600 hover:text-zinc-900",
+                  : !adminThemed
+                    ? "text-zinc-600 hover:text-zinc-900"
+                    : "",
               )}
+              style={
+                adminThemed
+                  ? {
+                      backgroundColor: activeTab === id ? palette.card : "transparent",
+                      color: activeTab === id ? palette.accent : palette.textSecondary,
+                      boxShadow: activeTab === id ? `inset 0 -1px 0 ${palette.border}` : undefined,
+                    }
+                  : undefined
+              }
             >
               {label}
             </button>
@@ -416,11 +463,11 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
 
       {(!canMutate || activeTab === "calendar") ? (
       <div className="grid gap-6 xl:grid-cols-[1fr_minmax(320px,400px)]">
-        <GlassPanel shine className="overflow-hidden p-6 md:p-8">
+        <ShootPanel admin={adminThemed} className="overflow-hidden p-6 md:p-8">
           <div className="mb-6 flex flex-row flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-zinc-900">{label}</h2>
-              <p className="mt-1 text-sm text-zinc-600">
+              <h2 className={cn("text-xl font-semibold", headingClass)} style={headingStyle}>{label}</h2>
+              <p className={cn("mt-1 text-sm", mutedClass)} style={mutedStyle}>
                 {isLoading ? "Loading…" : canMutate ? "Select cells to orchestrate shoot logistics." : "Review admin-logged coverage."}
               </p>
             </div>
@@ -504,13 +551,13 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               <span className="h-2 w-2 rounded-full bg-amber-400" /> Deliverable deadline
             </span>
           </div>
-        </GlassPanel>
+        </ShootPanel>
 
         <motion.div layout className="xl:sticky xl:top-6 xl:self-start">
-          <GlassPanel className="space-y-6 p-6 md:p-8">
+          <ShootPanel admin={adminThemed} shine={false} className="space-y-6 p-6 md:p-8">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">{selectedKey ?? "Select a day"}</h2>
-              <p className="mt-1 text-sm text-zinc-600">Shoot intel & linked deliverable milestones.</p>
+              <h2 className={cn("text-lg font-semibold", headingClass)} style={headingStyle}>{selectedKey ?? "Select a day"}</h2>
+              <p className={cn("mt-1 text-sm", mutedClass)} style={mutedStyle}>Shoot intel & linked deliverable milestones.</p>
             </div>
             <div className="space-y-4">
             {!selectedKey ? (
@@ -694,7 +741,7 @@ export function ShootCalendarPage({ mode }: { mode: ShootCalendarMode }) {
               </>
             )}
             </div>
-          </GlassPanel>
+          </ShootPanel>
         </motion.div>
       </div>
       ) : null}

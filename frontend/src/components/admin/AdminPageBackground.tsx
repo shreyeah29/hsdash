@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useAdminThemeStore } from "@/store/adminTheme";
-import { PixelSnowBackground } from "@/components/admin/PixelSnowBackground";
 import { cn } from "@/lib/utils";
 
 export function AdminPageBackground({
@@ -16,23 +15,16 @@ export function AdminPageBackground({
   return (
     <div
       className={cn("relative min-h-full", className)}
-      style={{ backgroundColor: studio ? palette.background : undefined }}
+      style={{ backgroundColor: palette.background }}
     >
-      {studio ? (
-        <>
-          <div className="pointer-events-none absolute inset-0" style={{ backgroundColor: palette.background }} />
-          <PixelSnowBackground />
-        </>
-      ) : (
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, #F5EDE4 0%, #F7F5F2 32%, #F1ECE6 68%, #EDE6DC 100%)`,
-          }}
-        />
-      )}
       {!studio && (
         <>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, #F5EDE4 0%, #F7F5F2 32%, #F1ECE6 68%, #EDE6DC 100%)`,
+            }}
+          />
           <div
             className="pointer-events-none absolute -right-16 -top-24 h-[300px] w-[300px] rounded-full blur-3xl"
             style={{ backgroundColor: `${palette.ivory}29` }}

@@ -12,8 +12,11 @@ export function AdminShootsPage() {
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight" style={{ color: palette.text }}>
           Production calendar
         </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: palette.textSecondary }}>
+          Create shoots on the calendar first. Editors are notified when deliverables are assigned — not when the shoot row is saved.
+        </p>
       </div>
-      <ShootCalendarPage mode="admin" />
+      <ShootCalendarPage mode="admin" embedded />
     </div>
   );
 }
