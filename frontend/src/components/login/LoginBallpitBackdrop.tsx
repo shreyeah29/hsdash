@@ -9,20 +9,21 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0f] text-white">
       <div className="fixed inset-0 z-0">
         <Ballpit
-          count={88}
-          gravity={0.38}
+          count={145}
+          gravity={0.42}
           friction={0.9985}
-          wallBounce={0.92}
+          wallBounce={0.9}
           followCursor
           colors={BALLPIT_COLORS}
-          minSize={0.35}
-          maxSize={0.62}
-          size0={0.68}
-          maxVelocity={0.09}
+          minSize={0.32}
+          maxSize={0.58}
+          size0={0.55}
+          maxVelocity={0.085}
           className="h-full w-full"
         />
       </div>
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-black/5" />
+      {/* Soft vignette keeps center readable while balls pile at the bottom */}
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_70%_55%_at_50%_42%,rgba(10,10,15,0.55)_0%,transparent_68%)]" />
       <div className="relative z-10 grid min-h-screen w-full place-items-center px-6 py-10">{children}</div>
     </div>
   );
