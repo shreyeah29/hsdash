@@ -94,8 +94,8 @@ export function StaggeredMenu({
       preLayerElsRef.current = preLayers;
 
       const offscreen = position === "left" ? -100 : 100;
-      gsap.set([panel, ...preLayers], { xPercent: offscreen });
-      if (panel) gsap.set(panel, { opacity: 0, pointerEvents: "none" });
+      gsap.set([panel, ...preLayers], { xPercent: offscreen, opacity: 1 });
+      if (panel) gsap.set(panel, { pointerEvents: "none" });
       if (preContainer) {
         gsap.set(preContainer, { xPercent: 0, opacity: 1 });
       }
@@ -138,7 +138,7 @@ export function StaggeredMenu({
 
     const tl = gsap.timeline({ paused: true });
 
-    if (panel) tl.set(panel, { opacity: 1, pointerEvents: "auto" }, 0);
+    if (panel) tl.set(panel, { pointerEvents: "auto" }, 0);
 
     layerStates.forEach((ls, i) => {
       tl.fromTo(ls.el, { xPercent: ls.start }, { xPercent: 0, duration: 0.5, ease: "power4.out" }, i * 0.07);
@@ -239,7 +239,7 @@ export function StaggeredMenu({
       ease: "power3.in",
       overwrite: "auto",
       onComplete: () => {
-        gsap.set(panel, { opacity: 0, pointerEvents: "none" });
+        gsap.set(panel, { pointerEvents: "none" });
         const itemEls = Array.from(panel.querySelectorAll<HTMLElement>(".sm-panel-itemLabel"));
         if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
         const numberEls = Array.from(

@@ -189,33 +189,18 @@
   display: flex;
   flex-direction: column;
   padding: 6em 2em 2em 2em;
-  overflow: hidden;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(105%);
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-.staggered-menu-wrapper[data-open] .staggered-menu-panel {
-  pointer-events: auto;
-  visibility: visible;
   overflow-y: auto;
+  z-index: 100;
+  pointer-events: none;
 }
 
 [data-position='left'] .staggered-menu-panel {
   right: auto;
   left: 0;
-  transform: translateX(-105%);
 }
 
-.staggered-menu-wrapper[data-open][data-position='left'] .staggered-menu-panel {
-  transform: translateX(0);
-}
-
-.staggered-menu-wrapper:not([data-open]) .staggered-menu-panel {
-  pointer-events: none !important;
+.staggered-menu-wrapper[data-open] .staggered-menu-panel {
+  pointer-events: auto;
 }
 
 .sm-prelayers {
@@ -227,19 +212,12 @@
   height: 100vh;
   height: 100dvh;
   pointer-events: none;
-  z-index: 55;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(105%);
+  z-index: 95;
 }
 
-.staggered-menu-wrapper[data-open] .sm-prelayers {
-  visibility: visible;
-}
-
-.staggered-menu-wrapper:not([data-open]) .sm-prelayers {
-  visibility: hidden !important;
-  pointer-events: none !important;
+[data-position='left'] .sm-prelayers {
+  right: auto;
+  left: 0;
 }
 
 .sm-prelayer {

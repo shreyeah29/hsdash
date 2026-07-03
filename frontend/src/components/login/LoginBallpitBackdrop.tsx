@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Ballpit } from "@/components/login/Ballpit";
 
-/** Purple, lavender, off-white, navy — on black login backdrop. */
-const BALLPIT_COLORS = [0x5227ff, 0xb497cf, 0xe8e8ec, 0x14141f, 0x5b6cff];
+/** React Bits Ballpit — purple, lavender, white, soft grey (no dark/black spheres). */
+const BALLPIT_COLORS = [0x5227ff, 0xb497cf, 0xffffff, 0xe8e8ec, 0x5b6cff];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
@@ -15,6 +15,8 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           wallBounce={0.9}
           followCursor
           colors={BALLPIT_COLORS}
+          ambientIntensity={1.2}
+          lightIntensity={220}
           minSize={0.32}
           maxSize={0.58}
           size0={0.55}
