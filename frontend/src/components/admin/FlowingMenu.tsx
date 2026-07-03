@@ -148,7 +148,7 @@ function MenuItem({
                 <span>
                   {index} {text}
                 </span>
-                <div className="flowing-menu__marquee-img" style={{ backgroundImage: `url(${image})` }} />
+                <img src={image} alt="" className="flowing-menu__marquee-img" loading="eager" draggable={false} />
               </div>
             ))}
           </div>
