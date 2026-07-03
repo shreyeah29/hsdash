@@ -34,8 +34,7 @@ export function AdminNavBar() {
       items={ADMIN_MENU_ITEMS}
       displaySocials={false}
       displayItemNumbering
-      logoUrl="/hswf_logo_dark.png"
-      logoClassName="brightness-0 invert"
+      showLogo={false}
       menuButtonColor={palette.text}
       openMenuButtonColor={palette.text}
       accentColor={palette.accent}

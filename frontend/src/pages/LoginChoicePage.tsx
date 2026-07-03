@@ -13,9 +13,8 @@ export function LoginChoicePage() {
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-lg text-center"
         >
-          <img src="/hswf_logo_dark.png" alt="HSWF" className="mx-auto h-10 w-auto object-contain brightness-0 invert" />
-          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">Wedding production</p>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-5xl">Sign in to HSWF</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">Wedding production</p>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-white drop-shadow-sm md:text-5xl">Sign in to HSWF</h1>
           <p className="mt-3 text-sm text-white/70 md:text-base">Admin control or crew workspace.</p>
 
           <motion.div

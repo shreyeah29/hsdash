@@ -24,6 +24,7 @@ type StaggeredMenuProps = {
   className?: string;
   logoUrl?: string;
   logoClassName?: string;
+  showLogo?: boolean;
   menuButtonColor?: string;
   openMenuButtonColor?: string;
   accentColor?: string;
@@ -45,6 +46,7 @@ export function StaggeredMenu({
   className,
   logoUrl = "/hswf_logo_dark.png",
   logoClassName,
+  showLogo = true,
   menuButtonColor = "#fff",
   openMenuButtonColor = "#fff",
   accentColor = "#5227FF",
@@ -384,18 +386,22 @@ export function StaggeredMenu({
       </div>
 
       <header className="staggered-menu-header" aria-label="Main navigation header">
-        <div className="sm-logo" aria-label="Logo">
-          <Link to="/admin">
-            <img
-              src={logoUrl}
-              alt="HSWF"
-              className={`sm-logo-img${logoClassName ? ` ${logoClassName}` : ""}`}
-              draggable={false}
-              width={110}
-              height={28}
-            />
-          </Link>
-        </div>
+        {showLogo ? (
+          <div className="sm-logo" aria-label="Logo">
+            <Link to="/admin">
+              <img
+                src={logoUrl}
+                alt="HSWF"
+                className={`sm-logo-img${logoClassName ? ` ${logoClassName}` : ""}`}
+                draggable={false}
+                width={110}
+                height={28}
+              />
+            </Link>
+          </div>
+        ) : (
+          <div className="w-0 shrink-0" aria-hidden />
+        )}
         {headerExtra ? <div className="sm-header-extra">{headerExtra}</div> : null}
         <button
           ref={toggleBtnRef}
