@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { AdminHomeShortcut, AdminHero, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
+import { FlowingMenu } from "@/components/admin/FlowingMenu";
+import { AdminHero, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
 import { ADMIN_PALETTE } from "@/lib/adminTheme";
+import { ADMIN_FLOWING_MENU_ITEMS } from "@/lib/adminFlowingMenuItems";
 import { useAuthStore } from "@/store/auth";
 import { calendarDayKeyFromIso, localDayKey } from "@/lib/calendarUtils";
 import { taskTypeLabel } from "@/lib/calendarUtils";
@@ -33,7 +34,6 @@ function friendlyToday() {
 const palette = ADMIN_PALETTE;
 
 export function AdminDashboardPage() {
-  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const todayKey = localDayKey(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
@@ -61,11 +61,16 @@ export function AdminDashboardPage() {
 
       <section>
         <AdminSectionLabel>Quick access</AdminSectionLabel>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <AdminHomeShortcut label="Leads" index="02" onClick={() => navigate("/admin/leads")} />
-          <AdminHomeShortcut label="Deadlines" index="03" onClick={() => navigate("/admin/deadlines")} />
-          <AdminHomeShortcut label="Weddings" index="05" onClick={() => navigate("/admin/weddings")} />
-          <AdminHomeShortcut label="Team" index="07" onClick={() => navigate("/admin/team")} />
+        <div className="mt-4">
+          <FlowingMenu
+            items={ADMIN_FLOWING_MENU_ITEMS}
+            speed={12}
+            textColor={palette.text}
+            bgColor={palette.card}
+            marqueeBgColor={palette.accent}
+            marqueeTextColor={palette.onAccent}
+            borderColor={palette.border}
+          />
         </div>
       </section>
 

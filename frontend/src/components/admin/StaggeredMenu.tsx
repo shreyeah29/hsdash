@@ -6,7 +6,9 @@ import "./StaggeredMenu.css";
 export type StaggeredMenuItem = {
   label: string;
   ariaLabel: string;
-  link: string;
+  link?: string;
+  onClick?: () => void;
+  variant?: "default" | "danger";
 };
 
 export type StaggeredMenuSocialItem = {
@@ -32,6 +34,8 @@ type StaggeredMenuProps = {
   isFixed?: boolean;
   closeOnClickAway?: boolean;
   headerExtra?: ReactNode;
+  toggleLabels?: { closed: string; open: string };
+  panelId?: string;
   onMenuOpen?: () => void;
   onMenuClose?: () => void;
 };
@@ -54,11 +58,15 @@ export function StaggeredMenu({
   isFixed = false,
   closeOnClickAway = true,
   headerExtra,
+  toggleLabels = { closed: "Menu", open: "Close" },
+  panelId = "staggered-menu-panel",
   onMenuOpen,
   onMenuClose,
 }: StaggeredMenuProps) {
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
+  const closedLabel = toggleLabels.closed;
+  const openLabel = toggleLabels.open;
   const panelRef = useRef<HTMLElement>(null);
   const preLayersRef = useRef<HTMLDivElement>(null);
   const preLayerElsRef = useRef<HTMLElement[]>([]);
@@ -66,7 +74,7 @@ export function StaggeredMenu({
   const plusVRef = useRef<HTMLSpanElement>(null);
   const iconRef = useRef<HTMLSpanElement>(null);
   const textInnerRef = useRef<HTMLSpanElement>(null);
-  const [textLines, setTextLines] = useState(["Menu", "Close"]);
+  const [textLines, setTextLines] = useState([closedLabel, openLabel]);
 
   const openTlRef = useRef<gsap.core.Timeline | null>(null);
   const closeTweenRef = useRef<gsap.core.Tween | null>(null);
@@ -296,33 +304,36 @@ export function StaggeredMenu({
     }
   }, [changeMenuColorOnOpen, menuButtonColor, openMenuButtonColor]);
 
-  const animateText = useCallback((opening: boolean) => {
-    const inner = textInnerRef.current;
-    if (!inner) return;
-    textCycleAnimRef.current?.kill();
+  const animateText = useCallback(
+    (opening: boolean) => {
+      const inner = textInnerRef.current;
+      if (!inner) return;
+      textCycleAnimRef.current?.kill();
 
-    const currentLabel = opening ? "Menu" : "Close";
-    const targetLabel = opening ? "Close" : "Menu";
-    const cycles = 3;
-    const seq = [currentLabel];
-    let last = currentLabel;
-    for (let i = 0; i < cycles; i++) {
-      last = last === "Menu" ? "Close" : "Menu";
-      seq.push(last);
-    }
-    if (last !== targetLabel) seq.push(targetLabel);
-    seq.push(targetLabel);
-    setTextLines(seq);
+      const currentLabel = opening ? closedLabel : openLabel;
+      const targetLabel = opening ? openLabel : closedLabel;
+      const cycles = 3;
+      const seq = [currentLabel];
+      let last = currentLabel;
+      for (let i = 0; i < cycles; i++) {
+        last = last === closedLabel ? openLabel : closedLabel;
+        seq.push(last);
+      }
+      if (last !== targetLabel) seq.push(targetLabel);
+      seq.push(targetLabel);
+      setTextLines(seq);
 
-    gsap.set(inner, { yPercent: 0 });
-    const lineCount = seq.length;
-    const finalShift = ((lineCount - 1) / lineCount) * 100;
-    textCycleAnimRef.current = gsap.to(inner, {
-      yPercent: -finalShift,
-      duration: 0.5 + lineCount * 0.07,
-      ease: "power4.out",
-    });
-  }, []);
+      gsap.set(inner, { yPercent: 0 });
+      const lineCount = seq.length;
+      const finalShift = ((lineCount - 1) / lineCount) * 100;
+      textCycleAnimRef.current = gsap.to(inner, {
+        yPercent: -finalShift,
+        duration: 0.5 + lineCount * 0.07,
+        ease: "power4.out",
+      });
+    },
+    [closedLabel, openLabel],
+  );
 
   const closeMenu = useCallback(() => {
     if (!openRef.current) return;
@@ -410,9 +421,9 @@ export function StaggeredMenu({
         <button
           ref={toggleBtnRef}
           className="sm-toggle"
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label={open ? `Close ${closedLabel.toLowerCase()}` : `Open ${closedLabel.toLowerCase()}`}
           aria-expanded={open}
-          aria-controls="staggered-menu-panel"
+          aria-controls={panelId}
           onClick={toggleMenu}
           type="button"
         >
@@ -432,21 +443,36 @@ export function StaggeredMenu({
         </button>
       </header>
 
-      <aside id="staggered-menu-panel" ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
+      <aside id={panelId} ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
         <div className="sm-panel-inner">
           <ul className="sm-panel-list" role="list" data-numbering={displayItemNumbering || undefined}>
             {items.length ? (
               items.map((it, idx) => (
                 <li className="sm-panel-itemWrap" key={it.label + idx}>
-                  <Link
-                    className="sm-panel-item"
-                    to={it.link}
-                    aria-label={it.ariaLabel}
-                    data-index={idx + 1}
-                    onClick={closeMenu}
-                  >
-                    <span className="sm-panel-itemLabel">{it.label}</span>
-                  </Link>
+                  {it.onClick ? (
+                    <button
+                      type="button"
+                      className={`sm-panel-item${it.variant === "danger" ? " sm-panel-item--danger" : ""}`}
+                      aria-label={it.ariaLabel}
+                      data-index={idx + 1}
+                      onClick={() => {
+                        it.onClick?.();
+                        closeMenu();
+                      }}
+                    >
+                      <span className="sm-panel-itemLabel">{it.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      className={`sm-panel-item${it.variant === "danger" ? " sm-panel-item--danger" : ""}`}
+                      to={it.link ?? "/admin"}
+                      aria-label={it.ariaLabel}
+                      data-index={idx + 1}
+                      onClick={closeMenu}
+                    >
+                      <span className="sm-panel-itemLabel">{it.label}</span>
+                    </Link>
+                  )}
                 </li>
               ))
             ) : (

@@ -303,6 +303,18 @@
   display: inline-block;
   text-decoration: none;
   padding-right: 1.4em;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+}
+
+.sm-panel-item--danger {
+  color: #b91c1c;
+}
+
+.sm-panel-item--danger:hover {
+  color: #991b1b;
 }
 
 .sm-panel-itemLabel {

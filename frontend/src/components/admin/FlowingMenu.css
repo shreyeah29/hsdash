@@ -1,0 +1,111 @@
+.flowing-menu-wrap {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid #000;
+  background: #fff;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.flowing-menu {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flowing-menu__item {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  border-top: 2px solid;
+  min-height: 3.5rem;
+}
+
+.flowing-menu__item:first-child {
+  border-top: none;
+}
+
+.flowing-menu__item-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 3.2vh, 2rem);
+  letter-spacing: 0.06em;
+  z-index: 1;
+}
+
+.flowing-menu__item-link:hover,
+.flowing-menu__item-link:focus:not(:focus-visible) {
+  color: inherit;
+}
+
+.flowing-menu__index {
+  font-size: 0.72em;
+  font-weight: 800;
+  opacity: 0.55;
+}
+
+.flowing-menu__marquee {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: translate3d(0, 101%, 0);
+}
+
+.flowing-menu__marquee-inner-wrap {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.flowing-menu__marquee-inner {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 100%;
+  width: fit-content;
+  will-change: transform;
+}
+
+.flowing-menu__marquee-part {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.flowing-menu__marquee-part span {
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 3.2vh, 2rem);
+  line-height: 1;
+  padding: 0 1vw;
+  letter-spacing: 0.06em;
+}
+
+.flowing-menu__marquee-img {
+  width: clamp(120px, 14vw, 200px);
+  height: clamp(2.5rem, 7vh, 4rem);
+  margin: 0 1.5vw;
+  padding: 0.25em 0;
+  border-radius: 999px;
+  border: 2px solid #000;
+  background-size: cover;
+  background-position: 50% 50%;
+}
