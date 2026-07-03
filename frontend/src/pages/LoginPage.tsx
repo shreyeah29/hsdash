@@ -91,25 +91,21 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   return (
     <LoginBallpitBackdrop>
       <div className="flex min-h-full items-center justify-center px-6 py-16">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.06] p-8 backdrop-blur-md md:p-10">
-            <Link
-              to="/login"
-              className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-white/55 transition-colors hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden />
-              Back
-            </Link>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+          <Link
+            to="/login"
+            className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-white/55 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Back
+          </Link>
 
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-200/80">
-                {loginKind === "admin" ? "Admin lane" : "Staff lane"}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
-              <p className="text-sm leading-relaxed text-white/65">{description}</p>
-            </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
+            <p className="text-sm text-white/65">{description}</p>
+          </div>
 
-            <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-white/80">Username</label>
                 <Input
@@ -139,7 +135,6 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
                 Enter dashboard
               </Button>
             </form>
-          </div>
         </motion.div>
       </div>
     </LoginBallpitBackdrop>

@@ -17,7 +17,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           className="h-full w-full"
         />
       </div>
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-black/30 via-black/10 to-black/50" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-black/10" />
       <div className="relative z-10 min-h-full">{children}</div>
     </div>
   );
