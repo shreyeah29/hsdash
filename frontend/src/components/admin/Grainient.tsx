@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mesh, Program, Renderer, Triangle } from "ogl";
 import "./Grainient.css";
 
@@ -32,6 +32,7 @@ type GrainientContext = {
   renderer: Renderer;
   program: Program;
   mesh: Mesh;
+  ready: boolean;
 };
 
 const hexToRgb = (hex: string): [number, number, number] => {
@@ -127,6 +128,10 @@ void main(){
 
 const ctxMap = new WeakMap<HTMLDivElement, GrainientContext>();
 
+function isProgramReady(gl: WebGLRenderingContext, program: Program) {
+  return gl.getProgramParameter(program.program, gl.LINK_STATUS);
+}
+
 export function Grainient({
   timeSpeed = 0.25,
   colorBalance = 0.0,
@@ -153,93 +158,131 @@ export function Grainient({
   className = "",
 }: GrainientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [webglReady, setWebglReady] = useState(true);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const renderer = new Renderer({
-      webgl: 2,
-      alpha: true,
-      antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2),
-    });
+    let renderer: Renderer | null = null;
+    let program: Program | null = null;
+    let mesh: Mesh | null = null;
+    let canvas: HTMLCanvasElement | null = null;
 
-    const gl = renderer.gl;
-    const canvas = gl.canvas as HTMLCanvasElement;
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.display = "block";
-    container.appendChild(canvas);
+    try {
+      renderer = new Renderer({
+        webgl: 2,
+        alpha: true,
+        antialias: false,
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+      });
 
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      vertex,
-      fragment,
-      uniforms: {
-        iTime: { value: 0 },
-        iResolution: { value: new Float32Array([1, 1]) },
-        uTimeSpeed: { value: 0.25 },
-        uColorBalance: { value: 0.0 },
-        uWarpStrength: { value: 1.0 },
-        uWarpFrequency: { value: 5.0 },
-        uWarpSpeed: { value: 2.0 },
-        uWarpAmplitude: { value: 50.0 },
-        uBlendAngle: { value: 0.0 },
-        uBlendSoftness: { value: 0.05 },
-        uRotationAmount: { value: 500.0 },
-        uNoiseScale: { value: 2.0 },
-        uGrainAmount: { value: 0.1 },
-        uGrainScale: { value: 2.0 },
-        uGrainAnimated: { value: 0.0 },
-        uContrast: { value: 1.5 },
-        uGamma: { value: 1.0 },
-        uSaturation: { value: 1.0 },
-        uCenterOffset: { value: new Float32Array([0, 0]) },
-        uZoom: { value: 0.9 },
-        uColor1: { value: new Float32Array([1, 1, 1]) },
-        uColor2: { value: new Float32Array([1, 1, 1]) },
-        uColor3: { value: new Float32Array([1, 1, 1]) },
-      },
-    });
+      const gl = renderer.gl;
+      if (!gl) {
+        setWebglReady(false);
+        return;
+      }
 
-    const mesh = new Mesh(gl, { geometry, program });
-    ctxMap.set(container, { renderer, program, mesh });
+      canvas = gl.canvas as HTMLCanvasElement;
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      canvas.style.display = "block";
+      container.appendChild(canvas);
+
+      const geometry = new Triangle(gl);
+      program = new Program(gl, {
+        vertex,
+        fragment,
+        uniforms: {
+          iTime: { value: 0 },
+          iResolution: { value: new Float32Array([1, 1]) },
+          uTimeSpeed: { value: 0.25 },
+          uColorBalance: { value: 0.0 },
+          uWarpStrength: { value: 1.0 },
+          uWarpFrequency: { value: 5.0 },
+          uWarpSpeed: { value: 2.0 },
+          uWarpAmplitude: { value: 50.0 },
+          uBlendAngle: { value: 0.0 },
+          uBlendSoftness: { value: 0.05 },
+          uRotationAmount: { value: 500.0 },
+          uNoiseScale: { value: 2.0 },
+          uGrainAmount: { value: 0.1 },
+          uGrainScale: { value: 2.0 },
+          uGrainAnimated: { value: 0.0 },
+          uContrast: { value: 1.5 },
+          uGamma: { value: 1.0 },
+          uSaturation: { value: 1.0 },
+          uCenterOffset: { value: new Float32Array([0, 0]) },
+          uZoom: { value: 0.9 },
+          uColor1: { value: new Float32Array([1, 1, 1]) },
+          uColor2: { value: new Float32Array([1, 1, 1]) },
+          uColor3: { value: new Float32Array([1, 1, 1]) },
+        },
+      });
+
+      if (!isProgramReady(gl, program)) {
+        console.warn("Grainient shader failed to link — using CSS fallback");
+        setWebglReady(false);
+        return;
+      }
+
+      mesh = new Mesh(gl, { geometry, program });
+      ctxMap.set(container, { renderer, program, mesh, ready: true });
+    } catch (error) {
+      console.warn("Grainient disabled:", error);
+      setWebglReady(false);
+      return;
+    }
+
+    if (!renderer || !program || !mesh || !canvas) return;
+
+    let raf = 0;
+    let isVisible = true;
+    let isPageVisible = !document.hidden;
+
+    const tryStop = () => {
+      if (raf !== 0) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+
+    const renderFrame = () => {
+      if (!renderer || !program || !mesh) return;
+      try {
+        renderer.render({ scene: mesh });
+      } catch (error) {
+        console.warn("Grainient render stopped:", error);
+        setWebglReady(false);
+        tryStop();
+      }
+    };
 
     const setSize = () => {
       const rect = container.getBoundingClientRect();
       const w = Math.max(1, Math.floor(rect.width));
       const h = Math.max(1, Math.floor(rect.height));
-      renderer.setSize(w, h);
-      const res = program.uniforms.iResolution.value as Float32Array;
-      res[0] = gl.drawingBufferWidth;
-      res[1] = gl.drawingBufferHeight;
-      renderer.render({ scene: mesh });
+      renderer!.setSize(w, h);
+      const res = program!.uniforms.iResolution.value as Float32Array;
+      res[0] = renderer!.gl.drawingBufferWidth;
+      res[1] = renderer!.gl.drawingBufferHeight;
+      renderFrame();
     };
 
     const ro = new ResizeObserver(setSize);
     ro.observe(container);
     setSize();
 
-    let raf = 0;
-    let isVisible = true;
-    let isPageVisible = !document.hidden;
     const t0 = performance.now();
 
     const loop = (t: number) => {
-      program.uniforms.iTime.value = (t - t0) * 0.001;
-      renderer.render({ scene: mesh });
+      program!.uniforms.iTime.value = (t - t0) * 0.001;
+      renderFrame();
       raf = requestAnimationFrame(loop);
     };
 
     const tryStart = () => {
       if (isVisible && isPageVisible && raf === 0) raf = requestAnimationFrame(loop);
-    };
-    const tryStop = () => {
-      if (raf !== 0) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-      }
     };
 
     const io = new IntersectionObserver(
@@ -266,10 +309,12 @@ export function Grainient({
       io.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       ctxMap.delete(container);
-      try {
-        container.removeChild(canvas);
-      } catch {
-        /* ignore */
+      if (canvas && container.contains(canvas)) {
+        try {
+          container.removeChild(canvas);
+        } catch {
+          /* ignore */
+        }
       }
     };
   }, []);
@@ -278,7 +323,7 @@ export function Grainient({
     const container = containerRef.current;
     if (!container) return;
     const ctx = ctxMap.get(container);
-    if (!ctx) return;
+    if (!ctx?.ready) return;
     const u = ctx.program.uniforms;
 
     u.uTimeSpeed.value = timeSpeed;
@@ -327,7 +372,14 @@ export function Grainient({
     color3,
   ]);
 
-  return <div ref={containerRef} className={`grainient-container ${className}`.trim()} />;
+  return (
+    <div
+      ref={containerRef}
+      className={`grainient-container ${className}`.trim()}
+      data-webgl={webglReady ? "on" : "off"}
+      aria-hidden={!webglReady}
+    />
+  );
 }
 
 export default Grainient;

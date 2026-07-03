@@ -70,6 +70,15 @@ export const GRAINIENT_PROPS: GrainientProps = {
   zoom: 0.9,
 };
 
+export function adminGradientStyle(props: Pick<GrainientProps, "color1" | "color2" | "color3"> = GRAINIENT_PROPS) {
+  const c1 = props.color1 ?? GRAINIENT_PROPS.color1!;
+  const c2 = props.color2 ?? GRAINIENT_PROPS.color2!;
+  const c3 = props.color3 ?? GRAINIENT_PROPS.color3!;
+  return {
+    background: `linear-gradient(135deg, ${c1} 0%, ${c2} 48%, ${c3} 100%)`,
+  } as const;
+}
+
 export function adminCssVars(p: AdminPalette): Record<string, string> {
   return {
     "--admin-bg": p.background,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -101,6 +101,10 @@ class ThreeViewport {
   }
 
   #initRenderer() {
+    const context = this.canvas.getContext("webgl2") ?? this.canvas.getContext("webgl");
+    if (!context) {
+      throw new Error("Ballpit: WebGL is not available");
+    }
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
       powerPreference: "high-performance",
@@ -273,7 +277,6 @@ class ThreeViewport {
     this.clear();
     this.#postprocessing?.dispose();
     this.renderer.dispose();
-    this.renderer.forceContextLoss();
     this.isDisposed = true;
   }
 }
@@ -594,7 +597,7 @@ class BallMaterial extends MeshPhysicalMaterial {
         "\n        uniform float thicknessPower;\n        uniform float thicknessScale;\n        uniform float thicknessDistortion;\n        uniform float thicknessAmbient;\n        uniform float thicknessAttenuation;\n      " + shader.fragmentShader;
       shader.fragmentShader = shader.fragmentShader.replace(
         "void main() {",
-        "\n        void RE_Direct_Scattering(const in IncidentLight directLight, const in vec2 uv, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, inout ReflectedLight reflectedLight) {\n          vec3 scatteringHalf = normalize(directLight.direction + (geometryNormal * thicknessDistortion));\n          float scatteringDot = pow(saturate(dot(geometryViewDir, -scatteringHalf)), thicknessPower) * thicknessScale;\n          #ifdef USE_COLOR\n            vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * vColor.rgb;\n          #else\n            vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * diffuse;\n          #endif\n          reflectedLight.directDiffuse += scatteringIllu * thicknessAttenuation * directLight.color;\n        }\n\n        void main() {\n      ",
+        "\n        void RE_Direct_Scattering(const in IncidentLight directLight, const in vec2 uv, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, inout ReflectedLight reflectedLight) {\n          vec3 scatteringHalf = normalize(directLight.direction + (geometryNormal * thicknessDistortion));\n          float scatteringDot = pow(saturate(dot(geometryViewDir, -scatteringHalf)), thicknessPower) * thicknessScale;\n          vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * diffuseColor.rgb;\n          reflectedLight.directDiffuse += scatteringIllu * thicknessAttenuation * directLight.color;\n        }\n\n        void main() {\n      ",
       );
       const lights = ShaderChunk.lights_fragment_begin.replaceAll(
         "RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );",
@@ -821,18 +824,27 @@ export type BallpitProps = {
 export function Ballpit({ className = "", followCursor = true, style, ...props }: BallpitProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const instanceRef = useRef<BallpitInstance | null>(null);
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    instanceRef.current = createBallpit(canvas, { followCursor, ...props });
+    if (!canvas || disabled) return;
+    try {
+      instanceRef.current = createBallpit(canvas, { followCursor, ...props });
+    } catch (error) {
+      console.warn("Ballpit disabled:", error);
+      setDisabled(true);
+      return;
+    }
     return () => {
       instanceRef.current?.dispose();
       instanceRef.current = null;
     };
     // Ballpit is intentionally initialized once per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [disabled]);
+
+  if (disabled) return null;
 
   return <canvas className={className} ref={canvasRef} style={{ width: "100%", height: "100%", display: "block", ...style }} />;
 }

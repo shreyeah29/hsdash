@@ -6,10 +6,13 @@ const BALLPIT_COLORS = [0x5227ff, 0xb497cf, 0xe8e8ec, 0x14141f, 0x5b6cff];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0f] text-white">
+    <div
+      className="relative min-h-screen w-full overflow-hidden text-white"
+      style={{ background: "linear-gradient(160deg, #14141f 0%, #5227ff 42%, #b497cf 100%)" }}
+    >
       <div className="fixed inset-0 z-0">
         <Ballpit
-          count={145}
+          count={200}
           gravity={0.42}
           friction={0.9985}
           wallBounce={0.9}

@@ -28,8 +28,8 @@ export function AdminNavBar() {
   const logout = useAuthStore((s) => s.logout);
 
   return (
-    <StaggeredMenu
-      isFixed
+    <div className="sticky top-0 z-50">
+      <StaggeredMenu
       position="right"
       items={ADMIN_MENU_ITEMS}
       displaySocials={false}
@@ -104,5 +104,6 @@ export function AdminNavBar() {
         </div>
       }
     />
+    </div>
   );
 }
