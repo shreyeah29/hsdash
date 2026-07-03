@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Archive, Activity, Users } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
@@ -52,71 +51,51 @@ export function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
-      <AdminHero className="lg:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: palette.textSecondaryOnBg }}>
+      <AdminHero>
+        <p className="admin-kicker">
           {greeting()}, {user?.name ?? "Admin"}
         </p>
-        <h1
-          className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight lg:text-5xl"
-          style={{ color: palette.textOnBg, textShadow: "0 2px 16px rgba(26, 18, 40, 0.22)" }}
-        >
-          Your production runway for today
-        </h1>
-        <p className="mt-3 text-lg font-medium lg:text-xl" style={{ color: palette.textSecondaryOnBg }}>
-          {friendlyToday()}
-        </p>
+        <h1 className="admin-display-hero mt-4 max-w-5xl">Your production runway for today</h1>
+        <p className="admin-display-subtitle mt-4 text-base lg:text-lg">{friendlyToday()}</p>
       </AdminHero>
 
       <section>
-        <AdminSectionLabel>QUICK ACCESS</AdminSectionLabel>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AdminHomeShortcut icon={Archive} label="Weddings" onClick={() => navigate("/admin/weddings")} />
-          <AdminHomeShortcut icon={Activity} label="Activity" onClick={() => navigate("/admin/activity")} />
-          <AdminHomeShortcut icon={Users} label="Team" onClick={() => navigate("/admin/team")} />
+        <AdminSectionLabel>Quick access</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminHomeShortcut label="Weddings" index="05" onClick={() => navigate("/admin/weddings")} />
+          <AdminHomeShortcut label="Activity" index="06" onClick={() => navigate("/admin/activity")} />
+          <AdminHomeShortcut label="Team" index="07" onClick={() => navigate("/admin/team")} />
         </div>
       </section>
 
       <section>
-        <AdminSectionLabel>DUE TODAY</AdminSectionLabel>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <AdminSectionLabel>Due today</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {isLoading ? (
-            <p style={{ color: palette.textSecondary }}>Loading runway…</p>
+            <p className="admin-display-subtitle">Loading runway…</p>
           ) : isError ? (
             <AdminSurface>
-              <p className="font-medium" style={{ color: palette.text }}>
-                Could not load runway
-              </p>
-              <p className="mt-2 text-sm" style={{ color: palette.textSecondary }}>
-                {String(error)}
-              </p>
-              <button
-                type="button"
-                className="mt-4 text-sm font-semibold"
-                style={{ color: palette.accent }}
-                onClick={() => void refetch()}
-              >
+              <p className="admin-display-title text-xl">Could not load runway</p>
+              <p className="admin-display-subtitle mt-2 text-sm">{String(error)}</p>
+              <button type="button" className="admin-btn admin-btn--solid mt-4" onClick={() => void refetch()}>
                 Retry
               </button>
             </AdminSurface>
           ) : todayTasks.length === 0 ? (
             <AdminSurface>
-              <p className="text-base leading-relaxed" style={{ color: palette.textSecondary }}>
-                Nothing due today — you&apos;re clear.
-              </p>
+              <p className="admin-display-subtitle text-base">Nothing due today — you&apos;re clear.</p>
             </AdminSurface>
           ) : (
             todayTasks.map((task) => (
               <AdminSurface key={task.id} padding="p-4 lg:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-lg font-bold tracking-tight" style={{ color: palette.text }}>
+                    <p className="text-lg font-semibold uppercase tracking-tight text-black">
                       {task.event?.clientName ?? "Wedding"}
                     </p>
-                    <p className="mt-1 text-sm" style={{ color: palette.textSecondary }}>
-                      {taskTypeLabel(task.taskType)}
-                    </p>
+                    <p className="admin-display-subtitle mt-1 text-sm">{taskTypeLabel(task.taskType)}</p>
                     {task.assignedTo?.name ? (
-                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide" style={{ color: palette.bronze }}>
+                      <p className="admin-kicker mt-2" style={{ color: palette.accent }}>
                         {task.assignedTo.name}
                       </p>
                     ) : null}

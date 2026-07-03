@@ -50,28 +50,28 @@ export const GRAINIENT_PROPS: GrainientProps = {
   zoom: 0.9,
 };
 
-/** Glass UI over Grainient — dark text on frosted cards, light text on the background. */
+/** Menu-matched admin UI — black type, white panels, sharp black borders. */
 export const ADMIN_PALETTE: AdminPalette = {
   background: "transparent",
-  surface: "rgba(255, 255, 255, 0.78)",
-  card: "rgba(255, 255, 255, 0.92)",
-  elevated: "rgba(255, 255, 255, 0.96)",
-  accent: "#7c3aad",
-  bronze: "#9c6dc8",
-  ivory: "#FFFFFF",
-  text: "#1a1228",
-  textSecondary: "#5e5670",
-  textOnBg: "#ffffff",
-  textSecondaryOnBg: "rgba(255, 255, 255, 0.9)",
-  navBar: "rgba(255, 255, 255, 0.55)",
-  navIndicator: "rgba(156, 109, 200, 0.38)",
-  border: "rgba(124, 58, 173, 0.22)",
-  success: "#15803d",
-  warning: "#b45309",
-  error: "#b91c1c",
+  surface: "#ffffff",
+  card: "#ffffff",
+  elevated: "#ffffff",
+  accent: "#5227ff",
+  bronze: "#5227ff",
+  ivory: "#ffffff",
+  text: "#000000",
+  textSecondary: "#333333",
+  textOnBg: "#000000",
+  textSecondaryOnBg: "#444444",
+  navBar: "#ffffff",
+  navIndicator: "#000000",
+  border: "#000000",
+  success: "#166534",
+  warning: "#92400e",
+  error: "#991b1b",
   delayed: "#9d174d",
   onAccent: "#ffffff",
-  heroGradientEnd: "#e8dff5",
+  heroGradientEnd: "#000000",
   backdropAccent: "#9c6dc8",
 };
 
@@ -102,5 +102,6 @@ export function adminCssVars(p: AdminPalette): Record<string, string> {
     "--admin-error": p.error,
     "--admin-delayed": p.delayed,
     "--admin-hero-end": p.heroGradientEnd,
+    "--sm-accent": p.accent,
   };
 }

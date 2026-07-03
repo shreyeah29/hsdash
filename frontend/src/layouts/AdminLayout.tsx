@@ -4,6 +4,7 @@ import { AdminPageBackground } from "@/components/admin/AdminPageBackground";
 import { ADMIN_PALETTE, adminCssVars } from "@/lib/adminTheme";
 import { ADMIN_CONTENT, ADMIN_MAIN_TOP } from "@/lib/adminLayout";
 import { cn } from "@/lib/utils";
+import "@/components/admin/adminMenuAesthetic.css";
 
 export function AdminLayout() {
   const location = useLocation();

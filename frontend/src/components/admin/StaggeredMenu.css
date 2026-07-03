@@ -104,18 +104,21 @@
 .staggered-menu-wrapper.admin-nav-shell .sm-toggle {
   height: 2.5rem;
   padding: 0 0.85rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  background: rgba(255, 255, 255, 0.55);
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 0;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 @media (min-width: 1024px) {
   .staggered-menu-wrapper.admin-nav-shell .sm-toggle {
     height: 2.75rem;
     padding: 0 1rem;
-    font-size: 15px;
+    font-size: 12px;
   }
 }
 

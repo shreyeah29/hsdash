@@ -25,39 +25,29 @@ export const ADMIN_MENU_ITEMS: StaggeredMenuItem[] = [
   { label: "Team", ariaLabel: "Manage people and access", link: "/admin/team" },
 ];
 
-const navPillStyle = (isActive: boolean) => ({
-  borderColor: isActive ? `${palette.accent}88` : "rgba(255,255,255,0.42)",
-  color: isActive ? palette.textOnBg : palette.textSecondaryOnBg,
-  backgroundColor: isActive ? palette.navIndicator : palette.navBar,
-});
-
 export function AdminNavBar() {
   const logout = useAuthStore((s) => s.logout);
 
   return (
-    <div className="sticky top-0 z-50 w-full border-b border-white/20 bg-black/10 backdrop-blur-md">
-      <div className={cn(ADMIN_NAV_INNER, "py-3 lg:py-4")}>
-        <nav className="hidden min-w-0 flex-1 items-center gap-1.5 md:flex lg:gap-2" aria-label="Quick navigation">
+    <div className="sticky top-0 z-50 w-full border-b-2 border-black bg-white">
+      <div className={cn(ADMIN_NAV_INNER, "py-3 lg:py-3.5")}>
+        <nav className="hidden min-w-0 flex-1 items-center gap-2 md:flex" aria-label="Quick navigation">
           {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
             <NavLink
               key={to}
               to={to}
               end={"end" in rest}
               className={({ isActive }) =>
-                cn(
-                  "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors lg:px-5 lg:py-2.5 lg:text-[15px]",
-                  isActive ? "font-semibold shadow-sm" : "",
-                )
+                cn("admin-nav-pill rounded-none px-3 py-2 lg:px-4 lg:py-2.5", isActive ? "admin-nav-pill--active" : "")
               }
-              style={({ isActive }) => navPillStyle(isActive)}
             >
-              <Icon className="h-4 w-4 shrink-0 lg:h-[18px] lg:w-[18px]" strokeWidth={1.75} />
+              <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <nav className="flex flex-1 items-center gap-1 md:hidden" aria-label="Quick navigation">
+        <nav className="flex flex-1 items-center gap-1.5 md:hidden" aria-label="Quick navigation">
           {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
             <NavLink
               key={to}
@@ -65,17 +55,19 @@ export function AdminNavBar() {
               end={"end" in rest}
               title={label}
               className={({ isActive }) =>
-                cn("flex h-10 w-10 items-center justify-center rounded-xl border transition-colors", isActive ? "font-semibold" : "")
+                cn(
+                  "admin-nav-pill flex h-10 w-10 items-center justify-center rounded-none p-0",
+                  isActive ? "admin-nav-pill--active" : "",
+                )
               }
-              style={({ isActive }) => navPillStyle(isActive)}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.75} />
+              <Icon className="h-4 w-4" strokeWidth={2} />
               <span className="sr-only">{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 lg:gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           <StaggeredMenu
             className="admin-nav-shell"
             position="right"
@@ -83,23 +75,14 @@ export function AdminNavBar() {
             displaySocials={false}
             displayItemNumbering
             showLogo={false}
-            menuButtonColor={palette.textOnBg}
-            openMenuButtonColor={palette.textOnBg}
+            menuButtonColor="#000000"
+            openMenuButtonColor="#000000"
             accentColor={palette.accent}
-            colors={["#919191", "#b0a7d1", "#9c6dc8"]}
+            colors={["#e8e8e8", "#b0a7d1", "#9c6dc8"]}
             headerExtra={null}
           />
-          <button
-            type="button"
-            onClick={() => void logout()}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors lg:h-11 lg:px-5 lg:text-[15px]"
-            style={{
-              borderColor: "rgba(255,255,255,0.42)",
-              color: palette.textSecondaryOnBg,
-              backgroundColor: palette.navBar,
-            }}
-          >
-            <LogOut className="h-4 w-4" />
+          <button type="button" onClick={() => void logout()} className="admin-menu-btn">
+            <LogOut className="h-3.5 w-3.5" strokeWidth={2} />
             <span className="hidden lg:inline">Sign out</span>
           </button>
         </div>

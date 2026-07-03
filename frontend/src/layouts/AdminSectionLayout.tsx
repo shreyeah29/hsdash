@@ -5,30 +5,19 @@ import { AdminPageBackground } from "@/components/admin/AdminPageBackground";
 import { ADMIN_PALETTE, adminCssVars } from "@/lib/adminTheme";
 import { ADMIN_CONTENT } from "@/lib/adminLayout";
 import { cn } from "@/lib/utils";
+import "@/components/admin/adminMenuAesthetic.css";
 
 export function AdminSectionLayout({ title }: { title: string }) {
   return (
     <div className="min-h-screen" style={adminCssVars(ADMIN_PALETTE) as React.CSSProperties}>
       <AdminPageBackground className="min-h-screen">
         <AdminNavBar />
-        <header
-          className="sticky top-[3.25rem] z-20 border-b backdrop-blur-md lg:top-[3.75rem]"
-          style={{
-            borderColor: ADMIN_PALETTE.border,
-            backgroundColor: "rgba(255, 255, 255, 0.08)",
-          }}
-        >
+        <header className="sticky top-[3.25rem] z-20 border-b-2 border-black bg-white lg:top-[3.75rem]">
           <div className={cn(ADMIN_CONTENT, "flex items-center gap-4 py-4")}>
-            <Link
-              to="/admin"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors hover:bg-white/10"
-              style={{ borderColor: "rgba(255,255,255,0.45)", color: ADMIN_PALETTE.textOnBg }}
-            >
-              <ArrowLeft className="h-5 w-5" />
+            <Link to="/admin" className="admin-menu-btn !px-0 w-10 justify-center" aria-label="Back to home">
+              <ArrowLeft className="h-4 w-4" />
             </Link>
-            <h1 className="text-xl font-bold tracking-tight lg:text-2xl" style={{ color: ADMIN_PALETTE.textOnBg, textShadow: "0 1px 10px rgba(26,18,40,0.2)" }}>
-              {title}
-            </h1>
+            <h1 className="admin-display-title text-2xl lg:text-3xl">{title}</h1>
           </div>
         </header>
         <main className={cn(ADMIN_CONTENT, "py-8 pb-12")}>
