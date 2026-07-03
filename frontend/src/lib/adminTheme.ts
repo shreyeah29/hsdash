@@ -1,7 +1,6 @@
-export type AdminThemeMode = "wedding" | "studio";
+import type { GrainientProps } from "@/components/admin/Grainient";
 
 export type AdminPalette = {
-  mode: AdminThemeMode;
   background: string;
   surface: string;
   card: string;
@@ -23,53 +22,53 @@ export type AdminPalette = {
   backdropAccent: string;
 };
 
-const wedding: Omit<AdminPalette, "mode"> = {
-  background: "#F7F5F2",
-  surface: "#F1ECE6",
-  card: "#FFFFFF",
-  elevated: "#FCFBF9",
-  accent: "#8B6A45",
-  bronze: "#A89584",
-  ivory: "#F5EDE4",
-  text: "#1F1B18",
-  textSecondary: "#5E5750",
-  navBar: "#FCFBF9",
-  navIndicator: "rgba(139, 106, 69, 0.14)",
-  border: "#E8E0D8",
-  success: "#4F7F5A",
-  warning: "#D59B3A",
-  error: "#C45B52",
-  delayed: "#BC7E87",
-  onAccent: "#FFFFFF",
-  heroGradientEnd: "#B89268",
-  backdropAccent: "#8B6A45",
+/** Single website admin theme — glass UI over Grainient background. */
+export const ADMIN_PALETTE: AdminPalette = {
+  background: "transparent",
+  surface: "rgba(255, 255, 255, 0.08)",
+  card: "rgba(255, 255, 255, 0.12)",
+  elevated: "rgba(255, 255, 255, 0.16)",
+  accent: "#FF9FFC",
+  bronze: "#E9D5FF",
+  ivory: "#FFFFFF",
+  text: "#FFFFFF",
+  textSecondary: "rgba(255, 255, 255, 0.72)",
+  navBar: "rgba(255, 255, 255, 0.08)",
+  navIndicator: "rgba(255, 255, 255, 0.22)",
+  border: "rgba(255, 255, 255, 0.2)",
+  success: "#86EFAC",
+  warning: "#FCD34D",
+  error: "#FCA5A5",
+  delayed: "#F9A8D4",
+  onAccent: "#1E1035",
+  heroGradientEnd: "#E9D5FF",
+  backdropAccent: "#5227FF",
 };
 
-const studio: Omit<AdminPalette, "mode"> = {
-  background: "#0B0D11",
-  surface: "#131720",
-  card: "#181D28",
-  elevated: "#1E2430",
-  accent: "#8B5CF6",
-  bronze: "#9EA3B0",
-  ivory: "#F4F4F5",
-  text: "#F4F4F5",
-  textSecondary: "#9EA3B0",
-  navBar: "#06080C",
-  navIndicator: "rgba(139, 92, 246, 0.32)",
-  border: "#2A3140",
-  success: "#34C759",
-  warning: "#FF9500",
-  error: "#FF453A",
-  delayed: "#BC7E87",
-  onAccent: "#F4F4F5",
-  heroGradientEnd: "#C4B5FD",
-  backdropAccent: "#8B5CF6",
+export const GRAINIENT_PROPS: GrainientProps = {
+  color1: "#FF9FFC",
+  color2: "#5227FF",
+  color3: "#B497CF",
+  timeSpeed: 0.25,
+  colorBalance: 0.0,
+  warpStrength: 1.0,
+  warpFrequency: 5.0,
+  warpSpeed: 2.0,
+  warpAmplitude: 50.0,
+  blendAngle: 0.0,
+  blendSoftness: 0.05,
+  rotationAmount: 500.0,
+  noiseScale: 2.0,
+  grainAmount: 0.1,
+  grainScale: 2.0,
+  grainAnimated: false,
+  contrast: 1.5,
+  gamma: 1.0,
+  saturation: 1.0,
+  centerX: 0.0,
+  centerY: 0.0,
+  zoom: 0.9,
 };
-
-export function adminPaletteFor(mode: AdminThemeMode): AdminPalette {
-  return { mode, ...(mode === "studio" ? studio : wedding) };
-}
 
 export function adminCssVars(p: AdminPalette): Record<string, string> {
   return {

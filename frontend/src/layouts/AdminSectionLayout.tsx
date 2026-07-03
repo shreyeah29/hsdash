@@ -2,38 +2,36 @@ import { ArrowLeft } from "lucide-react";
 import { Link, Outlet } from "react-router-dom";
 import { AdminNavBar } from "@/components/admin/AdminNavBar";
 import { AdminPageBackground } from "@/components/admin/AdminPageBackground";
-import { useAdminThemeStore } from "@/store/adminTheme";
-import { adminCssVars } from "@/lib/adminTheme";
+import { ADMIN_PALETTE, adminCssVars } from "@/lib/adminTheme";
+import { ADMIN_CONTENT } from "@/lib/adminLayout";
+import { cn } from "@/lib/utils";
 
 export function AdminSectionLayout({ title }: { title: string }) {
-  const palette = useAdminThemeStore((s) => s.palette);
-  const studio = palette.mode === "studio";
-
   return (
-    <div className="min-h-screen" style={adminCssVars(palette) as React.CSSProperties}>
+    <div className="min-h-screen" style={adminCssVars(ADMIN_PALETTE) as React.CSSProperties}>
       <AdminPageBackground className="min-h-screen">
         <AdminNavBar />
         <header
-          className="sticky top-[4.5rem] z-20 border-b backdrop-blur-md md:top-[5rem]"
+          className="sticky top-[4.25rem] z-20 border-b backdrop-blur-md lg:top-[4.75rem]"
           style={{
-            borderColor: studio ? `${palette.border}38` : palette.border,
-            backgroundColor: studio ? `${palette.background}d9` : `${palette.background}f2`,
+            borderColor: ADMIN_PALETTE.border,
+            backgroundColor: "rgba(255, 255, 255, 0.08)",
           }}
         >
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-3 md:px-8">
+          <div className={cn(ADMIN_CONTENT, "flex items-center gap-4 py-4")}>
             <Link
               to="/admin"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors"
-              style={{ borderColor: palette.border, color: palette.text }}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors hover:bg-white/10"
+              style={{ borderColor: ADMIN_PALETTE.border, color: ADMIN_PALETTE.text }}
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: palette.text }}>
+            <h1 className="text-xl font-bold tracking-tight lg:text-2xl" style={{ color: ADMIN_PALETTE.text }}>
               {title}
             </h1>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-5 py-6 pb-10 md:px-8">
+        <main className={cn(ADMIN_CONTENT, "py-8 pb-12")}>
           <Outlet />
         </main>
       </AdminPageBackground>

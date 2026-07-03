@@ -1,9 +1,11 @@
 import { CalendarDays, Home, LogOut, UserPlus, Video } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { StaggeredMenu, type StaggeredMenuItem } from "@/components/admin/StaggeredMenu";
-import { useAdminThemeStore } from "@/store/adminTheme";
+import { ADMIN_PALETTE } from "@/lib/adminTheme";
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
+
+const palette = ADMIN_PALETTE;
 
 const QUICK_NAV = [
   { to: "/admin", label: "Home", icon: Home, end: true },
@@ -23,8 +25,6 @@ export const ADMIN_MENU_ITEMS: StaggeredMenuItem[] = [
 ];
 
 export function AdminNavBar() {
-  const palette = useAdminThemeStore((s) => s.palette);
-  const studio = palette.mode === "studio";
   const logout = useAuthStore((s) => s.logout);
 
   return (
@@ -35,14 +35,37 @@ export function AdminNavBar() {
       displaySocials={false}
       displayItemNumbering
       logoUrl="/hswf_logo_dark.png"
-      logoClassName={studio ? "brightness-0 invert" : undefined}
+      logoClassName="brightness-0 invert"
       menuButtonColor={palette.text}
       openMenuButtonColor={palette.text}
       accentColor={palette.accent}
-      colors={studio ? ["#4C1D95", "#8B5CF6"] : ["#D4C4B0", "#8B6A45"]}
+      colors={["#FF9FFC", "#5227FF", "#B497CF"]}
       headerExtra={
-        <div className="flex items-center gap-1 sm:gap-2">
-          <nav className="flex items-center gap-0.5 sm:gap-1" aria-label="Quick navigation">
+        <div className="flex items-center gap-2 lg:gap-3">
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Quick navigation">
+            {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={"end" in rest}
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors lg:px-4 lg:py-2.5",
+                    isActive ? "font-semibold" : "",
+                  )
+                }
+                style={({ isActive }) => ({
+                  borderColor: isActive ? `${palette.accent}88` : palette.border,
+                  color: isActive ? palette.text : palette.textSecondary,
+                  backgroundColor: isActive ? palette.navIndicator : palette.surface,
+                })}
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <nav className="flex items-center gap-1 md:hidden" aria-label="Quick navigation">
             {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
               <NavLink
                 key={to}
@@ -51,23 +74,17 @@ export function AdminNavBar() {
                 title={label}
                 className={({ isActive }) =>
                   cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl border transition-colors sm:h-11 sm:w-11",
+                    "flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
                     isActive ? "font-semibold" : "",
                   )
                 }
                 style={({ isActive }) => ({
-                  borderColor: isActive ? `${palette.accent}66` : palette.border,
+                  borderColor: isActive ? `${palette.accent}88` : palette.border,
                   color: isActive ? palette.accent : palette.textSecondary,
-                  backgroundColor: isActive
-                    ? studio
-                      ? palette.navIndicator
-                      : `${palette.accent}1f`
-                    : studio
-                      ? `${palette.card}99`
-                      : palette.card,
+                  backgroundColor: isActive ? palette.navIndicator : palette.surface,
                 })}
               >
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
                 <span className="sr-only">{label}</span>
               </NavLink>
             ))}
@@ -75,16 +92,15 @@ export function AdminNavBar() {
           <button
             type="button"
             onClick={() => void logout()}
-            title="Sign out"
-            className="hidden h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-medium transition-colors sm:inline-flex sm:h-11"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors lg:h-11 lg:px-4"
             style={{
               borderColor: palette.border,
               color: palette.textSecondary,
-              backgroundColor: studio ? `${palette.card}99` : palette.card,
+              backgroundColor: palette.surface,
             }}
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden md:inline">Sign out</span>
+            <span className="hidden lg:inline">Sign out</span>
           </button>
         </div>
       }

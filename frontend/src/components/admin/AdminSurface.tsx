@@ -1,28 +1,25 @@
 import type { LucideIcon } from "lucide-react";
-import { useAdminThemeStore } from "@/store/adminTheme";
+import { ADMIN_PALETTE } from "@/lib/adminTheme";
 import { cn } from "@/lib/utils";
+
+const palette = ADMIN_PALETTE;
 
 export function AdminSurface({
   children,
   className,
-  padding = "p-5",
+  padding = "p-5 lg:p-6",
 }: {
   children: React.ReactNode;
   className?: string;
   padding?: string;
 }) {
-  const palette = useAdminThemeStore((s) => s.palette);
-
   return (
     <div
-      className={cn("rounded-[22px] border shadow-sm", padding, className)}
+      className={cn("rounded-2xl border shadow-sm backdrop-blur-md", padding, className)}
       style={{
         backgroundColor: palette.card,
-        borderColor: palette.mode === "studio" ? `${palette.border}38` : palette.border,
-        boxShadow:
-          palette.mode === "studio"
-            ? "0 8px 20px rgba(0,0,0,0.35)"
-            : "0 4px 16px rgba(31, 27, 24, 0.04)",
+        borderColor: palette.border,
+        boxShadow: "0 8px 32px rgba(30, 16, 53, 0.18)",
       }}
     >
       {children}
@@ -39,32 +36,26 @@ export function AdminHomeShortcut({
   label: string;
   onClick: () => void;
 }) {
-  const palette = useAdminThemeStore((s) => s.palette);
-  const studio = palette.mode === "studio";
-
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-1 flex-col items-center rounded-[22px] border px-2.5 py-5 transition-colors"
+      className="inline-flex min-w-[200px] flex-1 items-center gap-4 rounded-2xl border px-5 py-4 text-left backdrop-blur-md transition-colors hover:bg-white/[0.16] lg:min-w-[220px] lg:flex-none"
       style={{
-        backgroundColor: studio ? palette.surface : palette.elevated,
+        backgroundColor: palette.elevated,
         borderColor: palette.border,
       }}
     >
       <div
-        className="flex h-11 w-11 items-center justify-center rounded-[15px] border"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
         style={{
-          backgroundColor: `${palette.accent}${studio ? "29" : "24"}`,
-          borderColor: `${palette.accent}${studio ? "4d" : "47"}`,
+          backgroundColor: "rgba(255, 159, 252, 0.18)",
+          borderColor: "rgba(255, 159, 252, 0.35)",
         }}
       >
         <Icon className="h-5 w-5" style={{ color: palette.accent }} strokeWidth={1.75} />
       </div>
-      <span
-        className="mt-2.5 text-[9px] font-bold uppercase tracking-[0.15em]"
-        style={{ color: palette.text }}
-      >
+      <span className="text-sm font-semibold tracking-wide" style={{ color: palette.text }}>
         {label}
       </span>
     </button>
@@ -72,9 +63,8 @@ export function AdminHomeShortcut({
 }
 
 export function AdminSectionLabel({ children }: { children: React.ReactNode }) {
-  const palette = useAdminThemeStore((s) => s.palette);
   return (
-    <p className="text-sm font-bold tracking-[0.24em]" style={{ color: palette.accent }}>
+    <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: palette.accent }}>
       {children}
     </p>
   );

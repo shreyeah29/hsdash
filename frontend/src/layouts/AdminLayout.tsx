@@ -1,21 +1,18 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { AdminNavBar } from "@/components/admin/AdminNavBar";
 import { AdminPageBackground } from "@/components/admin/AdminPageBackground";
-import { useAdminThemeStore } from "@/store/adminTheme";
-import { adminCssVars } from "@/lib/adminTheme";
+import { ADMIN_PALETTE, adminCssVars } from "@/lib/adminTheme";
+import { ADMIN_CONTENT, ADMIN_MAIN_TOP } from "@/lib/adminLayout";
+import { cn } from "@/lib/utils";
 
 export function AdminLayout() {
-  const palette = useAdminThemeStore((s) => s.palette);
   const location = useLocation();
 
   return (
-    <div
-      className="min-h-screen text-[var(--admin-text)]"
-      style={adminCssVars(palette) as React.CSSProperties}
-    >
+    <div className="min-h-screen text-[var(--admin-text)]" style={adminCssVars(ADMIN_PALETTE) as React.CSSProperties}>
       <AdminPageBackground className="flex min-h-screen flex-col">
         <AdminNavBar />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-10 pt-[4.75rem] md:px-8 md:pt-[5.25rem]">
+        <main className={cn(ADMIN_CONTENT, ADMIN_MAIN_TOP, "flex-1 pb-12")}>
           <Outlet key={location.pathname} />
         </main>
       </AdminPageBackground>
