@@ -12,7 +12,7 @@ export function AdminSectionLayout({ title }: { title: string }) {
       <AdminPageBackground className="min-h-screen">
         <AdminNavBar />
         <header
-          className="sticky top-[4.25rem] z-20 border-b backdrop-blur-md lg:top-[4.75rem]"
+          className="sticky top-[3.25rem] z-20 border-b backdrop-blur-md lg:top-[3.75rem]"
           style={{
             borderColor: ADMIN_PALETTE.border,
             backgroundColor: "rgba(255, 255, 255, 0.08)",

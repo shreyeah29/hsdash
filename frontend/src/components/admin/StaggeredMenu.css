@@ -1,9 +1,26 @@
 .staggered-menu-wrapper {
   position: relative;
   width: 100%;
-  height: 100%;
   z-index: 40;
   pointer-events: none;
+  overflow: visible;
+}
+
+.staggered-menu-wrapper.admin-nav-shell {
+  height: auto;
+  min-height: 0;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.staggered-menu-wrapper.admin-nav-shell .staggered-menu-header {
+  position: relative;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
 }
 
 .staggered-menu-wrapper.fixed-wrapper {
@@ -59,8 +76,14 @@
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .sm-header-extra {
+    justify-content: center;
+  }
 }
 
 .sm-toggle {
@@ -76,6 +99,24 @@
   line-height: 1;
   overflow: visible;
   flex-shrink: 0;
+}
+
+.staggered-menu-wrapper.admin-nav-shell .sm-toggle {
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (min-width: 1024px) {
+  .staggered-menu-wrapper.admin-nav-shell .sm-toggle {
+    height: 2.75rem;
+    padding: 0 1rem;
+    font-size: 15px;
+  }
 }
 
 .sm-toggle:focus-visible {
@@ -136,42 +177,69 @@
 }
 
 .staggered-menu-panel {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
-  width: clamp(260px, 38vw, 420px);
-  height: 100%;
+  width: clamp(280px, 32vw, 440px);
+  height: 100vh;
+  height: 100dvh;
   background: white;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   padding: 6em 2em 2em 2em;
-  overflow-y: auto;
-  z-index: 10;
-  pointer-events: auto;
+  overflow: hidden;
+  z-index: 60;
+  pointer-events: none;
   opacity: 0;
+  visibility: hidden;
+  transform: translateX(105%);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.staggered-menu-wrapper[data-open] .staggered-menu-panel {
+  pointer-events: auto;
+  visibility: visible;
+  overflow-y: auto;
 }
 
 [data-position='left'] .staggered-menu-panel {
   right: auto;
   left: 0;
+  transform: translateX(-105%);
+}
+
+.staggered-menu-wrapper[data-open][data-position='left'] .staggered-menu-panel {
+  transform: translateX(0);
+}
+
+.staggered-menu-wrapper:not([data-open]) .staggered-menu-panel {
+  pointer-events: none !important;
 }
 
 .sm-prelayers {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: clamp(260px, 38vw, 420px);
+  width: clamp(280px, 32vw, 440px);
+  height: 100vh;
+  height: 100dvh;
   pointer-events: none;
-  z-index: 5;
+  z-index: 55;
   opacity: 0;
+  visibility: hidden;
+  transform: translateX(105%);
 }
 
-[data-position='left'] .sm-prelayers {
-  right: auto;
-  left: 0;
+.staggered-menu-wrapper[data-open] .sm-prelayers {
+  visibility: visible;
+}
+
+.staggered-menu-wrapper:not([data-open]) .sm-prelayers {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .sm-prelayer {

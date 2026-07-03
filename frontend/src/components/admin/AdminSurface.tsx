@@ -41,7 +41,7 @@ export function AdminHomeShortcut({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-w-[200px] flex-1 items-center gap-4 rounded-2xl border px-5 py-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 lg:min-w-[220px] lg:flex-none"
+      className="inline-flex w-full min-w-0 items-center gap-4 rounded-2xl border px-5 py-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 lg:px-6 lg:py-5"
       style={{
         backgroundColor: palette.elevated,
         borderColor: palette.border,

@@ -51,8 +51,8 @@ export function AdminDashboardPage() {
   }, [tasks, todayKey]);
 
   return (
-    <div className="space-y-10 lg:space-y-12">
-      <AdminHero>
+    <div className="space-y-8 lg:space-y-10">
+      <AdminHero className="lg:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: palette.textSecondaryOnBg }}>
           {greeting()}, {user?.name ?? "Admin"}
         </p>
@@ -69,7 +69,7 @@ export function AdminDashboardPage() {
 
       <section>
         <AdminSectionLabel>QUICK ACCESS</AdminSectionLabel>
-        <div className="mt-4 flex flex-wrap gap-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <AdminHomeShortcut icon={Archive} label="Weddings" onClick={() => navigate("/admin/weddings")} />
           <AdminHomeShortcut icon={Activity} label="Activity" onClick={() => navigate("/admin/activity")} />
           <AdminHomeShortcut icon={Users} label="Team" onClick={() => navigate("/admin/team")} />
@@ -78,7 +78,7 @@ export function AdminDashboardPage() {
 
       <section>
         <AdminSectionLabel>DUE TODAY</AdminSectionLabel>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {isLoading ? (
             <p style={{ color: palette.textSecondary }}>Loading runway…</p>
           ) : isError ? (

@@ -15,7 +15,7 @@ export function LoginChoicePage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-20 w-full max-w-2xl text-center"
+        className="relative z-20 w-full max-w-5xl text-center"
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/90" style={{ textShadow: "0 1px 8px rgba(26,18,40,0.3)" }}>
           Wedding production
@@ -41,7 +41,7 @@ export function LoginChoicePage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.08 }}
-          className="relative z-20 mx-auto mt-12 flex max-w-md flex-col items-stretch gap-4 sm:max-w-none sm:flex-row sm:justify-center"
+          className="relative z-20 mx-auto mt-12 flex w-full max-w-3xl flex-col items-stretch gap-4 sm:max-w-none sm:flex-row sm:justify-center lg:max-w-4xl lg:gap-6"
         >
           <Link to="/login/admin" className="login-choice-btn login-choice-btn--primary sm:flex-none sm:min-w-[240px] sm:text-lg">
             Admin sign in
