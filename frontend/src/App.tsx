@@ -21,6 +21,8 @@ import { AssignmentsBoardPage } from "@/pages/shared/AssignmentsBoardPage";
 import { AdminLeadsPage } from "@/pages/admin/AdminLeadsPage";
 import { PublicQuotationPage } from "@/pages/quotation/PublicQuotationPage";
 import { QuotationBuilderPage } from "@/pages/quotation/QuotationBuilderPage";
+import { AdminProfileSelectionPage } from "@/pages/admin/AdminProfileSelectionPage";
+import { RequireAdminProfile } from "@/routes/RequireAdminProfile";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { RequireEditor, RequireCoordinatorRole } from "@/routes/RoleGateways";
@@ -45,59 +47,41 @@ function App() {
             </RequireRole>
           }
         />
+        <Route
+          path="/admin/profiles"
+          element={
+            <RequireRole role={Role.ADMIN}>
+              <AdminProfileSelectionPage />
+            </RequireRole>
+          }
+        />
         <Route element={<RealtimeSync />}>
-          <Route
-            path="/admin"
-            element={
-              <RequireRole role={Role.ADMIN}>
-                <AdminLayout />
-              </RequireRole>
-            }
-          >
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="leads" element={<AdminLeadsPage />} />
-            <Route path="deadlines" element={<AdminDeadlinesPage />} />
-            <Route path="shoots" element={<AdminShootsPage />} />
-            <Route path="production-calendar" element={<Navigate to="/admin/shoots" replace />} />
-            <Route path="deliverables-status" element={<Navigate to="/admin/deadlines" replace />} />
-            <Route path="tasks" element={<Navigate to="/admin/deadlines" replace />} />
-            <Route path="assignments" element={<AssignmentsBoardPage mode="admin" />} />
-            <Route path="assign-deliverables" element={<Navigate to="/admin/assignments" replace />} />
-          </Route>
+          <Route element={<RequireAdminProfile />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="leads" element={<AdminLeadsPage />} />
+              <Route path="deadlines" element={<AdminDeadlinesPage />} />
+              <Route path="shoots" element={<AdminShootsPage />} />
+              <Route path="production-calendar" element={<Navigate to="/admin/shoots" replace />} />
+              <Route path="deliverables-status" element={<Navigate to="/admin/deadlines" replace />} />
+              <Route path="tasks" element={<Navigate to="/admin/deadlines" replace />} />
+              <Route path="assignments" element={<AssignmentsBoardPage mode="admin" />} />
+              <Route path="assign-deliverables" element={<Navigate to="/admin/assignments" replace />} />
+            </Route>
 
-          <Route
-            path="/admin/weddings"
-            element={
-              <RequireRole role={Role.ADMIN}>
-                <AdminSectionLayout title="Weddings" />
-              </RequireRole>
-            }
-          >
-            <Route index element={<WeddingsArchivePage />} />
-          </Route>
-          <Route path="/admin/weddings-archive" element={<Navigate to="/admin/weddings" replace />} />
+            <Route path="/admin/weddings" element={<AdminSectionLayout title="Weddings" />}>
+              <Route index element={<WeddingsArchivePage />} />
+            </Route>
+            <Route path="/admin/weddings-archive" element={<Navigate to="/admin/weddings" replace />} />
 
-          <Route
-            path="/admin/activity"
-            element={
-              <RequireRole role={Role.ADMIN}>
-                <AdminSectionLayout title="Activity" />
-              </RequireRole>
-            }
-          >
-            <Route index element={<AdminNotificationsPage />} />
-          </Route>
-          <Route path="/admin/notifications" element={<Navigate to="/admin/activity" replace />} />
+            <Route path="/admin/activity" element={<AdminSectionLayout title="Activity" />}>
+              <Route index element={<AdminNotificationsPage />} />
+            </Route>
+            <Route path="/admin/notifications" element={<Navigate to="/admin/activity" replace />} />
 
-          <Route
-            path="/admin/team"
-            element={
-              <RequireRole role={Role.ADMIN}>
-                <AdminSectionLayout title="Team" />
-              </RequireRole>
-            }
-          >
-            <Route index element={<TeamManagementPage />} />
+            <Route path="/admin/team" element={<AdminSectionLayout title="Team" />}>
+              <Route index element={<TeamManagementPage />} />
+            </Route>
           </Route>
 
           <Route element={<RequireCoordinatorRole />}>

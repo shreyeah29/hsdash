@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
 import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
+import { useAdminWorkspaceStore } from "@/store/adminWorkspace";
 import { Role, type User } from "@/types/domain";
 import { LoginBallpitBackdrop } from "@/components/login/LoginBallpitBackdrop";
 import "@/components/login/NeubrutalistLoginForm.css";
@@ -62,7 +63,8 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
           setError("This account is not an administrator. Use Team login.");
           return;
         }
-        navigate("/admin", { replace: true });
+        useAdminWorkspaceStore.getState().clearProfile();
+        navigate("/admin/profiles", { replace: true });
         return;
       }
 

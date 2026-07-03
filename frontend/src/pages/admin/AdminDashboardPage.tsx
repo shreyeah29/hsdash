@@ -61,9 +61,10 @@ export function AdminDashboardPage() {
 
       <section>
         <AdminSectionLabel>Quick access</AdminSectionLabel>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <AdminHomeShortcut label="Leads" index="02" onClick={() => navigate("/admin/leads")} />
+          <AdminHomeShortcut label="Deadlines" index="03" onClick={() => navigate("/admin/deadlines")} />
           <AdminHomeShortcut label="Weddings" index="05" onClick={() => navigate("/admin/weddings")} />
-          <AdminHomeShortcut label="Activity" index="06" onClick={() => navigate("/admin/activity")} />
           <AdminHomeShortcut label="Team" index="07" onClick={() => navigate("/admin/team")} />
         </div>
       </section>

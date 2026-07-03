@@ -1,19 +1,12 @@
-import { CalendarDays, Home, LogOut, UserPlus, Video } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { useEffect } from "react";
 import { StaggeredMenu, type StaggeredMenuItem } from "@/components/admin/StaggeredMenu";
+import { AdminSettingsMenu } from "@/components/admin/AdminSettingsMenu";
 import { ADMIN_PALETTE } from "@/lib/adminTheme";
 import { ADMIN_NAV_INNER } from "@/lib/adminLayout";
-import { useAuthStore } from "@/store/auth";
+import { useAdminWorkspaceStore } from "@/store/adminWorkspace";
 import { cn } from "@/lib/utils";
 
 const palette = ADMIN_PALETTE;
-
-const QUICK_NAV = [
-  { to: "/admin", label: "Home", icon: Home, end: true },
-  { to: "/admin/leads", label: "Leads", icon: UserPlus },
-  { to: "/admin/deadlines", label: "Deadlines", icon: CalendarDays },
-  { to: "/admin/shoots", label: "Shoots", icon: Video },
-] as const;
 
 export const ADMIN_MENU_ITEMS: StaggeredMenuItem[] = [
   { label: "Home", ariaLabel: "Go to admin home", link: "/admin" },
@@ -26,46 +19,26 @@ export const ADMIN_MENU_ITEMS: StaggeredMenuItem[] = [
 ];
 
 export function AdminNavBar() {
-  const logout = useAuthStore((s) => s.logout);
+  const profile = useAdminWorkspaceStore((s) => s.profile);
+  const hydrate = useAdminWorkspaceStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   return (
     <div className="sticky top-0 z-50 w-full border-b-2 border-black bg-white">
-      <div className={cn(ADMIN_NAV_INNER, "py-3 lg:py-3.5")}>
-        <nav className="hidden min-w-0 flex-1 items-center gap-2 md:flex" aria-label="Quick navigation">
-          {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={"end" in rest}
-              className={({ isActive }) =>
-                cn("admin-nav-pill rounded-none px-3 py-2 lg:px-4 lg:py-2.5", isActive ? "admin-nav-pill--active" : "")
-              }
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <nav className="flex flex-1 items-center gap-1.5 md:hidden" aria-label="Quick navigation">
-          {QUICK_NAV.map(({ to, label, icon: Icon, ...rest }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={"end" in rest}
-              title={label}
-              className={({ isActive }) =>
-                cn(
-                  "admin-nav-pill flex h-10 w-10 items-center justify-center rounded-none p-0",
-                  isActive ? "admin-nav-pill--active" : "",
-                )
-              }
-            >
-              <Icon className="h-4 w-4" strokeWidth={2} />
-              <span className="sr-only">{label}</span>
-            </NavLink>
-          ))}
-        </nav>
+      <div className={cn(ADMIN_NAV_INNER, "flex items-center justify-between py-3 lg:py-3.5")}>
+        <div className="flex min-w-0 items-center gap-3">
+          {profile ? (
+            <img
+              src={profile.image}
+              alt={profile.name}
+              className="h-9 w-9 rounded-full border-2 border-black object-cover object-top lg:h-10 lg:w-10"
+            />
+          ) : null}
+          <p className="admin-kicker hidden sm:block">{profile ? profile.name : "Admin"}</p>
+        </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <StaggeredMenu
@@ -81,10 +54,7 @@ export function AdminNavBar() {
             colors={["#e8e8e8", "#b0a7d1", "#9c6dc8"]}
             headerExtra={null}
           />
-          <button type="button" onClick={() => void logout()} className="admin-menu-btn">
-            <LogOut className="h-3.5 w-3.5" strokeWidth={2} />
-            <span className="hidden lg:inline">Sign out</span>
-          </button>
+          <AdminSettingsMenu />
         </div>
       </div>
     </div>
