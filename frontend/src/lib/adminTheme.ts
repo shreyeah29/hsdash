@@ -10,6 +10,8 @@ export type AdminPalette = {
   ivory: string;
   text: string;
   textSecondary: string;
+  textOnBg: string;
+  textSecondaryOnBg: string;
   navBar: string;
   navIndicator: string;
   border: string;
@@ -22,33 +24,11 @@ export type AdminPalette = {
   backdropAccent: string;
 };
 
-/** Single website admin theme — glass UI over Grainient background. */
-export const ADMIN_PALETTE: AdminPalette = {
-  background: "transparent",
-  surface: "rgba(255, 255, 255, 0.08)",
-  card: "rgba(255, 255, 255, 0.12)",
-  elevated: "rgba(255, 255, 255, 0.16)",
-  accent: "#FF9FFC",
-  bronze: "#E9D5FF",
-  ivory: "#FFFFFF",
-  text: "#FFFFFF",
-  textSecondary: "rgba(255, 255, 255, 0.72)",
-  navBar: "rgba(255, 255, 255, 0.08)",
-  navIndicator: "rgba(255, 255, 255, 0.22)",
-  border: "rgba(255, 255, 255, 0.2)",
-  success: "#86EFAC",
-  warning: "#FCD34D",
-  error: "#FCA5A5",
-  delayed: "#F9A8D4",
-  onAccent: "#1E1035",
-  heroGradientEnd: "#E9D5FF",
-  backdropAccent: "#5227FF",
-};
-
+/** React Bits Grainient palette — gray, lavender, purple. */
 export const GRAINIENT_PROPS: GrainientProps = {
-  color1: "#FF9FFC",
-  color2: "#5227FF",
-  color3: "#B497CF",
+  color1: "#919191",
+  color2: "#b0a7d1",
+  color3: "#9c6dc8",
   timeSpeed: 0.25,
   colorBalance: 0.0,
   warpStrength: 1.0,
@@ -70,6 +50,31 @@ export const GRAINIENT_PROPS: GrainientProps = {
   zoom: 0.9,
 };
 
+/** Glass UI over Grainient — dark text on frosted cards, light text on the background. */
+export const ADMIN_PALETTE: AdminPalette = {
+  background: "transparent",
+  surface: "rgba(255, 255, 255, 0.78)",
+  card: "rgba(255, 255, 255, 0.92)",
+  elevated: "rgba(255, 255, 255, 0.96)",
+  accent: "#7c3aad",
+  bronze: "#9c6dc8",
+  ivory: "#FFFFFF",
+  text: "#1a1228",
+  textSecondary: "#5e5670",
+  textOnBg: "#ffffff",
+  textSecondaryOnBg: "rgba(255, 255, 255, 0.9)",
+  navBar: "rgba(255, 255, 255, 0.55)",
+  navIndicator: "rgba(156, 109, 200, 0.38)",
+  border: "rgba(124, 58, 173, 0.22)",
+  success: "#15803d",
+  warning: "#b45309",
+  error: "#b91c1c",
+  delayed: "#9d174d",
+  onAccent: "#ffffff",
+  heroGradientEnd: "#e8dff5",
+  backdropAccent: "#9c6dc8",
+};
+
 export function adminGradientStyle(props: Pick<GrainientProps, "color1" | "color2" | "color3"> = GRAINIENT_PROPS) {
   const c1 = props.color1 ?? GRAINIENT_PROPS.color1!;
   const c2 = props.color2 ?? GRAINIENT_PROPS.color2!;
@@ -89,6 +94,7 @@ export function adminCssVars(p: AdminPalette): Record<string, string> {
     "--admin-bronze": p.bronze,
     "--admin-text": p.text,
     "--admin-text-secondary": p.textSecondary,
+    "--admin-text-on-bg": p.textOnBg,
     "--admin-nav": p.navBar,
     "--admin-border": p.border,
     "--admin-success": p.success,

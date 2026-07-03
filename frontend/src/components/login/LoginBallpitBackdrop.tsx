@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import { Ballpit } from "@/components/login/Ballpit";
+import { GRAINIENT_PROPS, adminGradientStyle } from "@/lib/adminTheme";
 
-/** React Bits Ballpit demo palette — purple, lavender, off-white, navy, blue. */
-const BALLPIT_COLORS = [0x5227ff, 0xb497cf, 0xe8e8ec, 0x14141f, 0x5b6cff];
+/** Ball colors aligned with Grainient — purple, lavender, gray, soft white. */
+const BALLPIT_COLORS = [0x9c6dc8, 0xb0a7d1, 0x919191, 0xf4f0fa, 0x7c3aad];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
     <div
       className="relative min-h-screen w-full overflow-hidden text-white"
-      style={{ background: "linear-gradient(160deg, #14141f 0%, #5227ff 42%, #b497cf 100%)" }}
+      style={adminGradientStyle(GRAINIENT_PROPS)}
     >
       <div className="fixed inset-0 z-0">
         <Ballpit
@@ -25,8 +26,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           className="h-full w-full"
         />
       </div>
-      {/* Soft vignette keeps center readable while balls pile at the bottom */}
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_70%_55%_at_50%_42%,rgba(10,10,15,0.55)_0%,transparent_68%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_72%_58%_at_50%_40%,rgba(255,255,255,0.22)_0%,transparent_70%)]" />
       <div className="relative z-10 grid min-h-screen w-full place-items-center px-6 py-10">{children}</div>
     </div>
   );

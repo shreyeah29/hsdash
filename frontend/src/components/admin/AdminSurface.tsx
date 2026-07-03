@@ -15,11 +15,12 @@ export function AdminSurface({
 }) {
   return (
     <div
-      className={cn("rounded-2xl border shadow-sm backdrop-blur-md", padding, className)}
+      className={cn("rounded-2xl border backdrop-blur-xl", padding, className)}
       style={{
         backgroundColor: palette.card,
         borderColor: palette.border,
-        boxShadow: "0 8px 32px rgba(30, 16, 53, 0.18)",
+        color: palette.text,
+        boxShadow: "0 16px 48px rgba(26, 18, 40, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85)",
       }}
     >
       {children}
@@ -40,32 +41,57 @@ export function AdminHomeShortcut({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-w-[200px] flex-1 items-center gap-4 rounded-2xl border px-5 py-4 text-left backdrop-blur-md transition-colors hover:bg-white/[0.16] lg:min-w-[220px] lg:flex-none"
+      className="inline-flex min-w-[200px] flex-1 items-center gap-4 rounded-2xl border px-5 py-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 lg:min-w-[220px] lg:flex-none"
       style={{
         backgroundColor: palette.elevated,
         borderColor: palette.border,
+        color: palette.text,
+        boxShadow: "0 12px 32px rgba(26, 18, 40, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
       }}
     >
       <div
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
         style={{
-          backgroundColor: "rgba(255, 159, 252, 0.18)",
-          borderColor: "rgba(255, 159, 252, 0.35)",
+          backgroundColor: "rgba(156, 109, 200, 0.16)",
+          borderColor: "rgba(124, 58, 173, 0.28)",
         }}
       >
         <Icon className="h-5 w-5" style={{ color: palette.accent }} strokeWidth={1.75} />
       </div>
-      <span className="text-sm font-semibold tracking-wide" style={{ color: palette.text }}>
-        {label}
-      </span>
+      <span className="text-sm font-semibold tracking-wide">{label}</span>
     </button>
   );
 }
 
 export function AdminSectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: palette.accent }}>
+    <p
+      className="text-xs font-bold uppercase tracking-[0.2em]"
+      style={{ color: palette.textOnBg, textShadow: "0 1px 10px rgba(26, 18, 40, 0.28)" }}
+    >
       {children}
     </p>
+  );
+}
+
+export function AdminHero({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("rounded-2xl border p-6 backdrop-blur-md lg:p-8", className)}
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.14)",
+        borderColor: "rgba(255, 255, 255, 0.35)",
+        color: palette.textOnBg,
+        boxShadow: "0 12px 40px rgba(26, 18, 40, 0.12)",
+      }}
+    >
+      {children}
+    </div>
   );
 }

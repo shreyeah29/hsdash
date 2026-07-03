@@ -35,10 +35,10 @@ export function AdminNavBar() {
       displaySocials={false}
       displayItemNumbering
       showLogo={false}
-      menuButtonColor={palette.text}
-      openMenuButtonColor={palette.text}
+      menuButtonColor={palette.textOnBg}
+      openMenuButtonColor={palette.textOnBg}
       accentColor={palette.accent}
-      colors={["#FF9FFC", "#5227FF", "#B497CF"]}
+      colors={["#919191", "#b0a7d1", "#9c6dc8"]}
       headerExtra={
         <div className="flex items-center gap-2 lg:gap-3">
           <nav className="hidden items-center gap-1 md:flex" aria-label="Quick navigation">
@@ -54,9 +54,9 @@ export function AdminNavBar() {
                   )
                 }
                 style={({ isActive }) => ({
-                  borderColor: isActive ? `${palette.accent}88` : palette.border,
-                  color: isActive ? palette.text : palette.textSecondary,
-                  backgroundColor: isActive ? palette.navIndicator : palette.surface,
+                  borderColor: isActive ? `${palette.accent}66` : "rgba(255,255,255,0.45)",
+                  color: isActive ? palette.textOnBg : palette.textSecondaryOnBg,
+                  backgroundColor: isActive ? palette.navIndicator : palette.navBar,
                 })}
               >
                 <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -78,9 +78,9 @@ export function AdminNavBar() {
                   )
                 }
                 style={({ isActive }) => ({
-                  borderColor: isActive ? `${palette.accent}88` : palette.border,
-                  color: isActive ? palette.accent : palette.textSecondary,
-                  backgroundColor: isActive ? palette.navIndicator : palette.surface,
+                  borderColor: isActive ? `${palette.accent}66` : "rgba(255,255,255,0.45)",
+                  color: isActive ? palette.accent : palette.textSecondaryOnBg,
+                  backgroundColor: isActive ? palette.navIndicator : palette.navBar,
                 })}
               >
                 <Icon className="h-4 w-4" strokeWidth={1.75} />
@@ -93,9 +93,9 @@ export function AdminNavBar() {
             onClick={() => void logout()}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors lg:h-11 lg:px-4"
             style={{
-              borderColor: palette.border,
-              color: palette.textSecondary,
-              backgroundColor: palette.surface,
+              borderColor: "rgba(255,255,255,0.45)",
+              color: palette.textSecondaryOnBg,
+              backgroundColor: palette.navBar,
             }}
           >
             <LogOut className="h-4 w-4" />

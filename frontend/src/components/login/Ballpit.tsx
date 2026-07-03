@@ -14,7 +14,6 @@ import {
   PointLight,
   Raycaster,
   Scene,
-  ShaderChunk,
   SphereGeometry,
   SRGBColorSpace,
   Timer,
@@ -101,15 +100,14 @@ class ThreeViewport {
   }
 
   #initRenderer() {
-    const context = this.canvas.getContext("webgl2") ?? this.canvas.getContext("webgl");
-    if (!context) {
-      throw new Error("Ballpit: WebGL is not available");
-    }
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
       powerPreference: "high-performance",
       ...(this.#options.rendererOptions ?? {}),
     });
+    if (!this.renderer.getContext()) {
+      throw new Error("Ballpit: WebGL is not available");
+    }
     this.renderer.outputColorSpace = SRGBColorSpace;
   }
 
@@ -577,38 +575,6 @@ class BallPhysics {
   }
 }
 
-class BallMaterial extends MeshPhysicalMaterial {
-  uniforms: Record<string, { value: number }>;
-  onBeforeCompile2?: (shader: { uniforms: Record<string, unknown>; fragmentShader: string }) => void;
-
-  constructor(params: ConstructorParameters<typeof MeshPhysicalMaterial>[0]) {
-    super(params);
-    this.uniforms = {
-      thicknessDistortion: { value: 0.1 },
-      thicknessAmbient: { value: 0 },
-      thicknessAttenuation: { value: 0.1 },
-      thicknessPower: { value: 2 },
-      thicknessScale: { value: 10 },
-    };
-    this.defines = { ...this.defines, USE_UV: "" };
-    this.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, this.uniforms);
-      shader.fragmentShader =
-        "\n        uniform float thicknessPower;\n        uniform float thicknessScale;\n        uniform float thicknessDistortion;\n        uniform float thicknessAmbient;\n        uniform float thicknessAttenuation;\n      " + shader.fragmentShader;
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "void main() {",
-        "\n        void RE_Direct_Scattering(const in IncidentLight directLight, const in vec2 uv, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, inout ReflectedLight reflectedLight) {\n          vec3 scatteringHalf = normalize(directLight.direction + (geometryNormal * thicknessDistortion));\n          float scatteringDot = pow(saturate(dot(geometryViewDir, -scatteringHalf)), thicknessPower) * thicknessScale;\n          vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * diffuseColor.rgb;\n          reflectedLight.directDiffuse += scatteringIllu * thicknessAttenuation * directLight.color;\n        }\n\n        void main() {\n      ",
-      );
-      const lights = ShaderChunk.lights_fragment_begin.replaceAll(
-        "RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );",
-        "\n          RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );\n          RE_Direct_Scattering(directLight, vUv, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, reflectedLight);\n        ",
-      );
-      shader.fragmentShader = shader.fragmentShader.replace("#include <lights_fragment_begin>", lights);
-      this.onBeforeCompile2?.(shader);
-    };
-  }
-}
-
 type BallpitMeshConfig = BallPhysicsConfig & {
   colors: number[];
   ambientColor: number;
@@ -657,7 +623,11 @@ class BallpitMesh extends InstancedMesh {
     const envScene = new RoomEnvironment();
     const envMap = new PMREMGenerator(renderer).fromScene(envScene).texture;
     const geometry = new SphereGeometry();
-    const material = new BallMaterial({ envMap, ...merged.materialParams });
+    const material = new MeshPhysicalMaterial({
+      envMap,
+      vertexColors: true,
+      ...merged.materialParams,
+    });
     material.envMapRotation.x = -Math.PI / 2;
     super(geometry, material, merged.count);
     this.config = merged;

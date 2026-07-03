@@ -1,86 +1,96 @@
-/* Neubrutalist login — adapted from Uiverse.io by andrew-demchenk0 */
+/* Frosted glass login card — readable on ballpit / grainient background */
 
 .nb-form {
-  --input-focus: #5227ff;
-  --font-color: #323232;
-  --font-color-sub: #666;
-  --bg-color: #fff;
-  --main-color: #1a1a1a;
-  --surface: #d4d4d4;
+  --input-focus: #7c3aad;
+  --font-color: #1a1228;
+  --font-color-sub: #5e5670;
+  --bg-color: #ffffff;
+  --surface: rgba(255, 255, 255, 0.94);
+  --border: rgba(124, 58, 173, 0.28);
   width: 100%;
-  max-width: 400px;
-  padding: 28px 28px 32px;
+  max-width: 420px;
+  padding: 32px 32px 36px;
   background: var(--surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
   gap: 18px;
-  border-radius: 5px;
-  border: 2px solid var(--main-color);
-  box-shadow: 6px 6px 0 var(--main-color);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow:
+    0 24px 64px rgba(26, 18, 40, 0.18),
+    0 2px 8px rgba(124, 58, 173, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .nb-form--team {
-  --input-focus: #6d28d9;
+  --input-focus: #9c6dc8;
 }
 
 .nb-title {
   color: var(--font-color);
-  font-weight: 900;
-  font-size: 22px;
-  line-height: 1.2;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.15;
   margin: 0 0 4px;
+  letter-spacing: -0.02em;
 }
 
 .nb-title span {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   color: var(--font-color-sub);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .nb-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--font-color);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--font-color-sub);
   margin-bottom: -10px;
 }
 
 .nb-input {
   width: 100%;
-  height: 46px;
-  border-radius: 5px;
-  border: 2px solid var(--main-color);
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
   background-color: var(--bg-color);
-  box-shadow: 4px 4px 0 var(--main-color);
+  box-shadow: inset 0 1px 2px rgba(26, 18, 40, 0.06);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--font-color);
-  padding: 8px 12px;
+  padding: 8px 14px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nb-input::placeholder {
   color: var(--font-color-sub);
-  opacity: 0.75;
-  font-weight: 500;
+  opacity: 0.7;
+  font-weight: 400;
 }
 
 .nb-input:focus {
-  border: 2px solid var(--input-focus);
+  border-color: var(--input-focus);
+  box-shadow:
+    0 0 0 3px rgba(124, 58, 173, 0.16),
+    inset 0 1px 2px rgba(26, 18, 40, 0.06);
 }
 
 .nb-error {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 5px;
-  border: 2px solid #b91c1c;
+  border-radius: 12px;
+  border: 1px solid rgba(185, 28, 28, 0.35);
   background: #fef2f2;
-  box-shadow: 3px 3px 0 #b91c1c;
   color: #991b1b;
   font-size: 13px;
   font-weight: 600;
@@ -90,25 +100,26 @@
 .nb-button-confirm {
   margin: 8px 0 0;
   width: 100%;
-  min-height: 48px;
-  border-radius: 5px;
-  border: 2px solid var(--main-color);
-  background-color: var(--bg-color);
-  box-shadow: 4px 4px 0 var(--main-color);
+  min-height: 50px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aad 0%, #9c6dc8 100%);
+  box-shadow: 0 8px 24px rgba(124, 58, 173, 0.35);
   font-size: 16px;
   font-weight: 700;
-  color: var(--font-color);
+  color: #ffffff;
   cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 .nb-button-confirm:hover:not(:disabled) {
-  background-color: #fafafa;
+  filter: brightness(1.05);
+  box-shadow: 0 10px 28px rgba(124, 58, 173, 0.42);
 }
 
 .nb-button-confirm:active:not(:disabled) {
-  box-shadow: 0 0 0 var(--main-color);
-  transform: translate(4px, 4px);
+  transform: translateY(1px);
+  box-shadow: 0 4px 14px rgba(124, 58, 173, 0.3);
 }
 
 .nb-button-confirm:disabled {
@@ -125,11 +136,55 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
+  text-shadow: 0 1px 8px rgba(26, 18, 40, 0.35);
   transition: color 0.15s ease;
 }
 
 .nb-back:hover {
   color: #fff;
+}
+
+.login-choice-btn {
+  display: inline-flex;
+  min-height: 56px;
+  min-width: 220px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 16px;
+  padding: 16px 28px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.login-choice-btn--primary {
+  background: rgba(255, 255, 255, 0.96);
+  color: #1a1228;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(26, 18, 40, 0.2);
+}
+
+.login-choice-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 48px rgba(26, 18, 40, 0.24);
+}
+
+.login-choice-btn--ghost {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 32px rgba(26, 18, 40, 0.15);
+  text-shadow: 0 1px 6px rgba(26, 18, 40, 0.25);
+}
+
+.login-choice-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
 }

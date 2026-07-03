@@ -5,7 +5,7 @@ import { Archive, Activity, Users } from "lucide-react";
 import { api } from "@/services/api";
 import type { Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { AdminHomeShortcut, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
+import { AdminHomeShortcut, AdminHero, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
 import { ADMIN_PALETTE } from "@/lib/adminTheme";
 import { useAuthStore } from "@/store/auth";
 import { calendarDayKeyFromIso, localDayKey } from "@/lib/calendarUtils";
@@ -52,26 +52,20 @@ export function AdminDashboardPage() {
 
   return (
     <div className="space-y-10 lg:space-y-12">
-      <section className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: palette.textSecondary }}>
-            {greeting()}, {user?.name ?? "Admin"}
-          </p>
-          <h1
-            className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight lg:text-5xl"
-            style={{
-              background: `linear-gradient(135deg, ${palette.text}, ${palette.heroGradientEnd})`,
-              WebkitBackgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            Your production runway for today
-          </h1>
-          <p className="mt-3 text-lg font-medium lg:text-xl" style={{ color: palette.accent }}>
-            {friendlyToday()}
-          </p>
-        </div>
-      </section>
+      <AdminHero>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: palette.textSecondaryOnBg }}>
+          {greeting()}, {user?.name ?? "Admin"}
+        </p>
+        <h1
+          className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight lg:text-5xl"
+          style={{ color: palette.textOnBg, textShadow: "0 2px 16px rgba(26, 18, 40, 0.22)" }}
+        >
+          Your production runway for today
+        </h1>
+        <p className="mt-3 text-lg font-medium lg:text-xl" style={{ color: palette.textSecondaryOnBg }}>
+          {friendlyToday()}
+        </p>
+      </AdminHero>
 
       <section>
         <AdminSectionLabel>QUICK ACCESS</AdminSectionLabel>
@@ -105,9 +99,11 @@ export function AdminDashboardPage() {
               </button>
             </AdminSurface>
           ) : todayTasks.length === 0 ? (
-            <p className="text-base leading-relaxed" style={{ color: palette.textSecondary }}>
-              Nothing due today — you&apos;re clear.
-            </p>
+            <AdminSurface>
+              <p className="text-base leading-relaxed" style={{ color: palette.textSecondary }}>
+                Nothing due today — you&apos;re clear.
+              </p>
+            </AdminSurface>
           ) : (
             todayTasks.map((task) => (
               <AdminSurface key={task.id} padding="p-4 lg:p-5">

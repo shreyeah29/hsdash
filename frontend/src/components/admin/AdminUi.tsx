@@ -26,11 +26,11 @@ export function AdminPageHeader({
     <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between", className)}>
       <div className="max-w-3xl">
         <AdminSectionLabel>{label}</AdminSectionLabel>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight lg:text-4xl" style={{ color: palette.text }}>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight lg:text-4xl" style={{ color: palette.textOnBg, textShadow: "0 1px 12px rgba(26,18,40,0.22)" }}>
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-2 text-sm leading-relaxed lg:text-base" style={{ color: palette.textSecondary }}>
+          <p className="mt-2 text-sm leading-relaxed lg:text-base" style={{ color: palette.textSecondaryOnBg }}>
             {subtitle}
           </p>
         ) : null}
@@ -43,8 +43,13 @@ export function AdminPageHeader({
 export function AdminStatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div
-      className="rounded-2xl border p-5 backdrop-blur-md"
-      style={{ backgroundColor: palette.card, borderColor: palette.border }}
+      className="rounded-2xl border p-5 backdrop-blur-xl"
+      style={{
+        backgroundColor: palette.card,
+        borderColor: palette.border,
+        color: palette.text,
+        boxShadow: "0 16px 48px rgba(26, 18, 40, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85)",
+      }}
     >
       <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
         {label}
@@ -103,9 +108,9 @@ export function AdminTabButton({
       onClick={onClick}
       className="rounded-xl px-4 py-2 text-sm font-semibold transition"
       style={{
-        backgroundColor: active ? "rgba(255, 159, 252, 0.22)" : "transparent",
-        color: active ? palette.text : palette.textSecondary,
-        border: `1px solid ${active ? "rgba(255, 159, 252, 0.45)" : palette.border}`,
+        backgroundColor: active ? "rgba(156, 109, 200, 0.28)" : "transparent",
+        color: active ? palette.textOnBg : palette.textSecondaryOnBg,
+        border: `1px solid ${active ? "rgba(156, 109, 200, 0.5)" : "rgba(255,255,255,0.35)"}`,
       }}
     >
       {children}
@@ -130,9 +135,9 @@ export function AdminFilterChip({
       onClick={onClick}
       className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition"
       style={{
-        backgroundColor: active ? "rgba(255, 159, 252, 0.18)" : palette.surface,
-        borderColor: active ? "rgba(255, 159, 252, 0.45)" : palette.border,
-        color: active ? palette.text : palette.textSecondary,
+        backgroundColor: active ? "rgba(156, 109, 200, 0.22)" : palette.navBar,
+        borderColor: active ? "rgba(156, 109, 200, 0.45)" : "rgba(255,255,255,0.35)",
+        color: active ? palette.textOnBg : palette.textSecondaryOnBg,
       }}
     >
       {dotColor ? <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} /> : null}

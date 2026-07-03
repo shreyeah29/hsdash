@@ -22,11 +22,11 @@ export function AdminSectionLayout({ title }: { title: string }) {
             <Link
               to="/admin"
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors hover:bg-white/10"
-              style={{ borderColor: ADMIN_PALETTE.border, color: ADMIN_PALETTE.text }}
+              style={{ borderColor: "rgba(255,255,255,0.45)", color: ADMIN_PALETTE.textOnBg }}
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-xl font-bold tracking-tight lg:text-2xl" style={{ color: ADMIN_PALETTE.text }}>
+            <h1 className="text-xl font-bold tracking-tight lg:text-2xl" style={{ color: ADMIN_PALETTE.textOnBg, textShadow: "0 1px 10px rgba(26,18,40,0.2)" }}>
               {title}
             </h1>
           </div>
