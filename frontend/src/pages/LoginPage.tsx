@@ -7,10 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
 import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
-import { Button } from "@/components/ui/button";
 import { Role, type User } from "@/types/domain";
 import { LoginBallpitBackdrop } from "@/components/login/LoginBallpitBackdrop";
-import { Input } from "@/components/ui/input";
+import "@/components/login/NeubrutalistLoginForm.css";
 
 const schema = z.object({
   username: z
@@ -18,7 +17,7 @@ const schema = z.object({
     .min(3, "At least 3 characters")
     .max(32)
     .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, and underscores only"),
-  password: z.string().min(1),
+  password: z.string().min(1, "Password is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -30,20 +29,22 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   const acceptSession = useAuthStore((s) => s.acceptSession);
   const logout = useAuthStore((s) => s.logout);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { username: "", password: "" },
   });
 
-  const title = loginKind === "admin" ? "Admin login" : "Team login";
-  const description =
-    loginKind === "admin"
-      ? "Owner access — analytics, calendar, leads, and team roster."
-      : "Editors & coordinators — your tailored workspace after sign-in.";
+  const isAdmin = loginKind === "admin";
+  const title = isAdmin ? "Admin login" : "Team login";
+  const subtitle = isAdmin
+    ? "Owner access — analytics, calendar, leads, and team roster."
+    : "Editors & coordinators — tasks, shoots, and handoffs.";
 
   async function onSubmit(values: FormValues) {
     setError(null);
+    setSubmitting(true);
     try {
       const { data } = await api.post<{ user: User; accessToken?: string }>("/auth/login", values);
       if (data.accessToken) setAccessToken(data.accessToken);
@@ -55,7 +56,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
         return;
       }
 
-      if (loginKind === "admin") {
+      if (isAdmin) {
         if (user.role !== Role.ADMIN) {
           await logout();
           setError("This account is not an administrator. Use Team login.");
@@ -85,55 +86,69 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
       setError("This account cannot access the staff portal.");
     } catch {
       setError("Invalid username or password.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <LoginBallpitBackdrop>
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-          <Link
-            to="/login"
-            className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-white/55 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back
-          </Link>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="flex w-full max-w-[400px] flex-col items-stretch"
+      >
+        <Link to="/login" className="nb-back">
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back
+        </Link>
 
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
-            <p className="text-sm text-white/65">{description}</p>
-          </div>
+        <form
+          className={`nb-form${isAdmin ? "" : " nb-form--team"}`}
+          onSubmit={form.handleSubmit(onSubmit)}
+          noValidate
+        >
+          <h1 className="nb-title">
+            {title}
+            <span>{subtitle}</span>
+          </h1>
 
-          <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/80">Username</label>
-                <Input
-                  {...form.register("username")}
-                  autoComplete="username"
-                  placeholder="e.g. laxman"
-                  className="border-white/15 bg-white/10 text-white placeholder:text-white/35 focus-visible:ring-violet-400/40"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/80">Password</label>
-                <Input
-                  type="password"
-                  {...form.register("password")}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className="border-white/15 bg-white/10 text-white placeholder:text-white/35 focus-visible:ring-violet-400/40"
-                />
-              </div>
+          <label className="nb-label" htmlFor="username">
+            Username
+          </label>
+          <input
+            id="username"
+            className="nb-input"
+            autoComplete="username"
+            placeholder="e.g. laxman"
+            {...form.register("username")}
+          />
+          {form.formState.errors.username ? (
+            <p className="nb-error">{form.formState.errors.username.message}</p>
+          ) : null}
 
-              {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+          <label className="nb-label" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            className="nb-input"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            {...form.register("password")}
+          />
+          {form.formState.errors.password ? (
+            <p className="nb-error">{form.formState.errors.password.message}</p>
+          ) : null}
 
-              <Button
-                type="submit"
-                className="mt-2 w-full rounded-xl bg-white py-6 text-[15px] font-semibold text-zinc-950 hover:bg-zinc-100"
-              >
-                Enter dashboard
-              </Button>
-            </form>
+          {error ? <p className="nb-error">{error}</p> : null}
+
+          <button type="submit" className="nb-button-confirm" disabled={submitting}>
+            {submitting ? "Signing in…" : "Enter dashboard"}
+          </button>
+        </form>
       </motion.div>
     </LoginBallpitBackdrop>
   );

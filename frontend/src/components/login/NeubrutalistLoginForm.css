@@ -1,0 +1,135 @@
+/* Neubrutalist login — adapted from Uiverse.io by andrew-demchenk0 */
+
+.nb-form {
+  --input-focus: #5227ff;
+  --font-color: #323232;
+  --font-color-sub: #666;
+  --bg-color: #fff;
+  --main-color: #1a1a1a;
+  --surface: #d4d4d4;
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 28px 32px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--main-color);
+  box-shadow: 6px 6px 0 var(--main-color);
+}
+
+.nb-form--team {
+  --input-focus: #6d28d9;
+}
+
+.nb-title {
+  color: var(--font-color);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+
+.nb-title span {
+  display: block;
+  margin-top: 8px;
+  color: var(--font-color-sub);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.nb-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--font-color);
+  margin-bottom: -10px;
+}
+
+.nb-input {
+  width: 100%;
+  height: 46px;
+  border-radius: 5px;
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px 0 var(--main-color);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--font-color);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nb-input::placeholder {
+  color: var(--font-color-sub);
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+.nb-input:focus {
+  border: 2px solid var(--input-focus);
+}
+
+.nb-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 2px solid #b91c1c;
+  background: #fef2f2;
+  box-shadow: 3px 3px 0 #b91c1c;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.nb-button-confirm {
+  margin: 8px 0 0;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 5px;
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px 0 var(--main-color);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--font-color);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.nb-button-confirm:hover:not(:disabled) {
+  background-color: #fafafa;
+}
+
+.nb-button-confirm:active:not(:disabled) {
+  box-shadow: 0 0 0 var(--main-color);
+  transform: translate(4px, 4px);
+}
+
+.nb-button-confirm:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.nb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.nb-back:hover {
+  color: #fff;
+}
