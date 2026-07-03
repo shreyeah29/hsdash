@@ -6,10 +6,10 @@ const BALLPIT_COLORS = [0x5227ff, 0xb497cf, 0xe8e8ec, 0x14141f, 0x5b6cff];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-full w-full overflow-hidden bg-[#0a0a0f] text-white">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0f] text-white">
       <div className="fixed inset-0 z-0">
         <Ballpit
-          count={55}
+          count={88}
           gravity={0.38}
           friction={0.9985}
           wallBounce={0.92}
@@ -23,7 +23,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
         />
       </div>
       <div className="pointer-events-none fixed inset-0 z-[1] bg-black/5" />
-      <div className="relative z-10 flex min-h-full items-center justify-center">{children}</div>
+      <div className="relative z-10 grid min-h-screen w-full place-items-center px-6 py-10">{children}</div>
     </div>
   );
 }
