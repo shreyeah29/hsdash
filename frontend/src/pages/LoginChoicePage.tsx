@@ -6,42 +6,42 @@ import { LoginBallpitBackdrop } from "@/components/login/LoginBallpitBackdrop";
 export function LoginChoicePage() {
   return (
     <LoginBallpitBackdrop>
-      <div className="flex min-h-full flex-col items-center justify-center px-6 py-16">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-xl px-6 text-center"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">Wedding production</p>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] md:text-5xl">
+          Sign in to HSWF
+        </h1>
+        <p className="mt-3 text-sm text-white/75 md:text-base">Admin control or crew workspace.</p>
+
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-lg text-center"
+          transition={{ duration: 0.45, delay: 0.08 }}
+          className="mx-auto mt-12 flex max-w-md flex-col items-stretch gap-4 sm:max-w-none sm:flex-row sm:justify-center"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">Wedding production</p>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-white drop-shadow-sm md:text-5xl">Sign in to HSWF</h1>
-          <p className="mt-3 text-sm text-white/70 md:text-base">Admin control or crew workspace.</p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.08 }}
-            className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4"
+          <Link
+            to="/login/admin"
+            className="group inline-flex min-h-[56px] min-w-[220px] flex-1 items-center justify-center gap-3 rounded-full bg-white px-10 py-4 text-base font-semibold text-zinc-950 shadow-lg shadow-black/20 transition hover:bg-zinc-100 sm:flex-none sm:min-w-[240px] sm:text-lg"
           >
-            <Link
-              to="/login/admin"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-100"
-            >
-              Admin sign in
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              to="/login/team"
-              className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
-            >
-              Team sign in
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </motion.div>
-
-          <p className="mt-10 text-[11px] text-white/40">Secure username sign-in</p>
+            Admin sign in
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <Link
+            to="/login/team"
+            className="group inline-flex min-h-[56px] min-w-[220px] flex-1 items-center justify-center gap-3 rounded-full border-2 border-white/35 bg-white/12 px-10 py-4 text-base font-semibold text-white shadow-lg shadow-black/15 backdrop-blur-sm transition hover:bg-white/18 sm:flex-none sm:min-w-[240px] sm:text-lg"
+          >
+            Team sign in
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </motion.div>
-      </div>
+
+        <p className="mt-12 text-xs text-white/45">Secure username sign-in</p>
+      </motion.div>
     </LoginBallpitBackdrop>
   );
 }
