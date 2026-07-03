@@ -67,8 +67,8 @@ export function AdminDashboardPage() {
             speed={12}
             textColor={palette.text}
             bgColor={palette.card}
-            marqueeBgColor={palette.accent}
-            marqueeTextColor={palette.onAccent}
+            marqueeBgColor="#ffffff"
+            marqueeTextColor={palette.text}
             borderColor={palette.border}
           />
         </div>

@@ -44,6 +44,11 @@
   font-size: clamp(1.1rem, 3.2vh, 2rem);
   letter-spacing: 0.06em;
   z-index: 1;
+  transition: opacity 0.25s ease;
+}
+
+.flowing-menu__item:hover .flowing-menu__item-link {
+  opacity: 0;
 }
 
 .flowing-menu__item-link:hover,
@@ -66,6 +71,7 @@
   height: 100%;
   pointer-events: none;
   transform: translate3d(0, 101%, 0);
+  z-index: 2;
 }
 
 .flowing-menu__marquee-inner-wrap {
