@@ -100,13 +100,12 @@
 }
 
 .flowing-menu__marquee-img {
-  width: clamp(140px, 16vw, 220px);
-  height: clamp(2.75rem, 7.5vh, 4.25rem);
-  margin: 0 1.25vw;
+  width: clamp(120px, 14vw, 200px);
+  height: clamp(2.5rem, 7vh, 4rem);
+  margin: 0 1.5vw;
+  padding: 0.25em 0;
   border-radius: 999px;
   border: 2px solid #000;
-  object-fit: cover;
-  display: block;
-  flex-shrink: 0;
-  background: #fff;
+  background-size: cover;
+  background-position: 50% 50%;
 }
