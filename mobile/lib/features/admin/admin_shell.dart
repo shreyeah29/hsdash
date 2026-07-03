@@ -4,6 +4,8 @@ import 'package:hsdash_mobile/features/admin/admin_deadlines_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_leads_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_tab_wrapper.dart';
+import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
+import 'package:hsdash_mobile/features/admin/pixel_snow_background.dart';
 import 'package:hsdash_mobile/models/user.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
 import 'package:hsdash_mobile/widgets/shoot_calendar_panel.dart';
@@ -22,22 +24,31 @@ class _AdminShellState extends ConsumerState<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
-    return DashboardShell(
-      tabIndex: _tab,
-      onTabChanged: (i) => setState(() => _tab = i),
-      useAdminTheme: true,
-      premiumDarkTabIndices: const {0, 1, 2, 3},
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.person_add_outlined), selectedIcon: Icon(Icons.person_add), label: 'Leads'),
-        NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
-        NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
-      ],
+    final palette = ref.watch(adminPaletteProvider);
+
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        AdminTabWrapper(child: const AdminHomeTab()),
-        AdminTabWrapper(child: const AdminLeadsTab()),
-        AdminTabWrapper(child: const AdminDeadlinesTab()),
-        AdminTabWrapper(child: const ShootCalendarPanel(mode: ShootCalendarMode.admin)),
+        if (palette.isStudio)
+          AdminStudioBackdrop(backgroundColor: palette.background),
+        DashboardShell(
+          tabIndex: _tab,
+          onTabChanged: (i) => setState(() => _tab = i),
+          useAdminTheme: true,
+          premiumDarkTabIndices: const {0, 1, 2, 3},
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+            NavigationDestination(icon: Icon(Icons.person_add_outlined), selectedIcon: Icon(Icons.person_add), label: 'Leads'),
+            NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Deadlines'),
+            NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Shoots'),
+          ],
+          children: [
+            AdminTabWrapper(child: const AdminHomeTab()),
+            AdminTabWrapper(child: const AdminLeadsTab()),
+            AdminTabWrapper(child: const AdminDeadlinesTab()),
+            AdminTabWrapper(child: const ShootCalendarPanel(mode: ShootCalendarMode.admin)),
+          ],
+        ),
       ],
     );
   }

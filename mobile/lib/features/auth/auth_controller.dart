@@ -33,12 +33,18 @@ class AuthState {
 
 class AuthController extends Notifier<AuthState> {
   late AppRepository _repo;
+  Future<void>? _bootstrapFuture;
 
   @override
   AuthState build() {
     _repo = ref.read(appRepositoryProvider);
-    Future.microtask(bootstrap);
+    ensureBootstrapped();
     return const AuthState(status: AuthStatus.unknown);
+  }
+
+  /// Starts session restore once; later calls return the same future.
+  Future<void> ensureBootstrapped() {
+    return _bootstrapFuture ??= bootstrap();
   }
 
   Future<void> bootstrap() async {

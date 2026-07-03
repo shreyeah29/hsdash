@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hsdash_mobile/config/premium_light_design_system.dart';
 import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
+import 'package:hsdash_mobile/features/admin/pixel_snow_background.dart';
 
 /// Inter-based type for admin premium screens (home, deadlines).
 abstract final class AdminHomeTypography {
@@ -214,14 +215,30 @@ abstract final class AdminHomePalette {
 
 /// Full-screen warm gradient behind admin content (wedding mode).
 class AdminPageBackground extends StatelessWidget {
-  const AdminPageBackground({super.key, required this.child});
+  const AdminPageBackground({
+    super.key,
+    required this.child,
+    this.layerBackdrop = true,
+  });
 
   final Widget child;
+
+  /// When false, studio mode skips the shared snow layer (shell provides it).
+  final bool layerBackdrop;
 
   @override
   Widget build(BuildContext context) {
     if (AdminHomePalette.isStudio) {
-      return ColoredBox(color: AdminHomePalette.background, child: child);
+      if (!layerBackdrop) {
+        return child;
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AdminStudioBackdrop(backgroundColor: AdminHomePalette.background),
+          Positioned.fill(child: child),
+        ],
+      );
     }
 
     return Stack(

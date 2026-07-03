@@ -12,6 +12,6 @@ class AdminTabWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     watchAdminPalette(ref);
-    return AdminPageBackground(child: child);
+    return AdminPageBackground(layerBackdrop: false, child: child);
   }
 }

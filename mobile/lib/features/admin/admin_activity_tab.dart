@@ -334,11 +334,12 @@ class _AdminActivityTabState extends ConsumerState<AdminActivityTab> with Single
     final roster = ref.watch(teamMembersProvider);
     final theme = _theme;
     final accent = widget.premiumDark ? AdminHomePalette.accent : widget.accent;
+    final studioSnow = widget.premiumDark && AdminHomePalette.isStudio;
 
     return OpsTheme(
       data: theme,
       child: ColoredBox(
-      color: theme.bg,
+      color: studioSnow ? Colors.transparent : theme.bg,
       child: feed.when(
         loading: () => Center(child: CircularProgressIndicator(color: accent, strokeWidth: 2.5)),
         error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: ErrorPanel(message: '$e', onRetry: _refresh)),

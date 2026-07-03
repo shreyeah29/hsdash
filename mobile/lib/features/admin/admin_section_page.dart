@@ -61,6 +61,7 @@ class AdminSectionPage extends ConsumerWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: palette.lightStatusBar ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: AdminPageBackground(
+        layerBackdrop: true,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(

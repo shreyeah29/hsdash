@@ -5,38 +5,16 @@ import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/widgets/hswf_logo.dart';
 
 /// Full-screen hero + overlaid sign-in. Routes: `/login/admin`, `/login/team`.
-class LoginChoiceScreen extends StatefulWidget {
+class LoginChoiceScreen extends StatelessWidget {
   const LoginChoiceScreen({super.key});
-
-  @override
-  State<LoginChoiceScreen> createState() => _LoginChoiceScreenState();
-}
-
-class _LoginChoiceScreenState extends State<LoginChoiceScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..forward();
-  }
-
-  @override
-  void dispose() {
-    _fade.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: appAuthOverlayStyle,
-      child: Scaffold(
+      child: const Scaffold(
         backgroundColor: Colors.black,
-        body: FadeTransition(
-          opacity: CurvedAnimation(parent: _fade, curve: Curves.easeOut),
-          child: const _FullScreenLogin(),
-        ),
+        body: _FullScreenLogin(),
       ),
     );
   }

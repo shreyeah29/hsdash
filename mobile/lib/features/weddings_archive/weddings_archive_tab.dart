@@ -128,6 +128,7 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
     final entries = ref.watch(weddingsArchiveEntriesProvider);
     final index = ref.watch(weddingsArchiveIndexProvider);
     final bg = WeddingsArchiveStyle.background(widget.accent);
+    final studioSnow = _premium && AdminHomePalette.isStudio;
 
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -189,7 +190,7 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
     if (_premium) {
       return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
-        child: ColoredBox(color: bg, child: body),
+        child: ColoredBox(color: studioSnow ? Colors.transparent : bg, child: body),
       );
     }
     return ColoredBox(color: bg, child: body);

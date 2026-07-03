@@ -173,9 +173,6 @@ class HsDashApp extends ConsumerWidget {
         // go_router can pass a null [child] while redirects run; never show an empty view.
         final routeChild = child ?? const _AppRoutePlaceholder();
 
-        if (auth.status == AuthStatus.unknown) {
-          return const _AppBootSplash();
-        }
         if (auth.status == AuthStatus.authenticated) {
           return RealtimeListener(child: routeChild);
         }

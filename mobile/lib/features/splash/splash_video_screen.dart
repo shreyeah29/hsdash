@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hsdash_mobile/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:video_player/video_player.dart';
 
-class SplashVideoScreen extends StatefulWidget {
-  const SplashVideoScreen({super.key});
+class SplashVideoScreen extends ConsumerStatefulWidget {
+  const SplashVideoScreen({super.key, this.onComplete});
+
+  final VoidCallback? onComplete;
 
   @override
-  State<SplashVideoScreen> createState() => _SplashVideoScreenState();
+  ConsumerState<SplashVideoScreen> createState() => _SplashVideoScreenState();
 }
 
-class _SplashVideoScreenState extends State<SplashVideoScreen> {
+class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
   static const _assetPath = 'assets/videos/intro.mp4';
 
   VideoPlayerController? _controller;
@@ -18,6 +21,7 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   @override
   void initState() {
     super.initState();
+    ref.read(authControllerProvider.notifier).ensureBootstrapped();
     _initVideo();
   }
 
@@ -48,7 +52,7 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
     final duration = controller.value.duration;
     final position = controller.value.position;
     if (duration.inMilliseconds > 0 &&
-        position.inMilliseconds >= duration.inMilliseconds - 100) {
+        position.inMilliseconds >= duration.inMilliseconds - 50) {
       _goHome();
     }
   }
@@ -56,17 +60,21 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   Future<void> _handleLoadFailure() async {
     if (_navigated || !mounted) return;
     await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) _goHome();
+    if (mounted) await _goHome();
   }
 
-  void _goHome() {
+  Future<void> _goHome() async {
     if (_navigated || !mounted) return;
     _navigated = true;
     _controller?.removeListener(_onPlaybackUpdate);
+    await _controller?.pause();
+    _controller?.dispose();
+    _controller = null;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-    );
+    await ref.read(authControllerProvider.notifier).ensureBootstrapped();
+    if (!mounted) return;
+
+    widget.onComplete?.call();
   }
 
   @override
