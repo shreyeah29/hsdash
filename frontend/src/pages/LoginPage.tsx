@@ -9,10 +9,7 @@ import { api, setAccessToken } from "@/services/api";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Role, type User } from "@/types/domain";
-import { AppBackground } from "@/components/premium/AppBackground";
-import { GlassPanel } from "@/components/premium/GlassPanel";
-import { BorderBeam } from "@/components/premium/BorderBeam";
-import { Spotlight } from "@/components/premium/Spotlight";
+import { LoginBallpitBackdrop } from "@/components/login/LoginBallpitBackdrop";
 import { Input } from "@/components/ui/input";
 
 const schema = z.object({
@@ -39,22 +36,16 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
     defaultValues: { username: "", password: "" },
   });
 
-  const title = loginKind === "admin" ? "Principal access" : "Crew access";
+  const title = loginKind === "admin" ? "Admin login" : "Team login";
   const description =
     loginKind === "admin"
-      ? "Owner login — analytics, calendar intelligence, team roster."
-      : "Editors & coordinators — tailored workspaces after authentication.";
-
-  const spotlightTint =
-    loginKind === "admin" ? "rgba(139, 92, 246, 0.08)" : "rgba(52, 211, 153, 0.06)";
+      ? "Owner access — analytics, calendar, leads, and team roster."
+      : "Editors & coordinators — your tailored workspace after sign-in.";
 
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
-      const { data } = await api.post<{ user: User; accessToken?: string }>(
-        "/auth/login",
-        values,
-      );
+      const { data } = await api.post<{ user: User; accessToken?: string }>("/auth/login", values);
       if (data.accessToken) setAccessToken(data.accessToken);
       acceptSession(data.user);
       const user = data.user;
@@ -67,7 +58,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
       if (loginKind === "admin") {
         if (user.role !== Role.ADMIN) {
           await logout();
-          setError("This account is not an administrator. Use Staff login.");
+          setError("This account is not an administrator. Use Team login.");
           return;
         }
         navigate("/admin", { replace: true });
@@ -98,57 +89,59 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
   }
 
   return (
-    <div className="relative min-h-full text-zinc-900">
-      <AppBackground accent={loginKind === "admin" ? "admin" : "editor"} />
-      <div className="relative z-10 flex min-h-full items-center justify-center px-6 py-16">
+    <LoginBallpitBackdrop>
+      <div className="flex min-h-full items-center justify-center px-6 py-16">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-          <Spotlight className="rounded-2xl" glowColor={spotlightTint}>
-            <BorderBeam>
-              <GlassPanel shine className="p-8 transition-transform duration-300 group-hover:-translate-y-0.5 md:p-10">
-                <div className="relative z-[1]">
-                  <Link
-                    to="/login"
-                    className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-600 transition-colors hover:text-zinc-950"
-                  >
-                    <ArrowLeft className="h-4 w-4" aria-hidden />
-                    Back
-                  </Link>
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.06] p-8 backdrop-blur-md md:p-10">
+            <Link
+              to="/login"
+              className="mb-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-white/55 transition-colors hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Back
+            </Link>
 
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-600">
-                      {loginKind === "admin" ? "Admin lane" : "Staff lane"}
-                    </p>
-                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">{title}</h1>
-                    <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
-                  </div>
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-200/80">
+                {loginKind === "admin" ? "Admin lane" : "Staff lane"}
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
+              <p className="text-sm leading-relaxed text-white/65">{description}</p>
+            </div>
 
-                  <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-zinc-800">Username</label>
-                      <Input {...form.register("username")} autoComplete="username" placeholder="e.g. laxman" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-zinc-800">Password</label>
-                      <Input
-                        type="password"
-                        {...form.register("password")}
-                        autoComplete="current-password"
-                        placeholder="••••••••"
-                      />
-                    </div>
+            <form className="mt-8 space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-white/80">Username</label>
+                <Input
+                  {...form.register("username")}
+                  autoComplete="username"
+                  placeholder="e.g. laxman"
+                  className="border-white/15 bg-white/10 text-white placeholder:text-white/35 focus-visible:ring-violet-400/40"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-white/80">Password</label>
+                <Input
+                  type="password"
+                  {...form.register("password")}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="border-white/15 bg-white/10 text-white placeholder:text-white/35 focus-visible:ring-violet-400/40"
+                />
+              </div>
 
-                    {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+              {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button type="submit" variant="premium" className="mt-2 w-full rounded-xl py-6 text-[15px] font-semibold">
-                      Enter dashboard
-                    </Button>
-                  </form>
-                </div>
-              </GlassPanel>
-            </BorderBeam>
-          </Spotlight>
+              <Button
+                type="submit"
+                className="mt-2 w-full rounded-xl bg-white py-6 text-[15px] font-semibold text-zinc-950 hover:bg-zinc-100"
+              >
+                Enter dashboard
+              </Button>
+            </form>
+          </div>
         </motion.div>
       </div>
-    </div>
+    </LoginBallpitBackdrop>
   );
 }
