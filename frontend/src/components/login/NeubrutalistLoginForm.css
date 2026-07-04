@@ -1,12 +1,12 @@
 /* Neubrutalist login — adapted from Uiverse.io by andrew-demchenk0 */
 
 .nb-form {
-  --input-focus: #7c6dff;
-  --font-color: #f4f4f5;
-  --font-color-sub: #a1a1aa;
-  --bg-color: #3f3f46;
-  --main-color: #5227ff;
-  --surface: #27272a;
+  --input-focus: #5227ff;
+  --font-color: #323232;
+  --font-color-sub: #666;
+  --bg-color: #fff;
+  --main-color: #1a1a1a;
+  --surface: #d4d4d4;
   width: 100%;
   max-width: 400px;
   padding: 28px 28px 32px;
@@ -88,22 +88,22 @@
   width: 100%;
   min-height: 48px;
   border-radius: 5px;
-  border: 2px solid #5227ff;
-  background-color: #5227ff;
-  box-shadow: 4px 4px 0 #3b1fd4;
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px 0 var(--main-color);
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--font-color);
   cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .nb-button-confirm:hover:not(:disabled) {
-  background-color: #6344ff;
+  background-color: #fafafa;
 }
 
 .nb-button-confirm:active:not(:disabled) {
-  box-shadow: 0 0 0 #3b1fd4;
+  box-shadow: 0 0 0 var(--main-color);
   transform: translate(4px, 4px);
 }
 
@@ -149,27 +149,26 @@
 }
 
 .login-choice-btn--primary {
-  background: #5227ff;
-  color: #ffffff;
-  border: 2px solid #3b1fd4;
-  box-shadow: 0 16px 40px rgba(82, 39, 255, 0.35);
+  background: rgba(255, 255, 255, 0.96);
+  color: #1a1228;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(26, 18, 40, 0.2);
 }
 
 .login-choice-btn--primary:hover {
   transform: translateY(-1px);
-  background: #6344ff;
-  box-shadow: 0 20px 48px rgba(82, 39, 255, 0.42);
+  box-shadow: 0 20px 48px rgba(26, 18, 40, 0.24);
 }
 
 .login-choice-btn--ghost {
-  background: rgba(39, 39, 42, 0.72);
-  color: #f4f4f5;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  text-shadow: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 32px rgba(26, 18, 40, 0.15);
+  text-shadow: 0 1px 6px rgba(26, 18, 40, 0.25);
 }
 
 .login-choice-btn--ghost:hover {
-  background: rgba(63, 63, 70, 0.85);
+  background: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }

@@ -10,9 +10,9 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
       <div className="fixed inset-0 z-0">
         <Ballpit
           count={100}
-          gravity={0.7}
-          friction={0.8}
-          wallBounce={0.95}
+          gravity={0.5}
+          friction={0.9975}
+          wallBounce={0.98}
           followCursor
           colors={BALLPIT_COLORS}
           ambientColor={0xffffff}
