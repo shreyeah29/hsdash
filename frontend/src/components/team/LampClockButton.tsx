@@ -230,16 +230,24 @@ export function LampClockButton() {
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         />
 
-        <button
-          type="button"
+        <motion.div
           className="lamp-clock__hit"
           onClick={() => void handleTap()}
-          disabled={animating || isLoading || isCompleted}
+          role="button"
+          tabIndex={animating || isLoading || isCompleted ? -1 : 0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              void handleTap();
+            }
+          }}
+          aria-disabled={animating || isLoading || isCompleted}
           aria-label={lampOn ? "Clock out" : "Clock in"}
+          whileTap={animating || isLoading || isCompleted ? undefined : { scale: 0.98 }}
         >
           <DeskLampVisual on={lampOn} breathing={lampOn && isActive} />
           <DustParticles active={lampOn} />
-        </button>
+        </motion.div>
 
         <div className="lamp-clock__meta">
           <p className="lamp-clock__hours">Studio · {shiftHoursLabel}</p>

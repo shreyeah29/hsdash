@@ -40,16 +40,17 @@
   background: transparent;
   cursor: pointer;
   width: min(220px, 100%);
-  min-height: 210px;
+  min-height: 230px;
   touch-action: manipulation;
+  outline: none;
 }
 
-.lamp-clock__hit:disabled {
+.lamp-clock__hit[aria-disabled="true"] {
   cursor: default;
   opacity: 0.92;
 }
 
-.lamp-clock__hit:disabled .desk-lamp {
+.lamp-clock__hit[aria-disabled="true"] .lamp-toggle {
   filter: saturate(0.65) brightness(0.85);
 }
 
