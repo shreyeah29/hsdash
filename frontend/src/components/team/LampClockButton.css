@@ -5,27 +5,25 @@
 
 .lamp-clock__panel {
   position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  border: 2px solid #000;
-  background: #000;
-  padding: 1rem 1rem 1.15rem;
-  min-height: 360px;
+  overflow: visible;
+  padding: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .lamp-clock__hit {
   position: relative;
   z-index: 2;
   margin: 0;
-  padding: 0.5rem 0 0;
+  padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
   width: 100%;
-  min-height: 200px;
+  min-height: 280px;
   touch-action: manipulation;
   outline: none;
   display: grid;
@@ -44,7 +42,7 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  margin-top: 0.75rem;
+  margin-top: 0.25rem;
   text-align: center;
 }
 
@@ -52,7 +50,7 @@
   margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #fafafa;
+  color: #000;
   letter-spacing: -0.02em;
 }
 
@@ -60,7 +58,7 @@
   margin: 0.3rem 0 0;
   font-size: 0.8rem;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.55);
+  color: #52525b;
 }
 
 .lamp-clock__badge {
@@ -75,7 +73,7 @@
 }
 
 .lamp-clock__badge--off {
-  color: rgba(255, 255, 255, 0.45);
+  color: #71717a;
 }
 
 .lamp-clock__badge--on {
@@ -110,13 +108,13 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(212, 175, 55, 0.85);
+  color: #b8860b;
 }
 
 .lamp-clock__progress {
   height: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -129,7 +127,7 @@
 .lamp-clock__timer {
   margin: 0.65rem 0 0;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: #52525b;
 }
 
 .lamp-clock__timer span {
@@ -147,13 +145,13 @@
   margin: 0.45rem 0 0;
   font-size: 0.7rem;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.45);
+  color: #71717a;
 }
 
 .lamp-clock__started {
   margin: 0.35rem 0 0;
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: #a1a1aa;
 }
 
 .lamp-clock__late {
@@ -232,10 +230,4 @@
 
 .lamp-summary-card__btn:hover {
   filter: brightness(1.06);
-}
-
-@media (min-width: 1024px) {
-  .lamp-clock__panel {
-    min-height: 380px;
-  }
 }
