@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Calendar } from "lucide-react";
 import { useWorkShift } from "@/hooks/useWorkShift";
 import {
   formatClockTime,
   formatCountdown,
   formatDurationHuman,
   fullShiftTargetTime,
-  shiftHoursLabel,
   timeUntilFullShift,
-  timeUntilShiftEnd,
   workedDuration,
 } from "@/lib/shiftHours";
 import type { WorkShiftSession } from "@/types/attendance";
-import { DeskLampVisual } from "@/components/team/DeskLampVisual";
+import { DeskLampVisual, type LampPhase } from "@/components/team/DeskLampVisual";
 import "./LampClockButton.css";
 
 type ShiftSummary = {
@@ -20,6 +19,8 @@ type ShiftSummary = {
   clockOutAt: Date;
   durationMs: number;
 };
+
+const TRANSITION_MS = 950;
 
 function playClickSound() {
   try {
@@ -42,32 +43,6 @@ function playClickSound() {
 
 function hapticTap() {
   navigator.vibrate?.(14);
-}
-
-function DustParticles({ active }: { active: boolean }) {
-  if (!active) return null;
-  return (
-    <div className="lamp-dust" aria-hidden>
-      {Array.from({ length: 14 }).map((_, i) => (
-        <motion.span
-          key={i}
-          className="lamp-dust__mote"
-          initial={{ opacity: 0, y: 0, x: 0 }}
-          animate={{
-            opacity: [0, 0.7, 0],
-            y: [-4 - (i % 5) * 6, -28 - (i % 4) * 10],
-            x: [(i % 2 === 0 ? -1 : 1) * (4 + (i % 3) * 5), (i % 2 === 0 ? 1 : -1) * (8 + (i % 4) * 4)],
-          }}
-          transition={{
-            duration: 2.4 + (i % 5) * 0.35,
-            repeat: Infinity,
-            delay: i * 0.18,
-            ease: "easeOut",
-          }}
-        />
-      ))}
-    </div>
-  );
 }
 
 function ShiftSummaryCard({
@@ -93,16 +68,22 @@ function ShiftSummaryCard({
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="lamp-summary-card__eyebrow">Shift complete</p>
-        <p className="lamp-summary-card__title">{formatDurationHuman(summary.durationMs)}</p>
+        <div className="lamp-summary-card__header">
+          <Calendar className="h-4 w-4" aria-hidden />
+          <span>Shift Summary</span>
+        </div>
         <div className="lamp-summary-card__rows">
           <div>
-            <span>Clock in</span>
+            <span>Clock In</span>
             <strong>{formatClockTime(summary.clockInAt)}</strong>
           </div>
           <div>
-            <span>Clock out</span>
+            <span>Clock Out</span>
             <strong>{formatClockTime(summary.clockOutAt)}</strong>
+          </div>
+          <div className="lamp-summary-card__total">
+            <span>Total Duration</span>
+            <strong>{formatDurationHuman(summary.durationMs)}</strong>
           </div>
         </div>
         <button type="button" className="lamp-summary-card__btn" onClick={onDismiss}>
@@ -113,66 +94,124 @@ function ShiftSummaryCard({
   );
 }
 
+function StatusBadge({ phase, completed }: { phase: LampPhase; completed: boolean }) {
+  if (phase === "opening" || phase === "closing") {
+    return (
+      <div className="lamp-clock__wait">
+        <p className="lamp-clock__wait-label">Please wait</p>
+        <div className="lamp-clock__progress">
+          <motion.div
+            className="lamp-clock__progress-fill"
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: TRANSITION_MS / 1000, ease: "easeInOut" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "on") {
+    return (
+      <p className="lamp-clock__badge lamp-clock__badge--on">
+        <span className="lamp-clock__dot lamp-clock__dot--on" />
+        On shift
+      </p>
+    );
+  }
+
+  return (
+    <p className="lamp-clock__badge lamp-clock__badge--off">
+      <span className="lamp-clock__dot lamp-clock__dot--off" />
+      {completed ? "Logged out" : "Clocked out"}
+    </p>
+  );
+}
+
 export function LampClockButton() {
   const { data, isLoading, clockIn, clockOut } = useWorkShift();
-  const [animating, setAnimating] = useState(false);
-  const [lampOn, setLampOn] = useState(false);
+  const [phase, setPhase] = useState<LampPhase>("off");
   const [tick, setTick] = useState(0);
   const [summary, setSummary] = useState<ShiftSummary | null>(null);
   const [lateNotice, setLateNotice] = useState<string | null>(null);
+  const [justLoggedOut, setJustLoggedOut] = useState(false);
   const pendingClockOut = useRef<WorkShiftSession | null>(null);
 
   const session = data?.session ?? null;
   const isActive = Boolean(session?.clockInAt && !session.clockOutAt);
   const isCompleted = Boolean(session?.clockInAt && session?.clockOutAt);
+  const isBusy = phase === "opening" || phase === "closing" || isLoading;
 
   useEffect(() => {
-    setLampOn(isActive);
-  }, [isActive]);
+    if (isBusy) return;
+    if (isActive) {
+      setPhase("on");
+      setJustLoggedOut(false);
+    } else if (!summary) {
+      setPhase("off");
+    }
+  }, [isActive, isBusy, summary]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (phase !== "on") return;
     const id = window.setInterval(() => setTick((n) => n + 1), 1000);
     return () => window.clearInterval(id);
-  }, [isActive]);
+  }, [phase]);
 
   const clockInAt = session?.clockInAt ? new Date(session.clockInAt) : null;
 
   const live = useMemo(() => {
     void tick;
-    if (!clockInAt || !isActive) return null;
+    if (!clockInAt || phase !== "on") return null;
     const worked = workedDuration(clockInAt);
     const untilLogout = timeUntilFullShift(clockInAt);
-    const untilSeven = timeUntilShiftEnd();
     const logoutAt = fullShiftTargetTime(clockInAt);
-    return { worked, untilLogout, untilSeven, logoutAt };
-  }, [clockInAt, isActive, tick]);
+    return { worked, untilLogout, logoutAt };
+  }, [clockInAt, phase, tick]);
+
+  const copy = useMemo(() => {
+    if (phase === "opening") {
+      return { title: "Welcome", subtitle: "Opening your shift…" };
+    }
+    if (phase === "closing") {
+      return { title: "Logging out…", subtitle: "Closing your shift." };
+    }
+    if (phase === "on") {
+      return { title: "Welcome back", subtitle: "You are now on shift." };
+    }
+    if (justLoggedOut || (isCompleted && !summary)) {
+      return { title: "Goodbye!", subtitle: "You have been logged out." };
+    }
+    return { title: "Welcome", subtitle: "Tap the lamp to start your shift." };
+  }, [isCompleted, justLoggedOut, phase, summary]);
 
   const handleTap = useCallback(async () => {
-    if (animating || isLoading || isCompleted) return;
+    if (isBusy || isCompleted) return;
 
-    if (!isActive) {
-      setAnimating(true);
+    if (phase === "off") {
       hapticTap();
       playClickSound();
-      try {
-        const result = await clockIn.mutateAsync();
-        setLateNotice(result.alert?.message ?? null);
-        setLampOn(true);
-      } catch {
-        setLampOn(false);
-      } finally {
-        window.setTimeout(() => setAnimating(false), 1000);
-      }
+      setPhase("opening");
+      setJustLoggedOut(false);
+
+      window.setTimeout(async () => {
+        try {
+          const result = await clockIn.mutateAsync();
+          setLateNotice(result.alert?.message ?? null);
+          setPhase("on");
+        } catch {
+          setPhase("off");
+        }
+      }, TRANSITION_MS);
       return;
     }
 
-    if (!session || !clockInAt) return;
-    setAnimating(true);
+    if (phase !== "on" || !session || !clockInAt) return;
+
     hapticTap();
     playClickSound();
+    setPhase("closing");
     pendingClockOut.current = session;
-    setLampOn(false);
 
     window.setTimeout(async () => {
       try {
@@ -184,79 +223,61 @@ export function LampClockButton() {
           clockOutAt: outAt,
           durationMs: workedDuration(inAt, outAt),
         });
+        setJustLoggedOut(true);
+        setPhase("off");
       } catch {
-        setLampOn(true);
+        setPhase("on");
       } finally {
         pendingClockOut.current = null;
-        setAnimating(false);
       }
-    }, 900);
-  }, [animating, clockIn, clockOut, clockInAt, isActive, isCompleted, isLoading, session]);
+    }, TRANSITION_MS);
+  }, [clockIn, clockOut, clockInAt, isBusy, isCompleted, phase, session]);
 
-  const status = isCompleted
-    ? "Shift done"
-    : isActive || lampOn
-      ? "On shift"
-      : "Clocked out";
-
-  const subtitle = useMemo(() => {
-    if (isCompleted && session?.clockOutAt) {
-      return `Finished at ${formatClockTime(new Date(session.clockOutAt))}`;
-    }
-    if ((isActive || lampOn) && clockInAt && live) {
-      if (live.untilLogout > 0) {
-        return `Logout in ${formatCountdown(live.untilLogout)} · until ${formatClockTime(live.logoutAt)}`;
-      }
-      return "Full shift reached — clock out when you leave";
-    }
-    if (isActive && clockInAt) {
-      return `Shift started at ${formatClockTime(clockInAt)}`;
-    }
-    return "Tap the lamp to start your shift";
-  }, [clockInAt, isActive, isCompleted, lampOn, live, session?.clockOutAt]);
-
-  const timerLabel =
-    isActive && live ? `Working for ${formatCountdown(live.worked)}` : null;
+  const timerLabel = phase === "on" && live ? formatCountdown(live.worked) : null;
 
   return (
     <div className="lamp-clock">
       <div className="lamp-clock__panel">
         <motion.div
-          className="lamp-clock__ambient"
-          animate={{
-            opacity: lampOn ? 0.95 : 0,
-            scale: lampOn ? 1 : 0.85,
-          }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        />
-
-        <motion.div
           className="lamp-clock__hit"
           onClick={() => void handleTap()}
           role="button"
-          tabIndex={animating || isLoading || isCompleted ? -1 : 0}
+          tabIndex={isBusy || isCompleted ? -1 : 0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               void handleTap();
             }
           }}
-          aria-disabled={animating || isLoading || isCompleted}
-          aria-label={lampOn ? "Clock out" : "Clock in"}
-          whileTap={animating || isLoading || isCompleted ? undefined : { scale: 0.98 }}
+          aria-disabled={isBusy || isCompleted}
+          aria-label={phase === "on" ? "Clock out" : "Clock in"}
+          whileTap={isBusy || isCompleted ? undefined : { scale: 0.985 }}
         >
-          <DeskLampVisual on={lampOn} breathing={lampOn && isActive} />
-          <DustParticles active={lampOn} />
+          <DeskLampVisual phase={phase} breathing={phase === "on"} />
         </motion.div>
 
         <div className="lamp-clock__meta">
-          <p className="lamp-clock__hours">Studio · {shiftHoursLabel}</p>
-          <p className="lamp-clock__status">{status}</p>
-          {timerLabel ? <p className="lamp-clock__timer">{timerLabel}</p> : null}
-          <p className="lamp-clock__subtitle">{subtitle}</p>
-          {clockInAt && (isActive || lampOn) ? (
+          <p className="lamp-clock__title">{copy.title}</p>
+          <p className="lamp-clock__subtitle">{copy.subtitle}</p>
+
+          <StatusBadge phase={phase} completed={isCompleted || justLoggedOut} />
+
+          {timerLabel ? (
+            <p className="lamp-clock__timer">
+              Working for <span>{timerLabel}</span>
+            </p>
+          ) : null}
+
+          {phase === "on" && live && live.untilLogout > 0 ? (
+            <p className="lamp-clock__logout">
+              Logout in {formatCountdown(live.untilLogout)} · until {formatClockTime(live.logoutAt)}
+            </p>
+          ) : null}
+
+          {clockInAt && phase === "on" ? (
             <p className="lamp-clock__started">Started at {formatClockTime(clockInAt)}</p>
           ) : null}
+
           {lateNotice ? <p className="lamp-clock__late">{lateNotice}</p> : null}
         </div>
       </div>

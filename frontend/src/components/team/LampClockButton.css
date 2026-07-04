@@ -6,122 +6,161 @@
 .lamp-clock__panel {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 2px solid #000;
-  background: radial-gradient(ellipse 90% 80% at 50% 100%, #1a1a1f 0%, #09090b 55%, #000 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  padding: 0.75rem 1rem 1.1rem;
-  min-height: 320px;
+  background: #000;
+  padding: 1rem 1rem 1.15rem;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-}
-
-.lamp-clock__ambient {
-  pointer-events: none;
-  position: absolute;
-  inset: -20% -10% auto;
-  height: 70%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 200, 110, 0.35) 0%, rgba(82, 39, 255, 0.12) 45%, transparent 72%);
-  filter: blur(18px);
 }
 
 .lamp-clock__hit {
   position: relative;
   z-index: 2;
   margin: 0;
-  padding: 0.25rem 0 0;
+  padding: 0.5rem 0 0;
   border: 0;
   background: transparent;
   cursor: pointer;
-  width: min(220px, 100%);
-  min-height: 220px;
+  width: 100%;
+  min-height: 200px;
   touch-action: manipulation;
   outline: none;
+  display: grid;
+  place-items: center;
 }
 
 .lamp-clock__hit[aria-disabled="true"] {
   cursor: default;
-  opacity: 0.92;
 }
 
-.lamp-clock__hit[aria-disabled="true"] .lamp-scene {
-  filter: saturate(0.7) brightness(0.8);
-}
-
-.lamp-dust {
-  pointer-events: none;
-  position: absolute;
-  inset: 18% 10% 32%;
-}
-
-.lamp-dust__mote {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 3px;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255, 230, 170, 0.85);
-  box-shadow: 0 0 8px rgba(255, 214, 120, 0.8);
+.lamp-clock__hit[aria-disabled="true"] .ref-lamp {
+  filter: saturate(0.65) brightness(0.82);
 }
 
 .lamp-clock__meta {
   position: relative;
   z-index: 2;
   width: 100%;
-  margin-top: 0.35rem;
+  margin-top: 0.75rem;
   text-align: center;
 }
 
-.lamp-clock__hours {
+.lamp-clock__title {
   margin: 0;
-  font-size: 10px;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.lamp-clock__status {
-  margin: 0.45rem 0 0;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: #fafafa;
-}
-
-.lamp-clock__timer {
-  margin: 0.35rem 0 0;
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: #fde68a;
-  text-shadow: 0 0 24px rgba(255, 200, 110, 0.35);
+  letter-spacing: -0.02em;
 }
 
 .lamp-clock__subtitle {
-  margin: 0.35rem 0 0;
-  font-size: 12px;
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.lamp-clock__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lamp-clock__badge--off {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.lamp-clock__badge--on {
+  color: #86efac;
+}
+
+.lamp-clock__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.lamp-clock__dot--off {
+  background: #71717a;
+}
+
+.lamp-clock__dot--on {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.65);
+}
+
+.lamp-clock__wait {
+  margin-top: 0.85rem;
+  width: 100%;
+  max-width: 200px;
+  margin-inline: auto;
+}
+
+.lamp-clock__wait-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.85);
+}
+
+.lamp-clock__progress {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.lamp-clock__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #b8860b, #d4af37, #fde68a);
+}
+
+.lamp-clock__timer {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.lamp-clock__timer span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: #d4af37;
+  text-shadow: 0 0 28px rgba(212, 175, 55, 0.35);
+}
+
+.lamp-clock__logout {
+  margin: 0.45rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .lamp-clock__started {
-  margin: 0.25rem 0 0;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.38);
 }
 
 .lamp-clock__late {
   margin: 0.45rem 0 0;
-  font-size: 11px;
+  font-size: 0.68rem;
   font-weight: 600;
-  color: #fbbf24;
+  color: #d4af37;
 }
 
 .lamp-summary-backdrop {
@@ -131,74 +170,72 @@
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
 }
 
 .lamp-summary-card {
-  width: min(100%, 360px);
+  width: min(100%, 320px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(24, 24, 27, 0.82);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 18, 20, 0.92);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  padding: 1.25rem 1.25rem 1rem;
   color: #fafafa;
 }
 
-.lamp-summary-card__eyebrow {
-  margin: 0;
-  font-size: 11px;
+.lamp-summary-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.lamp-summary-card__title {
-  margin: 0.5rem 0 0;
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .lamp-summary-card__rows {
   margin-top: 1rem;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .lamp-summary-card__rows div {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .lamp-summary-card__rows strong {
-  color: #fff;
-  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 600;
+}
+
+.lamp-summary-card__total strong {
+  color: #d4af37;
+  font-weight: 800;
 }
 
 .lamp-summary-card__btn {
-  margin-top: 1.25rem;
+  margin-top: 1.1rem;
   width: 100%;
-  min-height: 44px;
+  min-height: 42px;
   border-radius: 10px;
   border: 0;
-  background: #5227ff;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
+  background: linear-gradient(180deg, #d4af37 0%, #b8860b 100%);
+  color: #1a1a1a;
+  font-size: 0.85rem;
+  font-weight: 800;
   cursor: pointer;
 }
 
 .lamp-summary-card__btn:hover {
-  background: #6344ff;
+  filter: brightness(1.06);
 }
 
 @media (min-width: 1024px) {
   .lamp-clock__panel {
-    min-height: 300px;
+    min-height: 380px;
   }
 }
