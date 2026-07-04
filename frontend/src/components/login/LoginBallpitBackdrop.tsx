@@ -9,15 +9,15 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
       <div className="fixed inset-0 z-0">
         <Ballpit
-          count={200}
+          count={110}
           gravity={0.7}
           friction={0.8}
           wallBounce={0.95}
           followCursor
           colors={BALLPIT_COLORS}
           ambientColor={0xffffff}
-          ambientIntensity={3}
-          lightIntensity={420}
+          ambientIntensity={1}
+          lightIntensity={200}
           className="h-full w-full"
         />
       </div>

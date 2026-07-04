@@ -623,9 +623,12 @@ class BallpitMesh extends InstancedMesh {
     const envScene = new RoomEnvironment();
     const envMap = new PMREMGenerator(renderer).fromScene(envScene).texture;
     const geometry = new SphereGeometry();
+    // NOTE: do NOT enable vertexColors here. SphereGeometry has no color
+    // attribute, so WebGL would feed the shader black (0,0,0) and multiply it
+    // into every instance color, turning all balls black. Per-ball colors are
+    // applied via setColorAt/instanceColor, which works without vertexColors.
     const material = new MeshPhysicalMaterial({
       envMap,
-      vertexColors: true,
       ...merged.materialParams,
     });
     material.envMapRotation.x = -Math.PI / 2;
@@ -693,7 +696,7 @@ function createBallpit(canvas: HTMLCanvasElement, config: Partial<BallpitMeshCon
     rendererOptions: { antialias: true, alpha: true },
   });
   viewport.renderer.toneMapping = ACESFilmicToneMapping;
-  viewport.renderer.toneMappingExposure = 1.45;
+  viewport.renderer.toneMappingExposure = 1;
   viewport.camera.position.set(0, 0, 20);
   viewport.camera.lookAt(0, 0, 0);
   viewport.cameraMaxAspect = 1.5;
