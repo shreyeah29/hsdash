@@ -12,6 +12,7 @@ import {
   workedDuration,
 } from "@/lib/shiftHours";
 import type { WorkShiftSession } from "@/types/attendance";
+import { DeskLampVisual } from "@/components/team/DeskLampVisual";
 import "./LampClockButton.css";
 
 type ShiftSummary = {
@@ -236,52 +237,7 @@ export function LampClockButton() {
           disabled={animating || isLoading || isCompleted}
           aria-label={lampOn ? "Clock out" : "Clock in"}
         >
-          <svg viewBox="0 0 200 220" className="lamp-clock__svg" aria-hidden>
-            <ellipse cx="100" cy="206" rx="54" ry="10" fill="rgba(255,255,255,0.08)" />
-            <rect x="88" y="148" width="24" height="58" rx="4" fill="#2a2a32" stroke="#52525b" strokeWidth="2" />
-            <path d="M92 148 Q100 118 108 148" fill="none" stroke="#52525b" strokeWidth="3" strokeLinecap="round" />
-
-            <motion.g
-              style={{ originX: "100px", originY: "118px" }}
-              animate={{ rotate: lampOn ? -18 : 24 }}
-              transition={{ type: "spring", stiffness: 180, damping: 16, duration: 1 }}
-            >
-              <path
-                d="M58 118 C58 86 142 86 142 118 L148 132 C150 138 145 144 138 144 H62 C55 144 50 138 52 132 Z"
-                fill="#3f3f46"
-                stroke="#71717a"
-                strokeWidth="2"
-              />
-              <motion.circle
-                cx="100"
-                cy="118"
-                r="14"
-                fill="#fef3c7"
-                animate={{
-                  opacity: lampOn ? 1 : 0.15,
-                  filter: lampOn ? "drop-shadow(0 0 18px rgba(255,214,120,0.95))" : "none",
-                }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-            </motion.g>
-
-            <motion.ellipse
-              cx="100"
-              cy="188"
-              rx="72"
-              ry="28"
-              fill="url(#lampGlow)"
-              animate={{ opacity: lampOn ? 0.55 : 0 }}
-              transition={{ duration: 0.9 }}
-            />
-            <defs>
-              <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="rgba(255,214,120,0.55)" />
-                <stop offset="100%" stopColor="rgba(255,214,120,0)" />
-              </radialGradient>
-            </defs>
-          </svg>
-
+          <DeskLampVisual on={lampOn} breathing={lampOn && isActive} />
           <DustParticles active={lampOn} />
         </button>
 
