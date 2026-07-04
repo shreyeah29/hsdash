@@ -1,26 +1,36 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Zap, CalendarHeart, AlertOctagon, Sparkles } from "lucide-react";
-import { useAuthStore } from "@/store/auth";
 import { api } from "@/services/api";
 import type { Task, UserNotification } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { GlassPanel, AnimatedStatCard, PriorityShowcaseCard } from "@/components/premium";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { AdminHero, AdminHomeShortcut, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
+import { ADMIN_PALETTE } from "@/lib/adminTheme";
+import { useAuthStore } from "@/store/auth";
+import { taskTypeLabel } from "@/lib/calendarUtils";
+import { StatusBadge } from "@/components/StatusBadge";
 import { crewLiveQueryOptions } from "@/hooks/useCrewLiveData";
 
-function greeting(hour: number) {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
   return "Good evening";
 }
 
+function friendlyToday() {
+  const now = new Date();
+  return now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+}
+
+const palette = ADMIN_PALETTE;
+
 export function TeamDashboardPage() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const firstName = user?.name?.split(/\s+/)[0] ?? "there";
+  const now = new Date();
 
   const { data: notifications = [], dataUpdatedAt: notificationsUpdatedAt } = useQuery({
     queryKey: ["my-notifications"],
@@ -66,9 +76,6 @@ export function TeamDashboardPage() {
     ...crewLiveQueryOptions,
   });
 
-  const now = new Date();
-  const hour = now.getHours();
-
   const stats = useMemo(() => {
     const tasks = data ?? [];
     const open = tasks.filter((t) => t.status !== TaskStatus.COMPLETED);
@@ -83,10 +90,9 @@ export function TeamDashboardPage() {
       const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       return diffDays <= 1;
     }).length;
-    const cinematic = open.filter((t) => t.taskType.includes("CINEMATIC")).length;
     const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
     const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
-    return { overdue, dueThisWeek, urgent, cinematic, progress, total: tasks.length, open: open.length };
+    return { overdue, dueThisWeek, urgent, progress, total: tasks.length, open: open.length };
   }, [data, now]);
 
   const nextUp = useMemo(() => {
@@ -94,149 +100,154 @@ export function TeamDashboardPage() {
     return [...tasks].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)).slice(0, 6);
   }, [data]);
 
-  const firstName = user?.name?.split(/\s+/)[0] ?? "there";
-
   return (
-    <div className="space-y-10">
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel shine-border relative overflow-hidden p-8 md:p-10"
-      >
-        <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-emerald-200/50 blur-[90px]" />
-        <div className="relative space-y-4">
-          <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-800">
-            <span className="text-lg">👋</span>
-            {greeting(hour)}, {firstName}
-          </p>
-          <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-[2.1rem]">
-            Your edit bay is tuned —{" "}
-            <span className="font-semibold text-emerald-800">
-              {stats.open > 0 ? `${stats.open} cuts need your signature.` : "no assignments yet — admin routes work to you here."}
-            </span>
-          </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 md:text-[15px]">
-            {stats.cinematic > 0 ? (
-              <>
-                <span className="font-semibold text-zinc-900">{stats.cinematic}</span> cinematic edits still simmering.{" "}
-              </>
-            ) : null}
-            {stats.urgent > 0 ? (
-              <>
-                <span className="font-semibold text-amber-700">{stats.urgent}</span> ask for love within 24h.{" "}
-              </>
-            ) : (
-              <>Cadence looks humane — protect deep focus time. </>
-            )}
-            <span className="font-semibold text-zinc-900">{stats.dueThisWeek}</span> deliveries horizon within seven days.
-          </p>
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button variant="premium" className="rounded-xl px-6" asChild>
-              <Link to="/team/tasks">Jump into tasks</Link>
-            </Button>
-            <Button variant="glass" className="rounded-xl" asChild>
-              <Link to="/team/tasks">Update statuses</Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              disabled={isFetching}
-              onClick={() => {
-                void refetchTasks();
-                void qc.invalidateQueries({ queryKey: ["my-notifications"] });
-              }}
-            >
-              {isFetching ? "Refreshing…" : "Refresh"}
-            </Button>
-          </div>
+    <div className="space-y-8 lg:space-y-10">
+      <AdminHero>
+        <p className="admin-kicker">
+          {greeting()}, {firstName}
+        </p>
+        <h1 className="admin-display-hero mt-4 max-w-5xl">
+          {stats.open > 0 ? `${stats.open} cuts need your signature` : "Your edit bay is clear"}
+        </h1>
+        <p className="admin-display-subtitle mt-4 text-base lg:text-lg">
+          {stats.urgent > 0 ? `${stats.urgent} due within 24h · ` : ""}
+          {stats.dueThisWeek} due this week · {friendlyToday()}
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button type="button" className="admin-btn admin-btn--solid" onClick={() => navigate("/team/tasks")}>
+            Jump into tasks
+          </button>
+          <button
+            type="button"
+            className="admin-btn"
+            disabled={isFetching}
+            onClick={() => {
+              void refetchTasks();
+              void qc.invalidateQueries({ queryKey: ["my-notifications"] });
+            }}
+          >
+            {isFetching ? "Refreshing…" : "Refresh"}
+          </button>
         </div>
-      </motion.div>
+      </AdminHero>
+
+      <section>
+        <AdminSectionLabel>Quick access</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <AdminHomeShortcut label="Today" index="01" onClick={() => navigate("/team")} />
+          <AdminHomeShortcut label="My tasks" index="02" onClick={() => navigate("/team/tasks")} />
+        </div>
+      </section>
 
       {tasksError ? (
-        <GlassPanel className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-          Could not load your tasks — check you are logged in as an editor and that the API URL is correct.{" "}
-          {(tasksQueryError as Error)?.message ? `(${String((tasksQueryError as Error).message)})` : null}
-        </GlassPanel>
+        <AdminSurface>
+          <p className="admin-display-title text-xl">Could not load tasks</p>
+          <p className="admin-display-subtitle mt-2 text-sm">{String((tasksQueryError as Error)?.message ?? "")}</p>
+        </AdminSurface>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <AnimatedStatCard label="Urgent horizon" value={stats.urgent} hint="≤ 24 hours" icon={Zap} accent="amber" delay={0} />
-        <AnimatedStatCard label="This week" value={stats.dueThisWeek} hint="Stay ahead" icon={CalendarHeart} accent="cyan" delay={0.05} />
-        <AnimatedStatCard label="Overdue" value={stats.overdue} hint="Recover gracefully" icon={AlertOctagon} accent="rose" delay={0.1} />
-        <AnimatedStatCard label="Completion" value={`${stats.progress}%`} hint="Personal throughput" icon={Sparkles} accent="emerald" delay={0.15} />
-      </div>
+      <section>
+        <AdminSectionLabel>Your runway</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <AdminSurface padding="p-4 lg:p-5">
+            <p className="admin-kicker">Urgent</p>
+            <p className="admin-stat-value mt-2">{stats.urgent}</p>
+            <p className="admin-display-subtitle mt-1 text-sm">≤ 24 hours</p>
+          </AdminSurface>
+          <AdminSurface padding="p-4 lg:p-5">
+            <p className="admin-kicker">This week</p>
+            <p className="admin-stat-value mt-2">{stats.dueThisWeek}</p>
+            <p className="admin-display-subtitle mt-1 text-sm">Stay ahead</p>
+          </AdminSurface>
+          <AdminSurface padding="p-4 lg:p-5">
+            <p className="admin-kicker">Overdue</p>
+            <p className="admin-stat-value mt-2">{stats.overdue}</p>
+            <p className="admin-display-subtitle mt-1 text-sm">Recover gracefully</p>
+          </AdminSurface>
+          <AdminSurface padding="p-4 lg:p-5">
+            <p className="admin-kicker">Completion</p>
+            <p className="admin-stat-value mt-2">{stats.progress}%</p>
+            <p className="admin-display-subtitle mt-1 text-sm">Personal throughput</p>
+          </AdminSurface>
+        </div>
+      </section>
 
-      <GlassPanel shine className="p-6 md:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Signal inbox</h2>
-            <p className="text-sm text-zinc-600">
-              Admin assignments appear here automatically when you&apos;re assigned.
-              {notificationsUpdatedAt ? (
-                <span className="block text-[11px] text-zinc-500">
-                  Last sync {new Date(notificationsUpdatedAt).toLocaleTimeString()}
-                </span>
-              ) : null}
-            </p>
-          </div>
+      <section>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <AdminSectionLabel>Signal inbox</AdminSectionLabel>
           {unreadCount > 0 ? (
-            <Button variant="glass" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
+            <button
+              type="button"
+              className="admin-btn"
+              disabled={markAllRead.isPending}
+              onClick={() => markAllRead.mutate()}
+            >
               Clear unread ({unreadCount})
-            </Button>
+            </button>
           ) : null}
         </div>
-        <div className="mt-6 space-y-3">
+        <p className="admin-display-subtitle mt-1 text-sm">
+          Admin assignments appear here when you&apos;re assigned.
+          {notificationsUpdatedAt ? (
+            <span className="block text-[11px]">Last sync {new Date(notificationsUpdatedAt).toLocaleTimeString()}</span>
+          ) : null}
+        </p>
+        <div className="mt-4 grid gap-3">
           {notifications.slice(0, 12).map((n) => (
-            <div
-              key={n.id}
-              className={cn(
-                "rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 transition-colors",
-                !n.read && "border-emerald-300 bg-emerald-50",
-              )}
-            >
-              <div className="font-medium text-zinc-900">{n.title}</div>
-              <div className="mt-1 text-sm text-zinc-600">{n.body}</div>
+            <AdminSurface key={n.id} padding="p-4 lg:p-5">
+              <p className="text-lg font-semibold uppercase tracking-tight text-black">{n.title}</p>
+              <p className="admin-display-subtitle mt-1 text-sm">{n.body}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {!n.read ? (
-                  <Button variant="glass" size="sm" disabled={markRead.isPending} onClick={() => markRead.mutate(n.id)}>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={markRead.isPending}
+                    onClick={() => markRead.mutate(n.id)}
+                  >
                     Mark read
-                  </Button>
+                  </button>
                 ) : null}
-                <Button variant="ghost" size="sm" className="text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" asChild>
-                  <Link to="/team/tasks">Open tasks →</Link>
-                </Button>
+                <Link to="/team/tasks" className="admin-btn" style={{ color: palette.accent }}>
+                  Open tasks
+                </Link>
               </div>
-            </div>
+            </AdminSurface>
           ))}
           {notifications.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
-              Quiet channel — new assignments appear here the moment they&apos;re yours.
-            </p>
+            <AdminSurface>
+              <p className="admin-display-subtitle text-base">Quiet channel — new assignments appear here when they&apos;re yours.</p>
+            </AdminSurface>
           ) : null}
         </div>
-      </GlassPanel>
+      </section>
 
-      <GlassPanel className="p-6 md:p-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Incoming countdowns</h2>
-            <p className="text-sm text-zinc-600">Closest deadlines first — tap tasks for granular controls.</p>
-          </div>
-          <Button variant="premium" size="sm" className="rounded-xl" asChild>
-            <Link to="/team/tasks">Expand workspace</Link>
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {nextUp.map((t, i) => (
-            <PriorityShowcaseCard key={t.id} task={t} index={i} />
+      <section>
+        <AdminSectionLabel>Incoming countdowns</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {nextUp.map((task) => (
+            <AdminSurface key={task.id} padding="p-4 lg:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold uppercase tracking-tight text-black">
+                    {task.event?.clientName ?? "Wedding"}
+                  </p>
+                  <p className="admin-display-subtitle mt-1 text-sm">{taskTypeLabel(task.taskType)}</p>
+                  <p className="admin-kicker mt-2" style={{ color: palette.accent }}>
+                    {new Date(task.deadline).toLocaleDateString()}
+                  </p>
+                </div>
+                <StatusBadge status={task.status} />
+              </div>
+            </AdminSurface>
           ))}
           {stats.total === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
-              No tasks assigned to you yet. If admin just saved your name on a shoot, wait a few seconds or tap Refresh below.
-            </div>
+            <AdminSurface>
+              <p className="admin-display-subtitle text-base">No tasks assigned yet.</p>
+            </AdminSurface>
           ) : null}
         </div>
-      </GlassPanel>
+      </section>
     </div>
   );
 }

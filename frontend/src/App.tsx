@@ -5,6 +5,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminSectionLayout } from "@/layouts/AdminSectionLayout";
 import { TeamLayout } from "@/layouts/TeamLayout";
+import { TeamSectionLayout } from "@/layouts/TeamSectionLayout";
 import { CoordinatorLayout } from "@/layouts/CoordinatorLayout";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { AdminDeadlinesPage } from "@/pages/admin/AdminDeadlinesPage";
@@ -95,7 +96,9 @@ function App() {
           <Route element={<RequireEditor />}>
             <Route path="/team" element={<TeamLayout />}>
               <Route index element={<TeamDashboardPage />} />
-              <Route path="tasks" element={<TasksPage />} />
+            </Route>
+            <Route path="/team/tasks" element={<TeamSectionLayout title="My tasks" />}>
+              <Route index element={<TasksPage />} />
             </Route>
           </Route>
         </Route>
