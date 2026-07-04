@@ -5,6 +5,8 @@ import { useWorkShift } from "@/hooks/useWorkShift";
 import { formatClockTime, formatDurationHuman, workedDuration } from "@/lib/shiftHours";
 import type { WorkShiftSession } from "@/types/attendance";
 import { DeskLampVisual, type LampPhase } from "@/components/team/DeskLampVisual";
+import { MovingBorder } from "@/components/ui/moving-border";
+import { cn } from "@/lib/utils";
 import "./LampClockButton.css";
 
 type ShiftSummary = {
@@ -210,10 +212,24 @@ export function LampClockButton() {
     }, TRANSITION_MS);
   }, [clockIn, clockOut, clockInAt, isBusy, isCompleted, phase, session]);
 
+  const isLit = phase !== "off";
+
   return (
     <div className="lamp-clock">
       <div className="lamp-clock__panel">
-        <div className={`lamp-clock__stage${phase !== "off" ? " lamp-clock__stage--lit" : ""}`}>
+        <MovingBorder
+          radius={14}
+          borderWidth={2}
+          gradientWidth={isLit ? 88 : 56}
+          duration={isLit ? 2.8 : 4.5}
+          colors={
+            isLit
+              ? ["#fde68a", "#d4af37", "#f59e0b", "#b8860b"]
+              : ["#5227ff", "#71717a", "#a78bfa", "#3f3f46"]
+          }
+          outerClassName="lamp-clock__border w-full max-w-[176px] mx-auto"
+          className={cn("lamp-clock__stage overflow-hidden bg-[#0a0a0a]", isLit && "lamp-clock__stage--lit")}
+        >
           <motion.div
             className="lamp-clock__hit"
             onClick={() => void handleTap()}
@@ -231,7 +247,7 @@ export function LampClockButton() {
           >
             <DeskLampVisual phase={phase} breathing={phase === "on"} />
           </motion.div>
-        </div>
+        </MovingBorder>
 
         <div className="lamp-clock__meta">
           <p className="lamp-clock__title">{copy.title}</p>
