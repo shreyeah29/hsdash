@@ -46,10 +46,15 @@ export function RealtimeSync() {
       void qc.invalidateQueries({ queryKey: ["my-notifications"] });
     };
 
+    const bumpAttendance = () => {
+      void qc.invalidateQueries({ queryKey: ["work-shift-today"] });
+    };
+
     socket.on("task:updated", bumpAllProduction);
     socket.on("production:cleared", bumpAllProduction);
     socket.on("assignment:updated", bumpAssignments);
     socket.on("notification:new", bumpNotifications);
+    socket.on("attendance:updated", bumpAttendance);
 
     return () => {
       socket?.disconnect();

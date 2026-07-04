@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/auth";
 import { taskTypeLabel } from "@/lib/calendarUtils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { crewLiveQueryOptions } from "@/hooks/useCrewLiveData";
+import { LampClockButton } from "@/components/team/LampClockButton";
 
 function greeting() {
   const h = new Date().getHours();
@@ -102,32 +103,37 @@ export function TeamDashboardPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
-      <AdminHero>
-        <p className="admin-kicker">
-          {greeting()}, {firstName}
-        </p>
-        <h1 className="admin-display-hero mt-4 max-w-5xl">
-          {stats.open > 0 ? `${stats.open} cuts need your signature` : "Your edit bay is clear"}
-        </h1>
-        <p className="admin-display-subtitle mt-4 text-base lg:text-lg">
-          {stats.urgent > 0 ? `${stats.urgent} due within 24h · ` : ""}
-          {stats.dueThisWeek} due this week · {friendlyToday()}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button type="button" className="admin-btn admin-btn--solid" onClick={() => navigate("/team/tasks")}>
-            Jump into tasks
-          </button>
-          <button
-            type="button"
-            className="admin-btn"
-            disabled={isFetching}
-            onClick={() => {
-              void refetchTasks();
-              void qc.invalidateQueries({ queryKey: ["my-notifications"] });
-            }}
-          >
-            {isFetching ? "Refreshing…" : "Refresh"}
-          </button>
+      <AdminHero className="overflow-hidden">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)] lg:items-stretch">
+          <div>
+            <p className="admin-kicker">
+              {greeting()}, {firstName}
+            </p>
+            <h1 className="admin-display-hero mt-4 max-w-5xl">
+              {stats.open > 0 ? `${stats.open} cuts need your signature` : "Your edit bay is clear"}
+            </h1>
+            <p className="admin-display-subtitle mt-4 text-base lg:text-lg">
+              {stats.urgent > 0 ? `${stats.urgent} due within 24h · ` : ""}
+              {stats.dueThisWeek} due this week · {friendlyToday()}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button type="button" className="admin-btn admin-btn--solid" onClick={() => navigate("/team/tasks")}>
+                Jump into tasks
+              </button>
+              <button
+                type="button"
+                className="admin-btn"
+                disabled={isFetching}
+                onClick={() => {
+                  void refetchTasks();
+                  void qc.invalidateQueries({ queryKey: ["my-notifications"] });
+                }}
+              >
+                {isFetching ? "Refreshing…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+          <LampClockButton />
         </div>
       </AdminHero>
 
