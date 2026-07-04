@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 import { Ballpit } from "@/components/login/Ballpit";
 
-/** React Bits demo — bright white, grey, lavender, violet (no dark/black stops). */
-const BALLPIT_COLORS = [0xffffff, 0xf4f4f5, 0xe4e4e7, 0xb497cf, 0x5227ff, 0xa78bfa];
+/** React Bits demo palette — white, ash, violet (3 stops, even mix). */
+const BALLPIT_COLORS = [0xffffff, 0x3a3a42, 0x5227ff];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
       <div className="fixed inset-0 z-0">
         <Ballpit
-          count={110}
+          count={100}
           gravity={0.7}
           friction={0.8}
           wallBounce={0.95}
@@ -18,6 +18,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           ambientColor={0xffffff}
           ambientIntensity={1}
           lightIntensity={200}
+          materialParams={{ metalness: 0.5, roughness: 0.5, clearcoat: 1, clearcoatRoughness: 0.15 }}
           className="h-full w-full"
         />
       </div>
