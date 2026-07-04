@@ -48,6 +48,8 @@ export function RealtimeSync() {
 
     const bumpAttendance = () => {
       void qc.invalidateQueries({ queryKey: ["work-shift-today"] });
+      void qc.invalidateQueries({ queryKey: ["admin-attendance-alerts"] });
+      void qc.invalidateQueries({ queryKey: ["admin-task-activity"] });
     };
 
     socket.on("task:updated", bumpAllProduction);

@@ -2,14 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import { useWorkShift } from "@/hooks/useWorkShift";
-import {
-  formatClockTime,
-  formatCountdown,
-  formatDurationHuman,
-  fullShiftTargetTime,
-  timeUntilFullShift,
-  workedDuration,
-} from "@/lib/shiftHours";
+import { formatClockTime, formatDurationHuman, workedDuration } from "@/lib/shiftHours";
 import type { WorkShiftSession } from "@/types/attendance";
 import { DeskLampVisual, type LampPhase } from "@/components/team/DeskLampVisual";
 import "./LampClockButton.css";
@@ -131,7 +124,6 @@ function StatusBadge({ phase, completed }: { phase: LampPhase; completed: boolea
 export function LampClockButton() {
   const { data, isLoading, clockIn, clockOut } = useWorkShift();
   const [phase, setPhase] = useState<LampPhase>("off");
-  const [tick, setTick] = useState(0);
   const [summary, setSummary] = useState<ShiftSummary | null>(null);
   const [lateNotice, setLateNotice] = useState<string | null>(null);
   const [justLoggedOut, setJustLoggedOut] = useState(false);
@@ -152,22 +144,7 @@ export function LampClockButton() {
     }
   }, [isActive, isBusy, summary]);
 
-  useEffect(() => {
-    if (phase !== "on") return;
-    const id = window.setInterval(() => setTick((n) => n + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [phase]);
-
   const clockInAt = session?.clockInAt ? new Date(session.clockInAt) : null;
-
-  const live = useMemo(() => {
-    void tick;
-    if (!clockInAt || phase !== "on") return null;
-    const worked = workedDuration(clockInAt);
-    const untilLogout = timeUntilFullShift(clockInAt);
-    const logoutAt = fullShiftTargetTime(clockInAt);
-    return { worked, untilLogout, logoutAt };
-  }, [clockInAt, phase, tick]);
 
   const copy = useMemo(() => {
     if (phase === "opening") {
@@ -233,45 +210,37 @@ export function LampClockButton() {
     }, TRANSITION_MS);
   }, [clockIn, clockOut, clockInAt, isBusy, isCompleted, phase, session]);
 
-  const timerLabel = phase === "on" && live ? formatCountdown(live.worked) : null;
-
   return (
     <div className="lamp-clock">
       <div className="lamp-clock__panel">
-        <motion.div
-          className="lamp-clock__hit"
-          onClick={() => void handleTap()}
-          role="button"
-          tabIndex={isBusy || isCompleted ? -1 : 0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              void handleTap();
-            }
-          }}
-          aria-disabled={isBusy || isCompleted}
-          aria-label={phase === "on" ? "Clock out" : "Clock in"}
-          whileTap={isBusy || isCompleted ? undefined : { scale: 0.985 }}
-        >
-          <DeskLampVisual phase={phase} breathing={phase === "on"} />
-        </motion.div>
+        <div className={`lamp-clock__stage${phase !== "off" ? " lamp-clock__stage--lit" : ""}`}>
+          <motion.div
+            className="lamp-clock__hit"
+            onClick={() => void handleTap()}
+            role="button"
+            tabIndex={isBusy || isCompleted ? -1 : 0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                void handleTap();
+              }
+            }}
+            aria-disabled={isBusy || isCompleted}
+            aria-label={phase === "on" ? "Clock out" : "Clock in"}
+            whileTap={isBusy || isCompleted ? undefined : { scale: 0.985 }}
+          >
+            <DeskLampVisual phase={phase} breathing={phase === "on"} />
+          </motion.div>
+        </div>
 
         <div className="lamp-clock__meta">
           <p className="lamp-clock__title">{copy.title}</p>
-          <p className="lamp-clock__subtitle">{copy.subtitle}</p>
+          {phase !== "on" ? <p className="lamp-clock__subtitle">{copy.subtitle}</p> : null}
 
-          <StatusBadge phase={phase} completed={isCompleted || justLoggedOut} />
-
-          {timerLabel ? (
-            <p className="lamp-clock__timer">
-              Working for <span>{timerLabel}</span>
-            </p>
-          ) : null}
-
-          {phase === "on" && live && live.untilLogout > 0 ? (
-            <p className="lamp-clock__logout">
-              Logout in {formatCountdown(live.untilLogout)} · until {formatClockTime(live.logoutAt)}
-            </p>
+          {phase === "opening" || phase === "closing" ? (
+            <StatusBadge phase={phase} completed={isCompleted || justLoggedOut} />
+          ) : phase === "off" ? (
+            <StatusBadge phase={phase} completed={isCompleted || justLoggedOut} />
           ) : null}
 
           {clockInAt && phase === "on" ? (

@@ -1,9 +1,10 @@
 import { calendarDayKeyFromIso, localDayKey } from "@/lib/calendarUtils";
+import type { AttendanceAlertRow } from "@/types/attendance";
 import type { Task, TaskStatus, Team, User } from "@/types/domain";
 
 export type ActivityPeriodFilter = "today" | "week" | "month" | "all";
-export type ActivityTypeFilter = "all" | "assigned" | "started" | "completed" | "delayed";
-export type OpsActivityKind = "assigned" | "started" | "completed" | "delayed";
+export type ActivityTypeFilter = "all" | "assigned" | "started" | "completed" | "delayed" | "attendance";
+export type OpsActivityKind = "assigned" | "started" | "completed" | "delayed" | "attendance";
 export type MemberHealthStatus = "available" | "busy" | "delayed" | "noActivity";
 
 export type TaskActivityRow = {
@@ -133,6 +134,8 @@ export function opsKindLabel(kind: OpsActivityKind) {
       return "Completed";
     case "delayed":
       return "Delayed";
+    case "attendance":
+      return "Attendance";
   }
 }
 
@@ -146,6 +149,8 @@ export function opsKindColor(kind: OpsActivityKind) {
       return "text-emerald-700 bg-emerald-50 border-emerald-200";
     case "delayed":
       return "text-rose-700 bg-rose-50 border-rose-200";
+    case "attendance":
+      return "text-amber-800 bg-amber-50 border-amber-200";
   }
 }
 
@@ -201,6 +206,22 @@ export function opsActivityFromRow(a: TaskActivityRow): OpsActivityEntry {
   };
 }
 
+function opsActivityFromAttendance(alert: AttendanceAlertRow): OpsActivityEntry {
+  return {
+    id: alert.id,
+    taskId: "",
+    eventId: "",
+    kind: "attendance",
+    timestamp: new Date(alert.occurredAt),
+    memberId: alert.userId,
+    memberName: alert.user?.name ?? "Unknown",
+    memberTeam: alert.user?.team ?? undefined,
+    eventName: "Attendance",
+    taskName: alert.message,
+    synthetic: false,
+  };
+}
+
 function opsActivityFromTask(task: Task): OpsActivityEntry | null {
   if (!task.assignedToId) return null;
   return {
@@ -218,13 +239,16 @@ function opsActivityFromTask(task: Task): OpsActivityEntry | null {
   };
 }
 
-export function buildOpsEntries(activities: TaskActivityRow[], tasks: Task[]) {
+export function buildOpsEntries(activities: TaskActivityRow[], tasks: Task[], attendanceAlerts: AttendanceAlertRow[] = []) {
   const activityTaskIds = new Set(activities.map((a) => a.taskId));
   const entries = activities.map(opsActivityFromRow);
   for (const task of tasks) {
     if (activityTaskIds.has(task.id)) continue;
     const synthetic = opsActivityFromTask(task);
     if (synthetic) entries.push(synthetic);
+  }
+  for (const alert of attendanceAlerts) {
+    entries.push(opsActivityFromAttendance(alert));
   }
   entries.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return entries;
@@ -265,8 +289,9 @@ export function buildOpsDashboard(
   tasks: Task[],
   filters: OpsDashboardFilters,
   roster: User[] = [],
+  attendanceAlerts: AttendanceAlertRow[] = [],
 ): OpsDashboardData {
-  const allEntries = buildOpsEntries(activities, tasks);
+  const allEntries = buildOpsEntries(activities, tasks, attendanceAlerts);
   const filtered = applyOpsFilters(allEntries, filters);
   const rosterById = new Map(roster.map((m) => [m.id, m]));
   const memberIds = new Set<string>();
@@ -394,6 +419,8 @@ export function buildOpsDashboard(
         break;
       case "delayed":
         delayedMembers.add(e.memberName);
+        break;
+      case "attendance":
         break;
     }
     eventsMap.set(e.eventId, {

@@ -12,6 +12,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  gap: 0.65rem;
+}
+
+.lamp-clock__stage {
+  width: 100%;
+  max-width: 168px;
+  margin: 0 auto;
+  border: 2px solid #000;
+  border-radius: 14px;
+  background: #0a0a0a;
+  box-shadow: 4px 4px 0 #000;
+  overflow: hidden;
+}
+
+.lamp-clock__stage--lit {
+  background: radial-gradient(ellipse at 50% 88%, rgba(212, 175, 55, 0.18) 0%, #0a0a0a 52%);
 }
 
 .lamp-clock__hit {
@@ -23,11 +39,19 @@
   background: transparent;
   cursor: pointer;
   width: 100%;
-  min-height: 280px;
+  min-height: 148px;
   touch-action: manipulation;
   outline: none;
   display: grid;
-  place-items: center;
+  place-items: end center;
+}
+
+.lamp-clock__stage .ref-lamp {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto -18px;
+  transform: scale(0.72);
+  transform-origin: center bottom;
 }
 
 .lamp-clock__hit[aria-disabled="true"] {
@@ -42,7 +66,6 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  margin-top: 0.25rem;
   text-align: center;
 }
 
@@ -149,9 +172,9 @@
 }
 
 .lamp-clock__started {
-  margin: 0.35rem 0 0;
-  font-size: 0.68rem;
-  color: #a1a1aa;
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: #71717a;
 }
 
 .lamp-clock__late {

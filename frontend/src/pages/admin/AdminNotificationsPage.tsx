@@ -13,6 +13,7 @@ import {
   useAdminPalette,
 } from "@/components/admin/AdminUi";
 import type { Task, User } from "@/types/domain";
+import type { AttendanceAlertRow } from "@/types/attendance";
 import {
   buildOpsDashboard,
   formatActivityWhen,
@@ -41,6 +42,13 @@ async function fetchTasks() {
 async function fetchRoster() {
   const { data } = await api.get<{ users: User[] }>("/production-calendar/team-members");
   return data.users;
+}
+
+async function fetchAttendanceAlerts() {
+  const { data } = await api.get<{ alerts: AttendanceAlertRow[] }>("/admin/attendance-alerts", {
+    params: { limit: 80 },
+  });
+  return data.alerts;
 }
 
 function activityLoadErrorMessage(error: unknown): string {
@@ -75,10 +83,11 @@ export function AdminNotificationsPage() {
   const activityQuery = useQuery({ queryKey: ["admin-task-activity"], queryFn: fetchActivity });
   const tasksQuery = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks });
   const rosterQuery = useQuery({ queryKey: ["production-calendar-roster"], queryFn: fetchRoster });
+  const attendanceQuery = useQuery({ queryKey: ["admin-attendance-alerts"], queryFn: fetchAttendanceAlerts });
 
-  const isLoading = activityQuery.isLoading || tasksQuery.isLoading;
+  const isLoading = activityQuery.isLoading || tasksQuery.isLoading || attendanceQuery.isLoading;
   const error = activityQuery.error;
-  const isRefetching = activityQuery.isRefetching || tasksQuery.isRefetching;
+  const isRefetching = activityQuery.isRefetching || tasksQuery.isRefetching || attendanceQuery.isRefetching;
 
   const dashboard = useMemo(() => {
     return buildOpsDashboard(
@@ -86,13 +95,15 @@ export function AdminNotificationsPage() {
       tasksQuery.data ?? [],
       { period, type, search, eventId: eventId || null, memberId: memberId || null },
       rosterQuery.data ?? [],
+      attendanceQuery.data ?? [],
     );
-  }, [activityQuery.data, tasksQuery.data, rosterQuery.data, period, type, search, eventId, memberId]);
+  }, [activityQuery.data, tasksQuery.data, rosterQuery.data, attendanceQuery.data, period, type, search, eventId, memberId]);
 
   function refetchAll() {
     void activityQuery.refetch();
     void tasksQuery.refetch();
     void rosterQuery.refetch();
+    void attendanceQuery.refetch();
   }
 
   return (
@@ -139,6 +150,7 @@ export function AdminNotificationsPage() {
             <option value="started">Started</option>
             <option value="completed">Completed</option>
             <option value="delayed">Delayed</option>
+            <option value="attendance">Attendance</option>
           </AdminSelect>
           <AdminSelect value={eventId || "ALL"} onChange={(e) => setEventId(e.target.value === "ALL" ? "" : e.target.value)}>
             <option value="ALL">All events</option>

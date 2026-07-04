@@ -11,10 +11,12 @@ import { useAdminThemeStore } from "@/store/adminTheme";
 import { cn } from "@/lib/utils";
 import {
   WEEKDAYS,
-  calendarDayKeyFromIso,
   formatDisplayDate,
+  groupOpenTasksByDeadlineDay,
   localDayKey,
   monthRangeIso,
+  runwayStatusIsDelayed,
+  runwayStatusLabel,
   taskTypeLabel,
   DELIVERABLE_DEADLINE_DAYS,
 } from "@/lib/calendarUtils";
@@ -28,14 +30,14 @@ async function fetchOverviewTasks() {
 
 function RunwayTaskCard({ task }: { task: Task }) {
   const palette = useAdminThemeStore((s) => s.palette);
-  const overdue = +new Date(task.deadline) < +new Date(new Date().setHours(0, 0, 0, 0));
+  const delayed = runwayStatusIsDelayed(task);
 
   return (
     <li
       className="rounded-2xl border px-4 py-3"
       style={{
         backgroundColor: palette.card,
-        borderColor: overdue ? `${palette.error}55` : palette.border,
+        borderColor: delayed ? `${palette.error}55` : palette.border,
       }}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -50,7 +52,13 @@ function RunwayTaskCard({ task }: { task: Task }) {
             {task.assignedTo?.name ?? "Unassigned"}
           </p>
         </div>
-        <StatusBadge status={task.status} />
+        {delayed ? (
+          <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+            {runwayStatusLabel(task)}
+          </span>
+        ) : (
+          <StatusBadge status={task.status} />
+        )}
       </div>
     </li>
   );
@@ -73,11 +81,7 @@ export function AdminDeliverablesRunway() {
   const openTasks = useMemo(() => tasks.filter((t) => t.status !== TaskStatus.COMPLETED), [tasks]);
 
   const duesByDay = useMemo(() => {
-    const m = new Map<string, Task[]>();
-    for (const t of openTasks) {
-      const dk = calendarDayKeyFromIso(t.deadline);
-      m.set(dk, [...(m.get(dk) ?? []), t]);
-    }
+    const m = groupOpenTasksByDeadlineDay(openTasks);
     for (const [, list] of m) list.sort((a, b) => a.taskType.localeCompare(b.taskType));
     return m;
   }, [openTasks]);
@@ -109,7 +113,7 @@ export function AdminDeliverablesRunway() {
               {label}
             </h2>
             <p className="mt-1 text-sm" style={{ color: palette.textSecondary }}>
-              {isLoading ? "Loading…" : "Amber dot = deliverable due"}
+              {isLoading ? "Loading…" : "Amber = due · Rose = delayed (rolled to today)"}
             </p>
           </div>
           <div className="flex gap-2">
@@ -156,6 +160,7 @@ export function AdminDeliverablesRunway() {
             const dueList = duesByDay.get(key) ?? [];
             const inMonth = key >= from && key <= to;
             const dueN = inMonth ? dueList.length : 0;
+            const hasDelayed = dueList.some((t) => runwayStatusIsDelayed(t));
             const isToday = key === todayKey;
             const isSel = selectedKey === key;
 
@@ -176,7 +181,12 @@ export function AdminDeliverablesRunway() {
               >
                 <div className="flex items-center justify-between gap-1 font-semibold">
                   <span>{cell.day}</span>
-                  {dueN > 0 ? <span className="h-2 w-2 rounded-full bg-amber-400" title="Due" /> : null}
+                  {dueN > 0 ? (
+                    <span
+                      className={cn("h-2 w-2 rounded-full", hasDelayed ? "bg-rose-500" : "bg-amber-400")}
+                      title={hasDelayed ? "Delayed" : "Due"}
+                    />
+                  ) : null}
                 </div>
                 <div className="mt-1 space-y-0.5 overflow-hidden" style={{ color: palette.textSecondary }}>
                   {dueList.slice(0, 2).map((t) => (
