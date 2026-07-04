@@ -106,11 +106,7 @@ export function LoginPage({ loginKind }: { loginKind: LoginKind }) {
           Back
         </Link>
 
-        <form
-          className={`nb-form${isAdmin ? "" : " nb-form--team"}`}
-          onSubmit={form.handleSubmit(onSubmit)}
-          noValidate
-        >
+        <form className="nb-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <h1 className="nb-title">
             {title}
             <span>{subtitle}</span>

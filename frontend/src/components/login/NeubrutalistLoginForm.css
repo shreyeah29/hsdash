@@ -21,10 +21,6 @@
   box-shadow: 6px 6px 0 var(--main-color);
 }
 
-.nb-form--team {
-  --input-focus: #6d28d9;
-}
-
 .nb-title {
   color: var(--font-color);
   font-weight: 900;

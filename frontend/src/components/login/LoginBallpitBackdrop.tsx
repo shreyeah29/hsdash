@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 import { Ballpit } from "@/components/login/Ballpit";
 
-/**
- * React Bits Ballpit demo palette — white, grey, lavender, violet, indigo.
- * Matches the reactbits.dev preview (glossy mixed spheres on black).
- */
-const BALLPIT_COLORS = [0xffffff, 0xe4e4e7, 0xb497cf, 0x5227ff, 0x4338ca, 0x52525b];
+/** React Bits demo — bright white, grey, lavender, violet (no dark/black stops). */
+const BALLPIT_COLORS = [0xffffff, 0xf4f4f5, 0xe4e4e7, 0xb497cf, 0x5227ff, 0xa78bfa];
 
 export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
   return (
@@ -18,6 +15,9 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           wallBounce={0.95}
           followCursor
           colors={BALLPIT_COLORS}
+          ambientColor={0xffffff}
+          ambientIntensity={3}
+          lightIntensity={420}
           className="h-full w-full"
         />
       </div>

@@ -595,7 +595,7 @@ const DEFAULT_CONFIG: BallpitMeshConfig = {
   ambientColor: 0xffffff,
   ambientIntensity: 1,
   lightIntensity: 200,
-  materialParams: { metalness: 0.5, roughness: 0.5, clearcoat: 1, clearcoatRoughness: 0.15 },
+  materialParams: { metalness: 0.2, roughness: 0.38, clearcoat: 1, clearcoatRoughness: 0.1 },
   minSize: 0.5,
   maxSize: 1,
   size0: 1,
@@ -693,6 +693,7 @@ function createBallpit(canvas: HTMLCanvasElement, config: Partial<BallpitMeshCon
     rendererOptions: { antialias: true, alpha: true },
   });
   viewport.renderer.toneMapping = ACESFilmicToneMapping;
+  viewport.renderer.toneMappingExposure = 1.45;
   viewport.camera.position.set(0, 0, 20);
   viewport.camera.lookAt(0, 0, 0);
   viewport.cameraMaxAspect = 1.5;
@@ -788,6 +789,7 @@ export type BallpitProps = {
   maxX?: number;
   maxY?: number;
   maxZ?: number;
+  materialParams?: BallpitMeshConfig["materialParams"];
   style?: CSSProperties;
 };
 
