@@ -37,7 +37,7 @@ export function AdminNavBar() {
               className="h-9 w-9 rounded-full border-2 border-black object-cover object-top lg:h-10 lg:w-10"
             />
           ) : null}
-          <p className="admin-kicker hidden sm:block">{profile ? profile.name : "Admin"}</p>
+          <p className="admin-nav-profile-name truncate">{profile ? profile.name : "Admin"}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
