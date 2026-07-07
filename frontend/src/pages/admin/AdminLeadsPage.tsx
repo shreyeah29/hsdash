@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Copy, ExternalLink, FileText, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
@@ -34,6 +34,15 @@ const STATUS_DOT: Record<LeadStatus, string> = {
   LOST: "#C45B52",
   ARCHIVED: "#6B7280",
 };
+
+const PIPELINE_STATUSES: LeadStatus[] = [
+  LeadStatusEnum.NEW,
+  LeadStatusEnum.CONTACTED,
+  LeadStatusEnum.NEGOTIATION,
+  LeadStatusEnum.CONFIRMED,
+];
+
+const OUTCOME_STATUSES: LeadStatus[] = [LeadStatusEnum.LOST, LeadStatusEnum.ARCHIVED];
 
 async function fetchStats() {
   const { data } = await api.get<LeadStats>("/admin/leads/stats");
@@ -283,141 +292,179 @@ export function AdminLeadsPage() {
       </AdminSurface>
 
       <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
           {lead ? (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex flex-wrap items-center gap-2" style={{ color: palette.text }}>
-                  {displayName(lead)}
-                  <StatusBadge status={lead.status} />
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="grid gap-4 text-sm sm:grid-cols-2">
-                <Info label="Phone" value={lead.phoneNumber} />
-                {lead.email ? <Info label="Email" value={lead.email} /> : null}
-                <Info label="Event date" value={fmtDate(lead.eventDate)} />
-                <Info label="Location" value={lead.eventLocation} />
-                <Info label="Source" value={LEAD_SOURCE_LABELS[lead.source]} />
-                <Info label="Type" value={lead.eventType === "WEDDING" ? "Wedding" : "Other"} />
-                {lead.assignedTo ? <Info label="Assigned" value={lead.assignedTo.name} /> : null}
+            <div className="flex flex-col">
+              <div className="border-b px-6 py-5" style={{ borderColor: palette.border }}>
+                <DialogHeader className="mb-0">
+                  <DialogTitle className="text-xl font-bold tracking-tight" style={{ color: palette.text }}>
+                    {displayName(lead)}
+                  </DialogTitle>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={lead.status} />
+                    <span className="text-xs" style={{ color: palette.textSecondary }}>
+                      {LEAD_SOURCE_LABELS[lead.source]} · {fmtDate(lead.eventDate)}
+                    </span>
+                  </div>
+                </DialogHeader>
               </div>
 
-              {lead.message ? (
-                <div className="rounded-xl border p-3 text-sm" style={{ borderColor: palette.border, backgroundColor: palette.surface, color: palette.text }}>
-                  {lead.message}
-                </div>
-              ) : null}
+              <div className="space-y-6 px-6 py-5">
+                <LeadModalSection label="Contact & event">
+                  <div className="grid gap-4 rounded-xl border-2 border-black p-4 sm:grid-cols-2" style={{ backgroundColor: palette.surface }}>
+                    <Info label="Phone" value={lead.phoneNumber} />
+                    {lead.email ? <Info label="Email" value={lead.email} /> : <Info label="Email" value="—" />}
+                    <Info label="Event date" value={fmtDate(lead.eventDate)} />
+                    <Info label="Location" value={lead.eventLocation} />
+                    <Info label="Type" value={lead.eventType === "WEDDING" ? "Wedding" : "Other"} />
+                    {lead.assignedTo ? <Info label="Assigned" value={lead.assignedTo.name} /> : <Info label="Assigned" value="Unassigned" />}
+                  </div>
+                </LeadModalSection>
 
-              <div className="flex flex-wrap gap-2">
-                <AdminSelect value={lead.status} onChange={(e) => patchLead.mutate({ id: lead.id, status: e.target.value as LeadStatus })}>
-                  {Object.values(LeadStatusEnum).map((s) => (
-                    <option key={s} value={s}>
-                      {LEAD_STATUS_LABELS[s]}
-                    </option>
-                  ))}
-                </AdminSelect>
-                <AdminSelect
-                  value={lead.assignedToId ?? "NONE"}
-                  onChange={(e) => patchLead.mutate({ id: lead.id, assignedToId: e.target.value === "NONE" ? null : e.target.value })}
-                >
-                  <option value="NONE">Unassigned</option>
-                  {(rosterQ.data ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </AdminSelect>
-              </div>
+                {lead.message ? (
+                  <LeadModalSection label="Enquiry message">
+                    <div className="rounded-xl border-2 border-black p-4 text-sm leading-relaxed" style={{ backgroundColor: palette.surface, color: palette.text }}>
+                      {lead.message}
+                    </div>
+                  </LeadModalSection>
+                ) : null}
 
-              {lead.status === "CONFIRMED" && !lead.convertedEntryId ? (
-                <AdminButton className="w-full" disabled={convertLead.isPending} onClick={() => convertLead.mutate(lead.id)}>
-                  <UserPlus className="h-4 w-4" />
-                  {convertLead.isPending ? "Converting…" : "Convert to client"}
-                </AdminButton>
-              ) : null}
-              {lead.convertedEntryId ? <p className="text-sm" style={{ color: palette.success }}>Converted — calendar entry created.</p> : null}
+                <LeadModalSection label="Pipeline stage">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {PIPELINE_STATUSES.map((status) => (
+                        <LeadStatusStageButton
+                          key={status}
+                          status={status}
+                          active={lead.status === status}
+                          disabled={patchLead.isPending}
+                          onSelect={() => {
+                            if (lead.status !== status) patchLead.mutate({ id: lead.id, status });
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+                        Outcome
+                      </span>
+                      {OUTCOME_STATUSES.map((status) => (
+                        <LeadStatusStageButton
+                          key={status}
+                          status={status}
+                          active={lead.status === status}
+                          disabled={patchLead.isPending}
+                          onSelect={() => {
+                            if (lead.status !== status) patchLead.mutate({ id: lead.id, status });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </LeadModalSection>
 
-              {lead.status === "NEGOTIATION" ? (
-                <Link
-                  to={`/admin/quotations/builder/${lead.id}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition"
-                  style={{ borderColor: `${palette.accent}66`, backgroundColor: `${palette.accent}14`, color: palette.text }}
-                >
-                  <FileText className="h-4 w-4" style={{ color: palette.accent }} />
-                  Create quotation
-                </Link>
-              ) : null}
+                <LeadModalSection label="Assign to">
+                  <AdminSelect
+                    className="w-full"
+                    value={lead.assignedToId ?? "NONE"}
+                    onChange={(e) => patchLead.mutate({ id: lead.id, assignedToId: e.target.value === "NONE" ? null : e.target.value })}
+                  >
+                    <option value="NONE">Unassigned</option>
+                    {(rosterQ.data ?? []).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                </LeadModalSection>
 
-              {(quotationsQ.data?.length ?? 0) > 0 ? (
-                <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
-                    Quotations
-                  </h3>
-                  <ul className="space-y-3">
-                    {quotationsQ.data!.map((q) => {
-                      const url = getQuotationPublicUrl(q.slug);
-                      return (
-                        <li key={q.id} className="rounded-xl border p-4 text-sm" style={{ borderColor: palette.border }}>
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <span className="font-medium" style={{ color: palette.text }}>
-                                Version {q.version}
-                              </span>
-                              <span className="ml-2" style={{ color: palette.textSecondary }}>
-                                {q.packageAmount}
+                {lead.status === "CONFIRMED" && !lead.convertedEntryId ? (
+                  <AdminButton className="w-full" disabled={convertLead.isPending} onClick={() => convertLead.mutate(lead.id)}>
+                    <UserPlus className="h-4 w-4" />
+                    {convertLead.isPending ? "Converting…" : "Convert to client"}
+                  </AdminButton>
+                ) : null}
+                {lead.convertedEntryId ? (
+                  <p className="rounded-xl border-2 border-black px-4 py-3 text-sm font-medium" style={{ borderColor: `${palette.success}66`, backgroundColor: `${palette.success}14`, color: palette.success }}>
+                    Converted — calendar entry created.
+                  </p>
+                ) : null}
+
+                {lead.status === "NEGOTIATION" ? (
+                  <Link
+                    to={`/admin/quotations/builder/${lead.id}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-black px-4 py-3 text-sm font-semibold transition hover:opacity-90"
+                    style={{ backgroundColor: `${palette.accent}14`, color: palette.text }}
+                  >
+                    <FileText className="h-4 w-4" style={{ color: palette.accent }} />
+                    Create quotation
+                  </Link>
+                ) : null}
+
+                {(quotationsQ.data?.length ?? 0) > 0 ? (
+                  <LeadModalSection label="Quotations">
+                    <ul className="space-y-3">
+                      {quotationsQ.data!.map((q) => {
+                        const url = getQuotationPublicUrl(q.slug);
+                        return (
+                          <li key={q.id} className="rounded-xl border-2 border-black p-4 text-sm" style={{ backgroundColor: palette.surface }}>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <span className="font-semibold" style={{ color: palette.text }}>
+                                  Version {q.version}
+                                </span>
+                                <span className="ml-2" style={{ color: palette.textSecondary }}>
+                                  {q.packageAmount}
+                                </span>
+                              </div>
+                              <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase" style={{ borderColor: palette.border, color: palette.textSecondary }}>
+                                {q.status.replaceAll("_", " ")}
                               </span>
                             </div>
-                            <span className="rounded-full border px-2 py-0.5 text-[10px] uppercase" style={{ borderColor: palette.border, color: palette.textSecondary }}>
-                              {q.status.replaceAll("_", " ")}
-                            </span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <AdminButton variant="outline" onClick={() => void copyText(url, "quote-link")}>
-                              Copy link
-                            </AdminButton>
-                            <AdminButton
-                              variant="outline"
-                              onClick={() => void copyText(quotationWhatsAppMessage(displayName(lead), url), "quote-message")}
-                            >
-                              WhatsApp
-                            </AdminButton>
-                            <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-2xl border px-3 py-2 text-xs" style={{ borderColor: palette.border, color: palette.text }}>
-                              <ExternalLink className="h-3 w-3" />
-                              Preview
-                            </a>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ) : null}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <AdminButton variant="outline" onClick={() => void copyText(url, "quote-link")}>
+                                Copy link
+                              </AdminButton>
+                              <AdminButton
+                                variant="outline"
+                                onClick={() => void copyText(quotationWhatsAppMessage(displayName(lead), url), "quote-message")}
+                              >
+                                WhatsApp
+                              </AdminButton>
+                              <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-2xl border-2 border-black px-3 py-2 text-xs font-semibold" style={{ color: palette.text }}>
+                                <ExternalLink className="h-3 w-3" />
+                                Preview
+                              </a>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </LeadModalSection>
+                ) : null}
 
-              <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
-                  Notes
-                </h3>
-                <div className="flex gap-2">
-                  <AdminInput value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add follow-up note…" />
-                  <AdminButton variant="outline" disabled={!noteText.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
-                    <MessageSquare className="h-4 w-4" />
-                  </AdminButton>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {lead.notes.map((n) => (
-                    <li key={n.id} className="rounded-xl border p-3 text-sm" style={{ borderColor: palette.border }}>
-                      <div className="text-xs" style={{ color: palette.textSecondary }}>
-                        {n.author.name} · {new Date(n.createdAt).toLocaleString()}
-                      </div>
-                      <p className="mt-1" style={{ color: palette.text }}>
-                        {n.content}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <LeadModalSection label="Notes">
+                  <div className="flex gap-2">
+                    <AdminInput value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add follow-up note…" className="flex-1" />
+                    <AdminButton variant="outline" disabled={!noteText.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+                      <MessageSquare className="h-4 w-4" />
+                    </AdminButton>
+                  </div>
+                  <ul className="mt-3 space-y-2">
+                    {lead.notes.map((n) => (
+                      <li key={n.id} className="rounded-xl border-2 border-black p-3 text-sm" style={{ backgroundColor: palette.surface }}>
+                        <div className="text-xs" style={{ color: palette.textSecondary }}>
+                          {n.author.name} · {new Date(n.createdAt).toLocaleString()}
+                        </div>
+                        <p className="mt-1" style={{ color: palette.text }}>
+                          {n.content}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </LeadModalSection>
               </div>
-            </>
+            </div>
           ) : (
             <p className="py-8 text-center text-sm" style={{ color: palette.textSecondary }}>
               Loading…
@@ -434,6 +481,42 @@ function StatusBadge({ status }: { status: LeadStatus }) {
     <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase", LEAD_STATUS_COLORS[status])}>
       {LEAD_STATUS_LABELS[status]}
     </span>
+  );
+}
+
+function LeadModalSection({ label, children }: { label: string; children: ReactNode }) {
+  const palette = useAdminPalette();
+  return (
+    <section>
+      <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.textSecondary }}>
+        {label}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function LeadStatusStageButton({
+  status,
+  active,
+  disabled,
+  onSelect,
+}: {
+  status: LeadStatus;
+  active: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onSelect}
+      className={cn("admin-chip transition-opacity", active ? "admin-chip--active" : "", disabled && "opacity-60")}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: active ? "#fff" : STATUS_DOT[status] }} />
+      {LEAD_STATUS_LABELS[status]}
+    </button>
   );
 }
 
