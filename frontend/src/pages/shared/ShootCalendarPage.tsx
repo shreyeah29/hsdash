@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { CreateDeliverableTasksDialog } from "@/components/admin/CreateDeliverableTasksDialog";
 import { AdminSurface } from "@/components/admin/AdminSurface";
 import { ShootCalendarExportTab } from "@/components/admin/ShootCalendarExportTab";
 import { useAdminThemeStore } from "@/store/adminTheme";
@@ -217,7 +216,6 @@ export function ShootCalendarPage({
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState<"calendar" | "export">("calendar");
-  const [createTasksOpen, setCreateTasksOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm(localDayKey(now.getFullYear(), now.getMonth(), now.getDate())));
@@ -567,19 +565,9 @@ export function ShootCalendarPage({
             ) : (
               <>
                 {canMutate ? (
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      type="button"
-                      variant="premium"
-                      className="w-full rounded-xl py-6"
-                      onClick={() => setCreateTasksOpen(true)}
-                    >
-                      Create deliverable tasks
-                    </Button>
-                    <Button type="button" variant="glass" className="w-full rounded-xl" onClick={openNew}>
-                      Add shoot details
-                    </Button>
-                  </div>
+                  <Button type="button" variant="glass" className="w-full rounded-xl" onClick={openNew}>
+                    Add shoot details
+                  </Button>
                 ) : null}
 
                 <div>
@@ -892,14 +880,6 @@ export function ShootCalendarPage({
             </div>
           </DialogContent>
         </Dialog>
-      ) : null}
-
-      {canMutate ? (
-        <CreateDeliverableTasksDialog
-          open={createTasksOpen}
-          onOpenChange={setCreateTasksOpen}
-          calendarDay={selectedKey}
-        />
       ) : null}
     </div>
   );

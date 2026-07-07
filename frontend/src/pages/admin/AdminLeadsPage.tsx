@@ -295,7 +295,7 @@ export function AdminLeadsPage() {
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
           {lead ? (
             <div className="flex flex-col">
-              <div className="border-b px-6 py-5" style={{ borderColor: palette.border }}>
+              <div className="border-b px-6 py-5 pr-14" style={{ borderColor: palette.border }}>
                 <DialogHeader className="mb-0">
                   <DialogTitle className="text-xl font-bold tracking-tight" style={{ color: palette.text }}>
                     {displayName(lead)}
