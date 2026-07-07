@@ -378,26 +378,35 @@ function onPointerLeave() {
 
 function onTouchStart(event: TouchEvent) {
   if (!event.touches.length) return;
-  event.preventDefault();
   globalPointer.x = event.touches[0].clientX;
   globalPointer.y = event.touches[0].clientY;
+
+  let consumesTouch = false;
   for (const [element, tracker] of pointerRegistry) {
     const rect = element.getBoundingClientRect();
-    if (pointerInside(rect)) {
-      tracker.touching = true;
-      updatePointerPosition(tracker, rect);
-      if (!tracker.hover) {
-        tracker.hover = true;
-        tracker.onEnter(tracker);
-      }
-      tracker.onMove(tracker);
+    if (!pointerInside(rect)) continue;
+
+    const target = event.target;
+    if (!(target instanceof Node) || (target !== element && !element.contains(target))) continue;
+
+    consumesTouch = true;
+    tracker.touching = true;
+    updatePointerPosition(tracker, rect);
+    if (!tracker.hover) {
+      tracker.hover = true;
+      tracker.onEnter(tracker);
     }
+    tracker.onMove(tracker);
   }
+
+  if (consumesTouch) event.preventDefault();
 }
 
 function onTouchMove(event: TouchEvent) {
   if (!event.touches.length) return;
-  event.preventDefault();
+  const anyTouching = Array.from(pointerRegistry.values()).some((tracker) => tracker.touching);
+  if (anyTouching) event.preventDefault();
+
   globalPointer.x = event.touches[0].clientX;
   globalPointer.y = event.touches[0].clientY;
   for (const [element, tracker] of pointerRegistry) {

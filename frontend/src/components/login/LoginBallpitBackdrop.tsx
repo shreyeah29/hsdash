@@ -27,7 +27,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
-      <div className="fixed inset-0 z-0">
+      <div className={`fixed inset-0 z-0${isMobile ? " pointer-events-none" : ""}`}>
         <Ballpit
           key={isMobile ? "mobile" : "desktop"}
           count={isMobile ? 48 : 100}
@@ -38,7 +38,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           gravity={0.5}
           friction={0.9975}
           wallBounce={0.98}
-          followCursor
+          followCursor={!isMobile}
           colors={BALLPIT_COLORS}
           ambientColor={0xffffff}
           ambientIntensity={1}
@@ -47,7 +47,7 @@ export function LoginBallpitBackdrop({ children }: { children: ReactNode }) {
           className="h-full w-full"
         />
       </div>
-      <div className="relative z-10 grid min-h-screen w-full place-items-center px-6 py-10 lg:px-12">{children}</div>
+      <div className="pointer-events-auto relative z-10 grid min-h-screen w-full place-items-center px-6 py-10 lg:px-12">{children}</div>
     </div>
   );
 }
