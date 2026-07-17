@@ -1,19 +1,15 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Radar,
-  CalendarDays,
-  ClipboardPenLine,
-  Flame,
-  Orbit,
-} from "lucide-react";
 import { api } from "@/services/api";
 import type { ShootCalendarEntry, Task } from "@/types/domain";
 import { TaskStatus } from "@/types/domain";
-import { GlassPanel, AnimatedStatCard, PriorityShowcaseCard, WorkloadBar } from "@/components/premium";
-import { Button } from "@/components/ui/button";
+import { AdminHero, AdminHomeShortcut, AdminSectionLabel, AdminSurface } from "@/components/admin/AdminSurface";
+import { AdminStatCard } from "@/components/admin/AdminUi";
+import { ADMIN_PALETTE } from "@/lib/adminTheme";
+import { useAuthStore } from "@/store/auth";
+import { taskTypeLabel } from "@/lib/calendarUtils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -29,6 +25,17 @@ function calendarDayKeyFromIso(iso: string) {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function friendlyToday() {
+  return new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+}
+
 async function fetchEntries(from: string, to: string) {
   const { data } = await api.get<{ entries: ShootCalendarEntry[] }>("/production-calendar/entries", {
     params: { from, to },
@@ -41,9 +48,15 @@ async function fetchTasks() {
   return data.tasks;
 }
 
+const palette = ADMIN_PALETTE;
+
 export function CoordinatorDashboardPage() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const firstName = user?.name?.split(/\s+/)[0] ?? "there";
   const now = new Date();
   const { from, to } = monthRangeIso(now.getFullYear(), now.getMonth());
+  const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 
   const { data: entries = [], isLoading: loadingCal } = useQuery({
     queryKey: ["production-calendar-entries", from, to],
@@ -57,17 +70,13 @@ export function CoordinatorDashboardPage() {
     staleTime: 60_000,
   });
 
-  const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-
   const summary = useMemo(() => {
     const open = tasks.filter((t) => t.status !== TaskStatus.COMPLETED);
     const delayed = open.filter((t) => t.status === TaskStatus.DELAYED).length;
     const unassigned = open.filter((t) => !(t.assignedToId ?? t.assignedTo?.id)).length;
     const pendingPipeline = entries.filter((e) => !e.eventId).length;
-
     const upcomingShoots = entries.filter((e) => calendarDayKeyFromIso(e.day) >= todayKey).length;
     const completedShootsMonth = entries.filter((e) => calendarDayKeyFromIso(e.day) < todayKey).length;
-
     const urgent = [...open].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)).slice(0, 6);
 
     return {
@@ -91,114 +100,132 @@ export function CoordinatorDashboardPage() {
   }, [tasks]);
 
   return (
-    <div className="space-y-10">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl space-y-3">
-        <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-900">
-          <Orbit className="h-3.5 w-3.5 text-amber-700" />
-          Coordinator runway
+    <div className="space-y-8 lg:space-y-10">
+      <AdminHero>
+        <p className="admin-kicker">
+          {greeting()}, {firstName}
         </p>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-          Orchestrate shoots. Ignite editing lanes.
-        </h1>
-        <p className="text-sm leading-relaxed text-zinc-600 md:text-[15px]">
-          Bridge logistics into deadlines — unlock post-production when you&apos;re ready, route workload without friction.
+        <h1 className="admin-display-hero mt-4 max-w-5xl">Orchestrate shoots. Ignite editing lanes.</h1>
+        <p className="admin-display-subtitle mt-4 text-base lg:text-lg">
+          Bridge logistics into deadlines — unlock post-production when you&apos;re ready · {friendlyToday()}
         </p>
-      </motion.div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button type="button" className="admin-btn admin-btn--solid" onClick={() => navigate("/coordinator/assignments")}>
+            Open assignments
+          </button>
+          <button type="button" className="admin-btn" onClick={() => navigate("/coordinator/shoot-calendar")}>
+            Shoot calendar
+          </button>
+        </div>
+      </AdminHero>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AnimatedStatCard
-          label="Pending pipeline"
-          value={loadingCal ? "—" : summary.pendingPipeline}
-          hint="Shoots awaiting kickoff"
-          icon={Radar}
-          accent="amber"
-          delay={0}
-        />
-        <AnimatedStatCard
-          label="Open deliverables"
-          value={loadingTasks ? "—" : summary.totalOpen}
-          hint={`${summary.unassigned} unassigned`}
-          icon={ClipboardPenLine}
-          accent="violet"
-          delay={0.05}
-        />
-        <AnimatedStatCard
-          label="Upcoming shoots"
-          value={loadingCal ? "—" : summary.upcomingShoots}
-          hint="This month ahead"
-          icon={CalendarDays}
-          accent="cyan"
-          delay={0.1}
-        />
-        <AnimatedStatCard
-          label="At-risk rows"
-          value={loadingTasks ? "—" : summary.delayed}
-          hint="Escalate lovingly"
-          icon={Flame}
-          accent="rose"
-          delay={0.15}
-        />
-      </div>
+      <section>
+        <AdminSectionLabel>Quick access</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <AdminHomeShortcut label="Command center" index="01" onClick={() => navigate("/coordinator")} />
+          <AdminHomeShortcut label="Shoot calendar" index="02" onClick={() => navigate("/coordinator/shoot-calendar")} />
+          <AdminHomeShortcut label="Assignments" index="03" onClick={() => navigate("/coordinator/assignments")} />
+        </div>
+      </section>
+
+      <section>
+        <AdminSectionLabel>Runway pulse</AdminSectionLabel>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard label="Pending pipeline" value={loadingCal ? "—" : summary.pendingPipeline} />
+          <AdminStatCard label="Open deliverables" value={loadingTasks ? "—" : summary.totalOpen} />
+          <AdminStatCard label="Upcoming shoots" value={loadingCal ? "—" : summary.upcomingShoots} />
+          <AdminStatCard label="At-risk rows" value={loadingTasks ? "—" : summary.delayed} />
+        </div>
+        <p className="admin-display-subtitle mt-3 text-sm">
+          {summary.unassigned} unassigned · {summary.completedShootsMonth} past days this month
+        </p>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
-        <GlassPanel shine className="p-6 md:p-8">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <AdminSurface>
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Hot runway</h2>
-              <p className="text-sm text-zinc-600">Tightest delivery windows across crews.</p>
+              <h2 className="admin-display-title text-xl">Hot runway</h2>
+              <p className="admin-display-subtitle mt-1 text-sm">Tightest delivery windows across crews.</p>
             </div>
-            <Button size="sm" variant="premium" className="rounded-xl px-5" asChild>
-              <Link to="/coordinator/assignments">Open assignment board</Link>
-            </Button>
+            <Link to="/coordinator/assignments" className="admin-btn admin-btn--solid">
+              Assignment board
+            </Link>
           </div>
-          <div className="space-y-3">
-            {summary.urgent.map((t, i) => (
-              <PriorityShowcaseCard key={t.id} task={t} index={i} />
+          <ul className="space-y-3">
+            {summary.urgent.map((t) => (
+              <li key={t.id} className="rounded-xl border-2 border-black px-4 py-3" style={{ backgroundColor: palette.surface }}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold" style={{ color: palette.text }}>
+                      {t.event?.clientName ?? "Wedding"}
+                    </p>
+                    <p className="mt-0.5 text-sm" style={{ color: palette.textSecondary }}>
+                      {taskTypeLabel(t.taskType)}
+                      {t.assignedTo?.name ? ` · ${t.assignedTo.name}` : " · Unassigned"}
+                    </p>
+                  </div>
+                  <StatusBadge status={t.status} />
+                </div>
+                <p className="mt-2 text-xs font-medium uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+                  Due {new Date(t.deadline).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                </p>
+              </li>
             ))}
             {!loadingTasks && summary.urgent.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-600">
-                Queue quiet — prime the next assignment wave from calendar unlocks.
+              <div className="rounded-xl border border-dashed border-black/30 py-12 text-center text-sm" style={{ color: palette.textSecondary }}>
+                Queue quiet — unlock the next wave from the shoot calendar.
               </div>
             ) : null}
-          </div>
-        </GlassPanel>
+          </ul>
+        </AdminSurface>
 
         <div className="space-y-4">
-          <GlassPanel className="p-6">
-            <h3 className="text-sm font-semibold text-zinc-900">Shoot footprint · month view</h3>
-            <p className="mt-1 text-xs text-zinc-600">Logistics density snapshot.</p>
+          <AdminSurface>
+            <h3 className="admin-display-title text-lg">Shoot footprint</h3>
+            <p className="admin-display-subtitle mt-1 text-sm">This month’s logistics density.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] uppercase tracking-wide text-zinc-600">Past days</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.completedShootsMonth}</p>
+              <div className="rounded-xl border-2 border-black p-4" style={{ backgroundColor: palette.surface }}>
+                <p className="admin-kicker">Past days</p>
+                <p className="admin-stat-value mt-2 text-2xl">{summary.completedShootsMonth}</p>
               </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] uppercase tracking-wide text-zinc-600">Future days</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-900">{summary.upcomingShoots}</p>
+              <div className="rounded-xl border-2 border-black p-4" style={{ backgroundColor: palette.surface }}>
+                <p className="admin-kicker">Future days</p>
+                <p className="admin-stat-value mt-2 text-2xl">{summary.upcomingShoots}</p>
               </div>
             </div>
-            <Button variant="glass" className="mt-5 w-full" asChild>
-              <Link to="/coordinator/shoot-calendar">Enter premium calendar</Link>
-            </Button>
-          </GlassPanel>
+            <button type="button" className="admin-btn mt-5 w-full" onClick={() => navigate("/coordinator/shoot-calendar")}>
+              Enter calendar
+            </button>
+          </AdminSurface>
 
-          <GlassPanel className="p-6">
-            <h3 className="text-sm font-semibold text-zinc-900">Open workload · crews</h3>
-            <div className="mt-5 space-y-5">
-              {workload.rows.map(([team, count], i) => (
-                <WorkloadBar
-                  key={team}
-                  label={team.replaceAll("_", " ")}
-                  value={count}
-                  max={workload.max}
-                  tone={i % 3 === 0 ? "amber" : i % 3 === 1 ? "violet" : "cyan"}
-                />
-              ))}
+          <AdminSurface>
+            <h3 className="admin-display-title text-lg">Open workload</h3>
+            <p className="admin-display-subtitle mt-1 text-sm">Open deliverables by crew.</p>
+            <div className="mt-5 space-y-4">
+              {workload.rows.map(([team, count]) => {
+                const pct = Math.max(8, Math.round((count / workload.max) * 100));
+                return (
+                  <div key={team}>
+                    <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
+                      <span className="font-medium capitalize" style={{ color: palette.text }}>
+                        {team.replaceAll("_", " ").toLowerCase()}
+                      </span>
+                      <span style={{ color: palette.textSecondary }}>{count}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full border border-black/20 bg-white">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: palette.accent }} />
+                    </div>
+                  </div>
+                );
+              })}
               {workload.rows.length === 0 ? (
-                <p className="text-center text-sm text-zinc-600">No workload slices yet.</p>
+                <p className="py-6 text-center text-sm" style={{ color: palette.textSecondary }}>
+                  No workload slices yet.
+                </p>
               ) : null}
             </div>
-          </GlassPanel>
+          </AdminSurface>
         </div>
       </div>
     </div>

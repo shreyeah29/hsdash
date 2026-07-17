@@ -179,7 +179,7 @@ export function ShootCalendarPage({
   embedded?: boolean;
 }) {
   const canMutate = mode === "admin";
-  const adminThemed = canMutate;
+  const adminThemed = true;
   const palette = useAdminThemeStore((s) => s.palette);
   const coordinatorMode = mode === "coordinator";
   const calendarPath = coordinatorMode ? "/coordinator/shoot-calendar" : "/admin/shoots";
@@ -407,8 +407,11 @@ export function ShootCalendarPage({
           ) : (
             <>
               Logistics mirror what Admin captured. Use{" "}
-              <span className="font-medium text-amber-700">Activate & assign crew</span> on each row to spawn deliverables and notify editors, or fine-tune in{" "}
-              <Link className="skiper-link-accent font-medium text-amber-700" to={assignmentsLink}>
+              <span className="font-medium" style={{ color: palette.accent }}>
+                Activate & assign crew
+              </span>{" "}
+              on each row to spawn deliverables and notify editors, or fine-tune in{" "}
+              <Link className="font-medium underline underline-offset-2" style={{ color: palette.accent }} to={assignmentsLink}>
                 Assignments
               </Link>
               .
@@ -654,16 +657,9 @@ export function ShootCalendarPage({
                           ) : null}
 
                           {!e.eventId ? (
-                            <Button
-                              size="sm"
+                            <button
                               type="button"
-                              variant="premium"
-                              className={cn(
-                                "rounded-xl text-black shadow-glow-amber hover:brightness-105",
-                                coordinatorMode
-                                  ? "bg-gradient-to-r from-amber-400 to-orange-500"
-                                  : "bg-gradient-to-r from-violet-500 to-cyan-500 text-white",
-                              )}
+                              className="admin-btn admin-btn--solid"
                               disabled={startPostProduction.isPending}
                               onClick={() => {
                                 setActivateEditors({
@@ -676,7 +672,7 @@ export function ShootCalendarPage({
                               }}
                             >
                               Activate & assign crew
-                            </Button>
+                            </button>
                           ) : null}
                           {canMutate ? (
                             <>
