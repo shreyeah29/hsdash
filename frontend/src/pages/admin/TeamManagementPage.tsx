@@ -33,10 +33,20 @@ type UserForm = {
 
 function errMsg(e: unknown): string {
   if (axios.isAxiosError(e)) {
-    const msg = (e.response?.data as { message?: string })?.message;
-    if (typeof msg === "string") return msg;
+    const data = e.response?.data as {
+      message?: string;
+      details?: Array<{ message?: string; path?: (string | number)[] }>;
+    };
+    if (typeof data?.message === "string") return data.message;
+    if (Array.isArray(data?.details) && data.details.length > 0) {
+      return data.details
+        .map((d) => d.message)
+        .filter(Boolean)
+        .join(" · ");
+    }
     return e.message;
   }
+  if (e instanceof Error) return e.message;
   return "Something went wrong.";
 }
 
@@ -58,6 +68,7 @@ export function TeamManagementPage() {
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"create" | "edit">("create");
+  const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [form, setForm] = useState<UserForm>({
     name: "",
     username: "",
@@ -104,25 +115,39 @@ export function TeamManagementPage() {
 
   const updateUser = useMutation({
     mutationFn: async () => {
-      await api.put(`/users/${form.id}`, {
+      const nextPassword = form.password?.trim() ?? "";
+      if (nextPassword.length > 0 && nextPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters.");
+      }
+      const payload: Record<string, unknown> = {
         name: form.name,
         username: form.username,
-        password: form.password ? form.password : undefined,
         role: form.role,
         team: form.role === Role.ADMIN ? null : form.team,
         designation: form.role === Role.ADMIN ? null : form.designation,
         isActive: form.isActive,
-      });
+      };
+      if (nextPassword.length >= 8) payload.password = nextPassword;
+      await api.put(`/users/${form.id}`, payload);
     },
     onSuccess: async () => {
       setOpen(false);
+      setPasswordNotice(null);
       await qc.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
   const resetPassword = useMutation({
     mutationFn: async ({ id, password }: { id: string; password: string }) => {
-      await api.post(`/users/${id}/reset-password`, { password });
+      const nextPassword = password.trim();
+      if (nextPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters.");
+      }
+      await api.post(`/users/${id}/reset-password`, { password: nextPassword });
+    },
+    onSuccess: () => {
+      setForm((f) => ({ ...f, password: "" }));
+      setPasswordNotice("Password updated.");
     },
   });
 
@@ -137,6 +162,7 @@ export function TeamManagementPage() {
 
   function openCreate() {
     setMode("create");
+    setPasswordNotice(null);
     setForm({
       name: "",
       username: "",
@@ -151,6 +177,7 @@ export function TeamManagementPage() {
 
   function openEdit(u: User) {
     setMode("edit");
+    setPasswordNotice(null);
     setForm({
       id: u.id,
       name: u.name,
@@ -165,10 +192,13 @@ export function TeamManagementPage() {
   }
 
   const needsTeam = form.role === Role.EDITOR || form.role === Role.COORDINATOR;
+  const passwordLen = form.password?.trim().length ?? 0;
+  const passwordOkForCreate = passwordLen >= 8;
+  const passwordOkForEdit = passwordLen === 0 || passwordLen >= 8;
   const canSubmit =
     !!form.name &&
     !!form.username &&
-    (mode === "edit" || (form.password && form.password.length >= 8)) &&
+    (mode === "create" ? passwordOkForCreate : passwordOkForEdit) &&
     (form.role === Role.ADMIN || (needsTeam && !!form.team));
 
   return (
@@ -270,10 +300,19 @@ export function TeamManagementPage() {
             <AdminInput placeholder="Username" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
             <AdminInput
               type="password"
-              placeholder={mode === "create" ? "Password (min 8)" : "New password (optional)"}
+              autoComplete="new-password"
+              placeholder={mode === "create" ? "Password (min 8)" : "New password (optional, min 8)"}
               value={form.password ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              onChange={(e) => {
+                setPasswordNotice(null);
+                setForm((f) => ({ ...f, password: e.target.value }));
+              }}
             />
+            {mode === "edit" && passwordLen > 0 && passwordLen < 8 ? (
+              <p className="text-xs" style={{ color: palette.error }}>
+                Password must be at least 8 characters.
+              </p>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2">
               <AdminSelect value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
                 <option value={Role.ADMIN}>Admin</option>
@@ -300,15 +339,22 @@ export function TeamManagementPage() {
               </span>
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} />
             </label>
+            {passwordNotice ? (
+              <p className="text-xs font-medium" style={{ color: palette.success }}>
+                {passwordNotice}
+              </p>
+            ) : null}
             {createUser.isError ? <p className="text-xs" style={{ color: palette.error }}>{errMsg(createUser.error)}</p> : null}
-            <div className="flex justify-end gap-2 border-t pt-4" style={{ borderColor: palette.border }}>
-              {mode === "edit" && form.id && form.password ? (
+            {updateUser.isError ? <p className="text-xs" style={{ color: palette.error }}>{errMsg(updateUser.error)}</p> : null}
+            {resetPassword.isError ? <p className="text-xs" style={{ color: palette.error }}>{errMsg(resetPassword.error)}</p> : null}
+            <div className="flex flex-wrap justify-end gap-2 border-t pt-4" style={{ borderColor: palette.border }}>
+              {mode === "edit" && form.id ? (
                 <AdminButton
                   variant="outline"
-                  disabled={resetPassword.isPending || form.password.length < 8}
+                  disabled={resetPassword.isPending || passwordLen < 8}
                   onClick={() => resetPassword.mutate({ id: form.id!, password: form.password! })}
                 >
-                  Reset password
+                  {resetPassword.isPending ? "Updating…" : "Reset password"}
                 </AdminButton>
               ) : null}
               <AdminButton variant="ghost" onClick={() => setOpen(false)}>

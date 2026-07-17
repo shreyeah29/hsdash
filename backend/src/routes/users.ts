@@ -79,10 +79,16 @@ usersRouter.post("/", async (req, res, next) => {
   }
 });
 
+/** Empty / whitespace passwords are treated as "not provided". */
+const optionalPasswordSchema = z.preprocess(
+  (v) => (typeof v === "string" && v.trim().length === 0 ? undefined : v),
+  z.string().min(8, "Password must be at least 8 characters").optional(),
+);
+
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   username: usernameSchema.optional(),
-  password: z.string().min(8).optional(),
+  password: optionalPasswordSchema,
   role: z.nativeEnum(Role).optional(),
   team: z.nativeEnum(Team).optional().nullable(),
   designation: z.string().optional().nullable(),
@@ -90,7 +96,10 @@ const updateUserSchema = z.object({
 });
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8),
+  password: z
+    .string()
+    .trim()
+    .min(8, "Password must be at least 8 characters"),
 });
 
 usersRouter.put("/:id", async (req, res, next) => {
@@ -99,7 +108,11 @@ usersRouter.put("/:id", async (req, res, next) => {
     const body = updateUserSchema.parse(req.body);
 
     const data: Record<string, unknown> = { ...body };
-    if (body.password) data.password = await bcrypt.hash(body.password, 12);
+    if (body.password) {
+      data.password = await bcrypt.hash(body.password, 12);
+    } else {
+      delete data.password;
+    }
     delete data.username;
     if (body.username) data.username = await assertUsernameAvailable(body.username, id);
 
