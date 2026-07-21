@@ -87,7 +87,11 @@ export function PublicEnquiryPage() {
               transition={{ duration: 0.6 }}
               className="mb-10 text-center text-white"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">HS Photography</p>
+              <img
+                src="/hswf_logo_white.png"
+                alt="HSWF"
+                className="mx-auto h-12 w-auto object-contain mix-blend-lighten md:h-14"
+              />
               <h1 className="mt-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Begin Your Story</h1>
               <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/75">
                 Tell us a little about your celebration and we&apos;ll get in touch with you shortly.
