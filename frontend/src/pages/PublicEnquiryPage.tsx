@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import "./PublicEnquiryPage.css";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
@@ -85,17 +86,14 @@ export function PublicEnquiryPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="mb-10 text-center text-white"
+              className="mb-8 text-center text-white"
             >
               <img
                 src="/hswf_logo_white_transparent.png"
                 alt="HSWF"
                 className="mx-auto mb-3 h-auto w-[min(100%,16rem)] object-contain sm:w-[min(100%,19rem)] md:w-[min(100%,22rem)]"
               />
-              <h1 className="mt-2 font-serif text-3xl font-light tracking-tight md:text-4xl">Tell us your story</h1>
-              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/75">
-                Tell us a little about your celebration and we&apos;ll get in touch with you shortly.
-              </p>
+              <h1 className="enquiry-tagline mt-2 text-xl text-white/90 md:text-2xl">Tell us your story</h1>
             </motion.div>
 
             <motion.form
