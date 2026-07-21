@@ -90,9 +90,9 @@ export function PublicEnquiryPage() {
               <img
                 src="/hswf_logo_white_transparent.png"
                 alt="HSWF"
-                className="mx-auto h-20 w-auto max-w-[min(100%,22rem)] object-contain md:h-24"
+                className="mx-auto mb-3 h-auto w-[min(100%,20rem)] object-contain sm:w-[min(100%,24rem)] md:w-[min(100%,30rem)]"
               />
-              <h1 className="mt-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Begin Your Story</h1>
+              <h1 className="mt-2 font-serif text-3xl font-light tracking-tight md:text-4xl">Begin Your Story</h1>
               <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/75">
                 Tell us a little about your celebration and we&apos;ll get in touch with you shortly.
               </p>
