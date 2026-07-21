@@ -67,19 +67,6 @@ export function PublicEnquiryPage() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-10 text-center text-white"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">HS Photography</p>
-          <h1 className="mt-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Begin Your Story</h1>
-          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/75">
-            Tell us a little about your celebration and we&apos;ll get in touch with you shortly.
-          </p>
-        </motion.div>
-
         {done ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
@@ -93,13 +80,27 @@ export function PublicEnquiryPage() {
             </p>
           </motion.div>
         ) : (
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            onSubmit={onSubmit}
-            className="space-y-5 rounded-3xl border border-white/15 bg-white/95 p-8 shadow-2xl backdrop-blur-xl md:p-10"
-          >
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-10 text-center text-white"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">HS Photography</p>
+              <h1 className="mt-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Begin Your Story</h1>
+              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/75">
+                Tell us a little about your celebration and we&apos;ll get in touch with you shortly.
+              </p>
+            </motion.div>
+
+            <motion.form
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              onSubmit={onSubmit}
+              className="space-y-5 rounded-3xl border border-white/15 bg-white/95 p-8 shadow-2xl backdrop-blur-xl md:p-10"
+            >
             <div className="flex rounded-2xl border border-zinc-200 bg-zinc-50 p-1">
               {(["WEDDING", "OTHER"] as const).map((t) => (
                 <button
@@ -198,6 +199,7 @@ export function PublicEnquiryPage() {
               {submitting ? "Sending…" : "Send Enquiry"}
             </Button>
           </motion.form>
+          </>
         )}
       </div>
     </div>
