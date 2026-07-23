@@ -28,16 +28,24 @@ const SHEET_MONTH: Record<string, number> = {
 };
 
 export function parseSheetContext(sheetName: string): { year: number | null; month: number | null } {
-  const parts = sheetName.trim().toLowerCase().split(/\s+/);
+  const trimmed = sheetName.trim().toLowerCase();
+  const parts = trimmed.split(/\s+/);
   let month: number | null = null;
   let year: number | null = null;
 
   for (const p of parts) {
-    const m = SHEET_MONTH[p.replace(/\d/g, "")] ?? SHEET_MONTH[p.slice(0, 3)];
+    const cleaned = p.replace(/\d/g, "").replace(/[^a-z]/g, "");
+    const m = SHEET_MONTH[cleaned] ?? SHEET_MONTH[cleaned.slice(0, 3)] ?? SHEET_MONTH[p.slice(0, 3)];
     if (m) month = m;
     const digits = p.replace(/\D/g, "");
     if (digits.length === 2) year = 2000 + Number(digits);
     if (digits.length === 4) year = Number(digits);
+  }
+
+  // Sheet names like "JAN" / "FEB " (month only) — common in yearly master calendars.
+  if (month == null) {
+    const only = trimmed.replace(/[^a-z]/g, "");
+    month = SHEET_MONTH[only] ?? SHEET_MONTH[only.slice(0, 3)] ?? null;
   }
 
   return { year, month };

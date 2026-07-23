@@ -49,7 +49,10 @@ export function cellToString(value: unknown): string {
     if (value > 20000 && value < 60000) return String(value);
     return String(value);
   }
-  return String(value).replace(/\s+/g, " ").trim();
+  const s = String(value).replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  if (/^(na|#value!|#n\/a|#ref!|#name\?)$/i.test(s)) return "";
+  return s;
 }
 
 export function normalizeClientName(name: string): string {
@@ -137,9 +140,14 @@ function parseFlexibleDate(
     if (y < 100) y += 2000;
     const a = Number(dmy[1]);
     const b = Number(dmy[2]);
-    const day = a > 12 && b <= 12 ? a : b;
-    const month = a > 12 && b <= 12 ? b : a <= 12 && b <= 12 ? b : a;
-    return `${y}-${pad2(month)}-${pad2(day)}`;
+    // Explicit day-first when first part can't be a month (e.g. 31/1/26).
+    if (a > 12 && b <= 12) return `${y}-${pad2(b)}-${pad2(a)}`;
+    // Explicit month-first when second part can't be a month (e.g. 1/31/26).
+    if (b > 12 && a <= 12) return `${y}-${pad2(a)}-${pad2(b)}`;
+    // Ambiguous (both <= 12): prefer sheet month context, else US MM/DD (master calendars).
+    if (ctx.defaultMonth != null && a === ctx.defaultMonth) return `${y}-${pad2(a)}-${pad2(b)}`;
+    if (ctx.defaultMonth != null && b === ctx.defaultMonth) return `${y}-${pad2(b)}-${pad2(a)}`;
+    return `${y}-${pad2(a)}-${pad2(b)}`;
   }
 
   const dayMonth = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)(?:\s+(\d{2,4}))?/i);
@@ -207,7 +215,7 @@ export function mapRowToShootInput(
   let clientName = pick(row, COL.clientName);
   let clientType = pick(row, COL.clientType);
   let city = pick(row, COL.city);
-  const eventName = pick(row, COL.eventName);
+  let eventName = pick(row, COL.eventName);
   const venue = pick(row, COL.venue);
   const phoneRaw = pick(row, COL.phone);
   const clientContact = pick(row, COL.clientContact);
@@ -224,6 +232,12 @@ export function mapRowToShootInput(
   let lastClientType = ctx.lastClientType;
   let lastCity = ctx.lastCity;
 
+  // Completely blank / garbage template rows — do not inherit previous client/date.
+  const hasOwnContent = Boolean(dateRaw || clientName || eventName || photoTeam || videoTeam);
+  if (!hasOwnContent) {
+    return { mapped: null, errors: [], lastDate, lastClientName, lastClientType, lastCity };
+  }
+
   if (!dateRaw && lastDate) dateRaw = lastDate;
   if (!clientName && lastClientName) clientName = lastClientName;
   if (!clientType && lastClientType) clientType = lastClientType;
@@ -231,6 +245,12 @@ export function mapRowToShootInput(
 
   if (!clientName && !eventName && !dateRaw) {
     return { mapped: null, errors: [], lastDate, lastClientName, lastClientType, lastCity };
+  }
+
+  // Studio / unnamed bookings still get imported.
+  if (clientName && dateRaw && !eventName) {
+    eventName = "Shoot";
+    warnings.push("Event name missing — defaulted to Shoot");
   }
 
   if (!clientName) errors.push("Client name missing");
