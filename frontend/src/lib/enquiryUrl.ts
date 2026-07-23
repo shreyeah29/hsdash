@@ -1,4 +1,4 @@
-/** Public marketing site — enquiry form lives here (not on the API host). */
+/** App / quotation host (admin dashboard). */
 export function getPublicSiteUrl() {
   const fromEnv = import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined;
   if (fromEnv?.trim()) return fromEnv.trim().replace(/\/$/, "");
@@ -6,8 +6,11 @@ export function getPublicSiteUrl() {
   return "https://hsdash.vercel.app";
 }
 
+/** Marketing site enquiry form — lives on hswf.in (not the dashboard host). */
 export function getEnquiryUrl() {
-  return `${getPublicSiteUrl()}/enquiry`;
+  const fromEnv = import.meta.env.VITE_ENQUIRY_URL as string | undefined;
+  if (fromEnv?.trim()) return fromEnv.trim().replace(/\/$/, "");
+  return "https://www.hswf.in/enquiry";
 }
 
 export function enquiryShareMessage(url = getEnquiryUrl()) {
