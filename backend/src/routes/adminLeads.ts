@@ -243,14 +243,34 @@ adminLeadsRouter.post("/:id/convert", async (req, res, next) => {
   }
 });
 
+async function deleteLeadById(id: string) {
+  const existing = await prisma.lead.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return false;
+  await prisma.lead.delete({ where: { id } });
+  return true;
+}
+
 adminLeadsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const existing = await prisma.lead.findUnique({ where: { id: req.params.id }, select: { id: true } });
-    if (!existing) {
+    const ok = await deleteLeadById(req.params.id);
+    if (!ok) {
       res.status(404).json({ error: "Lead not found" });
       return;
     }
-    await prisma.lead.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** Same as DELETE — reliable on hosts that mishandle DELETE during deploy. */
+adminLeadsRouter.post("/:id/delete", async (req, res, next) => {
+  try {
+    const ok = await deleteLeadById(req.params.id);
+    if (!ok) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
     res.json({ ok: true });
   } catch (e) {
     next(e);

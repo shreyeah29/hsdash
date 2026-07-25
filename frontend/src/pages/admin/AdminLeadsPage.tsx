@@ -164,12 +164,25 @@ export function AdminLeadsPage() {
 
   const deleteLead = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/admin/leads/${id}`);
+      // Prefer DELETE; fall back to POST if an older backend build rejects DELETE.
+      try {
+        await api.delete(`/admin/leads/${id}`);
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 404) {
+          await api.post(`/admin/leads/${id}/delete`);
+          return;
+        }
+        throw err;
+      }
     },
     onSuccess: async (_data, id) => {
       if (selectedId === id) setSelectedId(null);
       await qc.invalidateQueries({ queryKey: ["admin-leads"] });
       await qc.invalidateQueries({ queryKey: ["admin-leads-stats"] });
+    },
+    onError: () => {
+      window.alert("Could not delete this lead. Please try again in a moment.");
     },
   });
 
