@@ -242,3 +242,17 @@ adminLeadsRouter.post("/:id/convert", async (req, res, next) => {
     next(e);
   }
 });
+
+adminLeadsRouter.delete("/:id", async (req, res, next) => {
+  try {
+    const existing = await prisma.lead.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!existing) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+    await prisma.lead.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});

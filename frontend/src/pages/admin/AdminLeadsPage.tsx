@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Copy, ExternalLink, FileText, MessageSquare, Phone, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink, FileText, MessageSquare, Phone, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { getEnquiryUrl, enquiryShareMessage } from "@/lib/enquiryUrl";
 import { getQuotationPublicUrl, quotationWhatsAppMessage } from "@/lib/quotationUrl";
 import type { Quotation } from "@/types/quotation";
@@ -162,6 +162,17 @@ export function AdminLeadsPage() {
     },
   });
 
+  const deleteLead = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/admin/leads/${id}`);
+    },
+    onSuccess: async (_data, id) => {
+      if (selectedId === id) setSelectedId(null);
+      await qc.invalidateQueries({ queryKey: ["admin-leads"] });
+      await qc.invalidateQueries({ queryKey: ["admin-leads-stats"] });
+    },
+  });
+
   const stats = statsQ.data;
   const leads = leadsQ.data?.leads ?? [];
   const lead = detailQ.data;
@@ -260,10 +271,10 @@ export function AdminLeadsPage() {
         ) : (
           <ul className="divide-y" style={{ borderColor: palette.border }}>
             {leads.map((l) => (
-              <li key={l.id}>
+              <li key={l.id} className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-4 px-2 py-4 text-left transition hover:opacity-90"
+                  className="flex min-w-0 flex-1 items-center gap-4 px-2 py-4 text-left transition hover:opacity-90"
                   onClick={() => setSelectedId(l.id)}
                 >
                   <div className="min-w-0 flex-1">
@@ -284,6 +295,20 @@ export function AdminLeadsPage() {
                     </div>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0" style={{ color: palette.textSecondary }} />
+                </button>
+                <button
+                  type="button"
+                  className="mr-1 shrink-0 rounded-md border-2 border-black p-2 transition hover:bg-rose-50"
+                  title="Delete lead"
+                  aria-label={`Delete ${displayName(l)}`}
+                  disabled={deleteLead.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!window.confirm(`Delete lead “${displayName(l)}”? This cannot be undone.`)) return;
+                    deleteLead.mutate(l.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-rose-700" />
                 </button>
               </li>
             ))}
