@@ -5,15 +5,19 @@ import { UserPlus } from "lucide-react";
 import { api } from "@/services/api";
 import { AdminInput, AdminSelect } from "@/components/admin/AdminFields";
 import { AdminSurface } from "@/components/admin/AdminSurface";
+import { TeamCareersPanel } from "@/components/admin/TeamCareersPanel";
 import {
   AdminButton,
   AdminPageHeader,
   AdminStatCard,
+  AdminTabButton,
   useAdminPalette,
 } from "@/components/admin/AdminUi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { User } from "@/types/domain";
 import { Role, Team } from "@/types/domain";
+
+type TeamTab = "roster" | "careers";
 
 async function fetchUsers() {
   const { data } = await api.get<{ users: User[] }>("/users");
@@ -64,6 +68,7 @@ function initials(name: string) {
 export function TeamManagementPage() {
   const palette = useAdminPalette();
   const qc = useQueryClient();
+  const [tab, setTab] = useState<TeamTab>("roster");
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: fetchUsers });
 
   const [open, setOpen] = useState(false);
@@ -205,16 +210,35 @@ export function TeamManagementPage() {
     <div className="space-y-8">
       <AdminPageHeader
         label="TEAM"
-        title="Studio roster"
-        subtitle="Manage editors, coordinators, and access — same as the mobile Team shortcut."
+        title={tab === "roster" ? "Studio roster" : "Careers"}
+        subtitle={
+          tab === "roster"
+            ? "Manage editors, coordinators, and access — same as the mobile Team shortcut."
+            : "People who applied via the JOIN US form — shortlist, interview, and hire from here."
+        }
         actions={
-          <AdminButton onClick={openCreate}>
-            <UserPlus className="h-4 w-4" />
-            Add member
-          </AdminButton>
+          tab === "roster" ? (
+            <AdminButton onClick={openCreate}>
+              <UserPlus className="h-4 w-4" />
+              Add member
+            </AdminButton>
+          ) : null
         }
       />
 
+      <div className="flex flex-wrap gap-2">
+        <AdminTabButton active={tab === "roster"} onClick={() => setTab("roster")}>
+          Roster
+        </AdminTabButton>
+        <AdminTabButton active={tab === "careers"} onClick={() => setTab("careers")}>
+          Careers
+        </AdminTabButton>
+      </div>
+
+      {tab === "careers" ? <TeamCareersPanel /> : null}
+
+      {tab === "roster" ? (
+        <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <AdminStatCard label="Total" value={stats.total} />
         <AdminStatCard label="Active" value={stats.active} />
@@ -367,6 +391,8 @@ export function TeamManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+        </>
+      ) : null}
     </div>
   );
 }

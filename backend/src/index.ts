@@ -14,6 +14,8 @@ import { notificationsRouter } from "./routes/notifications";
 import { attendanceRouter } from "./routes/attendance";
 import { leadsRouter } from "./routes/leads";
 import { adminLeadsRouter } from "./routes/adminLeads";
+import { careersRouter } from "./routes/careers";
+import { adminCareersRouter } from "./routes/adminCareers";
 import { quotationsRouter } from "./routes/quotations";
 import { adminQuotationsRouter } from "./routes/adminQuotations";
 import { attachSocket } from "./realtime/socket";
@@ -47,6 +49,8 @@ app.use("/notifications", notificationsRouter);
 app.use("/attendance", attendanceRouter);
 app.use("/leads", leadsRouter);
 app.use("/admin/leads", adminLeadsRouter);
+app.use("/careers", careersRouter);
+app.use("/admin/careers", adminCareersRouter);
 app.use("/quotations", quotationsRouter);
 app.use("/admin", adminQuotationsRouter);
 

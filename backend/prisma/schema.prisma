@@ -101,6 +101,22 @@ enum QuotationStatus {
   EXPIRED
 }
 
+enum CareerApplicationStatus {
+  NEW
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+  HIRED
+  ARCHIVED
+}
+
+enum CareerApplicationSource {
+  GOOGLE_FORM
+  WEBSITE
+  MANUAL
+  IMPORT
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -417,4 +433,31 @@ model AdminCalendarNote {
   updatedAt DateTime @updatedAt
 
   @@index([day])
+}
+
+/** Hiring / JOIN US applications (Google Form + Careers tab). */
+model CareerApplication {
+  id              String                   @id @default(cuid())
+  status          CareerApplicationStatus  @default(NEW)
+  source          CareerApplicationSource  @default(GOOGLE_FORM)
+  name            String                   @default("")
+  email           String                   @default("")
+  phoneNumber     String                   @default("")
+  phoneNormalized String                   @default("")
+  roleApplied     String                   @default("")
+  softwares       String                   @default("")
+  experience      String                   @default("")
+  portfolioUrl    String                   @default("")
+  instagramLink   String                   @default("")
+  notes           String                   @default("")
+  externalId      String?                  @unique
+  submittedAt     DateTime                 @default(now())
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([status])
+  @@index([roleApplied])
+  @@index([phoneNormalized])
+  @@index([submittedAt])
+  @@index([createdAt])
 }
