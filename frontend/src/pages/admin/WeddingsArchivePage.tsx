@@ -4,11 +4,29 @@ import { ArrowLeft, Calendar, ChevronRight, Heart } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminSurface";
 import { AdminButton, useAdminPalette } from "@/components/admin/AdminUi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EventDeliverableBadges } from "@/components/weddings/EventDeliverableBadges";
 import { formatDisplayDate } from "@/lib/calendarUtils";
 import { WeddingsArchiveIndex, monthLabel } from "@/lib/weddingsArchiveIndex";
 import { useWideRangeCalendarEntries } from "@/hooks/useWideRangeCalendarEntries";
 import { ClientRelatedEventsPanel } from "@/components/production-calendar/ClientRelatedEventsPanel";
-import type { ShootCalendarEntry } from "@/types/domain";
+import type { ShootCalendarEntry, Task } from "@/types/domain";
+
+function collectEntryTasks(entry: ShootCalendarEntry): Task[] {
+  return entry.event?.tasks ?? [];
+}
+
+function collectWeddingTasks(events: ShootCalendarEntry[]): Task[] {
+  const seen = new Set<string>();
+  const out: Task[] = [];
+  for (const e of events) {
+    for (const t of collectEntryTasks(e)) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      out.push(t);
+    }
+  }
+  return out;
+}
 
 export function WeddingsArchivePage() {
   const palette = useAdminPalette();
@@ -47,6 +65,11 @@ export function WeddingsArchivePage() {
 
   const weddingGroup =
     year != null && month != null && weddingKey != null ? index.weddingGroup(year, month, weddingKey) : null;
+
+  const weddingTasks = useMemo(
+    () => (weddingGroup ? collectWeddingTasks(weddingGroup.events) : []),
+    [weddingGroup],
+  );
 
   const subtitle =
     depth === 0
@@ -160,29 +183,39 @@ export function WeddingsArchivePage() {
           </ul>
         ) : weddingGroup ? (
           <ul className="divide-y rounded-2xl border" style={{ borderColor: palette.border, backgroundColor: palette.card }}>
-            {weddingGroup.events.map((e) => (
-              <li key={e.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-start gap-4 px-4 py-4 text-left"
-                  onClick={() => setDetailEntry(e)}
-                >
-                  <Heart className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} />
-                  <div className="min-w-0 text-left">
-                    <div className="font-medium" style={{ color: palette.text }}>
-                      {e.eventName || e.clientName}
+            {weddingGroup.events.map((e) => {
+              const ownTasks = collectEntryTasks(e);
+              const badgeTasks = ownTasks.length > 0 ? ownTasks : weddingTasks;
+              return (
+                <li key={e.id}>
+                  <button
+                    type="button"
+                    className="flex w-full items-start gap-3 px-4 py-4 text-left sm:gap-4"
+                    onClick={() => setDetailEntry(e)}
+                  >
+                    <Heart className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="font-medium" style={{ color: palette.text }}>
+                        {e.eventName || e.clientName}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap gap-2 text-xs" style={{ color: palette.textSecondary }}>
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDisplayDate(e.day)}
+                        </span>
+                        {e.venue ? <span>{e.venue}</span> : null}
+                      </div>
+                      <div className="mt-2 sm:hidden">
+                        <EventDeliverableBadges tasks={badgeTasks} className="justify-start" />
+                      </div>
                     </div>
-                    <div className="mt-0.5 flex flex-wrap gap-2 text-xs" style={{ color: palette.textSecondary }}>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDisplayDate(e.day)}
-                      </span>
-                      {e.venue ? <span>{e.venue}</span> : null}
+                    <div className="hidden max-w-[55%] shrink-0 sm:block">
+                      <EventDeliverableBadges tasks={badgeTasks} />
                     </div>
-                  </div>
-                </button>
-              </li>
-            ))}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
       </AdminSurface>

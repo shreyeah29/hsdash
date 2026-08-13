@@ -533,11 +533,14 @@ export function ShootCalendarPage({
                     </span>
                   </div>
                   <div className="mt-1 space-y-0.5 overflow-hidden">
-                    {list.slice(0, 2).map((e) => (
-                      <div key={e.id} className="truncate text-zinc-600" title={e.clientName}>
-                        {e.clientName}
-                      </div>
-                    ))}
+                    {list.slice(0, 2).map((e, idx) => {
+                      const label = list.length > 1 ? `${idx + 1}. ${e.clientName}` : e.clientName;
+                      return (
+                        <div key={e.id} className="truncate text-zinc-600" title={label}>
+                          {label}
+                        </div>
+                      );
+                    })}
                     {list.length > 2 ? <div className="text-zinc-600">+{list.length - 2}</div> : null}
                   </div>
                 </motion.button>

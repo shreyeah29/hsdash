@@ -52,19 +52,36 @@ export function ClientRelatedEventsPanel({ entry, calendarPath = "/admin/shoots"
           return (
             <div
               key={r.id}
-              className={cn("flex items-start gap-3 px-3 py-3", isCurrent && "bg-violet-50/60")}
+              className={cn(
+                "flex items-start gap-3 px-3 py-3",
+                isCurrent && "border-l-4 border-l-fuchsia-500 bg-gradient-to-r from-fuchsia-50 via-violet-50 to-transparent",
+              )}
             >
-              <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-center">
-                <span className="text-[9px] font-semibold uppercase text-zinc-500">
+              <div
+                className={cn(
+                  "flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg border text-center",
+                  isCurrent
+                    ? "border-fuchsia-300 bg-fuchsia-100"
+                    : "border-zinc-200 bg-zinc-50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "text-[9px] font-semibold uppercase",
+                    isCurrent ? "text-fuchsia-700" : "text-zinc-500",
+                  )}
+                >
                   {dayKey.split(",")[0]?.trim().slice(0, 3)}
                 </span>
-                <span className="text-sm font-bold text-zinc-900">{dayKey.match(/\d+/)?.[0] ?? ""}</span>
+                <span className={cn("text-sm font-bold", isCurrent ? "text-fuchsia-900" : "text-zinc-900")}>
+                  {dayKey.match(/\d+/)?.[0] ?? ""}
+                </span>
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold text-zinc-900">{eventLabel}</span>
                   {isCurrent ? (
-                    <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
+                    <span className="rounded-full bg-fuchsia-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_0_12px_rgba(217,70,239,0.55)] ring-2 ring-fuchsia-200">
                       Current
                     </span>
                   ) : null}
