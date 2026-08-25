@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import { Role } from "@prisma/client";
-import { env } from "../config/env";
+import { corsOriginDelegate, parseFrontendOrigins } from "../config/corsOrigins";
 import { verifyAuthToken } from "../services/jwt";
 
 let io: Server | null = null;
@@ -13,10 +13,14 @@ export function getSocketIo(): Server | null {
 export function attachSocket(server: HttpServer) {
   io = new Server(server, {
     cors: {
-      origin: env.FRONTEND_URL,
+      origin: corsOriginDelegate,
       credentials: true,
     },
   });
+
+  // Log allowed web origins once at boot (helps debug domain cutovers).
+  // eslint-disable-next-line no-console
+  console.log(`[socket] CORS origins: ${parseFrontendOrigins().join(", ")}`);
 
   io.use((socket, next) => {
     try {

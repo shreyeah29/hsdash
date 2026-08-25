@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { env } from "./config/env";
+import { corsOriginDelegate } from "./config/corsOrigins";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth";
 import { eventsRouter } from "./routes/events";
@@ -27,7 +28,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: corsOriginDelegate,
     credentials: true,
     allowedHeaders: ["Authorization", "Content-Type"],
   }),

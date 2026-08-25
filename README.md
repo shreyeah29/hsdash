@@ -94,8 +94,8 @@ Set env vars:
 - `DATABASE_URL` (Render Postgres internal URL)
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN` (optional)
-- `FRONTEND_URL` (your frontend URL)
-- `COOKIE_SECURE=true` (recommended when frontend is on another domain, e.g. Vercel)
+- `FRONTEND_URL` (your frontend URL — production example: `https://hswf.app,https://hsdash.vercel.app`; `www` variants are allowed automatically)
+- `COOKIE_SECURE=true` (recommended when frontend is on another domain, e.g. Vercel / custom domain)
 
 When **frontend (Vercel)** and **API (Render)** are on different domains, the API sets the session cookie with **`SameSite=None; Secure`** automatically so `/auth/me` works after login.
 

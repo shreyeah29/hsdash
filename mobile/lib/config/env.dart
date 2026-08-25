@@ -8,7 +8,7 @@ const String apiBaseUrl = String.fromEnvironment(
 /// Public website — enquiry form is served here (not the API host).
 const String publicSiteUrl = String.fromEnvironment(
   'PUBLIC_SITE_URL',
-  defaultValue: 'https://hsdash.vercel.app',
+  defaultValue: 'https://hswf.app',
 );
 
 String get enquiryFormUrl => '$publicSiteUrl/enquiry';

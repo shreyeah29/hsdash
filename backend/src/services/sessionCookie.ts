@@ -5,7 +5,8 @@ import { getTokenCookieName } from "./jwt";
 /** Vercel / Render = different sites → must use SameSite=None + Secure for xhr/fetch with credentials */
 export function isCrossSiteFrontend(): boolean {
   try {
-    const u = new URL(env.FRONTEND_URL);
+    const first = env.FRONTEND_URL.split(",")[0]?.trim() ?? env.FRONTEND_URL;
+    const u = new URL(first);
     return u.hostname !== "localhost" && u.hostname !== "127.0.0.1";
   } catch {
     return true;

@@ -7,7 +7,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("7d"),
-  FRONTEND_URL: z.string().url(),
+  /** Primary frontend origin, or comma-separated list (e.g. https://hswf.app,https://www.hswf.app,https://hsdash.vercel.app). */
+  FRONTEND_URL: z.string().min(1),
   COOKIE_SECURE: z.coerce.boolean().optional(),
 });
 
