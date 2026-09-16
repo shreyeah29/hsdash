@@ -254,7 +254,10 @@ Requires **Apple Developer Program** ($99/year).
 ### Both stores
 
 - [ ] App name: **HS Dash** (or your brand)
-- [ ] Privacy policy URL (required — host a simple page)
+- [x] Privacy policy URL — https://hswf.app/privacy (also Terms: https://hswf.app/terms)
+- [x] Support contact — hello@hswf.in
+- [x] Export compliance — ITSAppUsesNonExemptEncryption = false in Info.plist
+- [x] Privacy manifest — ios/Runner/PrivacyInfo.xcprivacy
 - [ ] App icon 1024×1024
 - [ ] Screenshots (phone + tablet sizes)
 - [ ] Short + long description

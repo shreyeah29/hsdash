@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/features/admin/admin_activity_tab.dart';
 import 'package:hsdash_mobile/features/admin/admin_home_theme.dart';
+import 'package:hsdash_mobile/features/admin/admin_team_hub.dart';
 import 'package:hsdash_mobile/features/admin/admin_theme_mode.dart';
-import 'package:hsdash_mobile/features/admin/team_management_tab.dart';
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_tab.dart';
 
 /// Full-screen admin section opened from home shortcuts.
@@ -48,7 +48,7 @@ class AdminSectionPage extends ConsumerWidget {
       MaterialPageRoute<void>(
         builder: (_) => const AdminSectionPage(
           title: 'Team',
-          child: TeamManagementTab(adminThemed: true),
+          child: AdminTeamHub(),
         ),
       ),
     );

@@ -223,7 +223,7 @@ class AdminPageBackground extends StatelessWidget {
 
   final Widget child;
 
-  /// When false, studio mode skips the shared snow layer (shell provides it).
+  /// When false, studio mode skips the shared backdrop layer (shell provides it).
   final bool layerBackdrop;
 
   @override

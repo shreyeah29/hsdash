@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsdash_mobile/config/app_legal.dart';
 import 'package:hsdash_mobile/config/platform_ui.dart';
 import 'package:hsdash_mobile/widgets/hswf_logo.dart';
 
@@ -248,18 +249,46 @@ class _FooterNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final linkStyle = TextStyle(
+      fontSize: 12,
+      color: Colors.white.withValues(alpha: 0.72),
+      decoration: TextDecoration.underline,
+      decorationColor: Colors.white.withValues(alpha: 0.45),
+    );
+    return Column(
       children: [
-        Icon(Icons.lock_outline, size: 13, color: Colors.white.withValues(alpha: 0.55)),
-        const SizedBox(width: 6),
-        Text(
-          'Secure platform · v1.0.0',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.55),
-            letterSpacing: 0.2,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 13, color: Colors.white.withValues(alpha: 0.55)),
+            const SizedBox(width: 6),
+            Text(
+              'Secure platform · v1.0.1',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.55),
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => AppLegal.openPrivacyPolicy(),
+              child: Text('Privacy', style: linkStyle),
+            ),
+            Text(
+              '  ·  ',
+              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+            ),
+            GestureDetector(
+              onTap: () => AppLegal.openTermsOfUse(),
+              child: Text('Terms', style: linkStyle),
+            ),
+          ],
         ),
       ],
     );

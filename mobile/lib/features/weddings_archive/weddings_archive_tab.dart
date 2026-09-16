@@ -11,7 +11,9 @@ import 'package:hsdash_mobile/features/production_calendar/shoot_event_detail_sc
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_providers.dart';
 import 'package:hsdash_mobile/features/weddings_archive/weddings_archive_theme.dart';
 import 'package:hsdash_mobile/models/shoot_calendar_entry.dart';
+import 'package:hsdash_mobile/models/task.dart';
 import 'package:hsdash_mobile/widgets/dashboard_widgets.dart';
+import 'package:hsdash_mobile/widgets/event_deliverable_badges.dart';
 
 /// Standalone weddings browser: Year → Month → Wedding → Events → shoot details.
 class WeddingsArchiveTab extends ConsumerStatefulWidget {
@@ -128,7 +130,6 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
     final entries = ref.watch(weddingsArchiveEntriesProvider);
     final index = ref.watch(weddingsArchiveIndexProvider);
     final bg = WeddingsArchiveStyle.background(widget.accent);
-    final studioSnow = _premium && AdminHomePalette.isStudio;
 
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -190,7 +191,7 @@ class _WeddingsArchiveTabState extends ConsumerState<WeddingsArchiveTab> {
     if (_premium) {
       return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
-        child: ColoredBox(color: studioSnow ? Colors.transparent : bg, child: body),
+        child: ColoredBox(color: bg, child: body),
       );
     }
     return ColoredBox(color: bg, child: body);
@@ -706,6 +707,14 @@ class _EventsTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weddingTasks = <Task>[];
+    final seen = <String>{};
+    for (final e in group.events) {
+      for (final t in e.tasks) {
+        if (seen.add(t.id)) weddingTasks.add(t);
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
       children: [
@@ -716,6 +725,7 @@ class _EventsTimeline extends StatelessWidget {
             final day = formatFriendlyDay(shootDayKey(entry.day), includeYear: true);
             final eventLabel =
                 (entry.eventName?.trim().isNotEmpty ?? false) ? entry.eventName!.trim() : 'Shoot';
+            final badgeTasks = entry.tasks.isNotEmpty ? entry.tasks : weddingTasks;
             return _ArchiveListRow(
               premium: premium,
               shellAccent: shellAccent,
@@ -723,6 +733,7 @@ class _EventsTimeline extends StatelessWidget {
               onTap: () => onEventTap(entry),
               title: eventLabel,
               subtitle: day,
+              belowSubtitle: EventDeliverableBadges(tasks: badgeTasks),
               trailing: Icon(
                 entry.hasPostProduction ? Icons.bolt : Icons.chevron_right_rounded,
                 size: 18,
@@ -779,6 +790,7 @@ class _ArchiveListRow extends StatelessWidget {
     required this.onTap,
     required this.title,
     this.subtitle,
+    this.belowSubtitle,
     this.leading,
     this.trailing,
   });
@@ -789,6 +801,7 @@ class _ArchiveListRow extends StatelessWidget {
   final VoidCallback onTap;
   final String title;
   final String? subtitle;
+  final Widget? belowSubtitle;
   final Widget? leading;
   final Widget? trailing;
 
@@ -806,6 +819,7 @@ class _ArchiveListRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (leading != null) ...[
                 leading!,
@@ -820,11 +834,18 @@ class _ArchiveListRow extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(subtitle!, style: metaStyle),
                     ],
+                    if (belowSubtitle != null) ...[
+                      const SizedBox(height: 8),
+                      belowSubtitle!,
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              chevron,
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: chevron,
+              ),
             ],
           ),
         ),

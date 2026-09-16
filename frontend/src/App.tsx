@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PublicEnquiryPage } from "@/pages/PublicEnquiryPage";
+import { PrivacyPolicyPage, TermsOfUsePage } from "@/pages/LegalPages";
 import { LoginChoicePage } from "@/pages/LoginChoicePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
@@ -34,6 +35,8 @@ function App() {
   return (
     <Routes>
       <Route path="/enquiry" element={<PublicEnquiryPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfUsePage />} />
       <Route path="/q/:slug" element={<PublicQuotationPage />} />
       <Route path="/login" element={<LoginChoicePage />} />
       <Route path="/login/admin" element={<LoginPage loginKind="admin" />} />

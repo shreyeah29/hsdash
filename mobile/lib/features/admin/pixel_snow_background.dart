@@ -182,7 +182,7 @@ class _PixelSnowPainter extends CustomPainter {
   }
 }
 
-/// Dark studio base + drifting pixel snow.
+/// Dark studio base (flat — no animated snow/stars).
 class AdminStudioBackdrop extends StatelessWidget {
   const AdminStudioBackdrop({super.key, required this.backgroundColor});
 
@@ -190,12 +190,6 @@ class AdminStudioBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: backgroundColor),
-        const PixelSnowBackground(),
-      ],
-    );
+    return ColoredBox(color: backgroundColor);
   }
 }

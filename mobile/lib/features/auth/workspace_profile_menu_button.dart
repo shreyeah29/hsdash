@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsdash_mobile/config/app_legal.dart';
 import 'package:hsdash_mobile/config/theme.dart';
 import 'package:hsdash_mobile/features/auth/admin_workspace_profile.dart';
 
@@ -42,7 +43,7 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: darkMenu ? const Color(0xFF2A3142) : AppColors.border),
       ),
-      onSelected: (value) {
+      onSelected: (value) async {
         switch (value) {
           case 'switch':
             onSwitchProfile();
@@ -50,6 +51,10 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
             onChangePassword?.call();
           case 'username':
             onChangeUsername?.call();
+          case 'privacy':
+            await AppLegal.openPrivacyPolicy();
+          case 'terms':
+            await AppLegal.openTermsOfUse();
           case 'logout':
             onLogout();
         }
@@ -99,6 +104,34 @@ class WorkspaceProfileMenuButton extends StatelessWidget {
               ],
             ),
           ),
+        PopupMenuItem<String>(
+          value: 'privacy',
+          height: 48,
+          child: Row(
+            children: [
+              Icon(Icons.privacy_tip_outlined, size: 20, color: darkMenu ? const Color(0xFF8B5CF6) : AppColors.violet),
+              const SizedBox(width: 12),
+              Text(
+                'Privacy Policy',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'terms',
+          height: 48,
+          child: Row(
+            children: [
+              Icon(Icons.description_outlined, size: 20, color: darkMenu ? const Color(0xFF8B5CF6) : AppColors.violet),
+              const SizedBox(width: 12),
+              Text(
+                'Terms of Use',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: labelColor),
+              ),
+            ],
+          ),
+        ),
         PopupMenuItem<String>(
           value: 'logout',
           height: 48,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hsdash_mobile/core/task_utils.dart';
+import 'package:hsdash_mobile/config/app_legal.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/attendance/attendance_providers.dart';
 import 'package:hsdash_mobile/features/coordinator/coordinator_providers.dart';
@@ -72,12 +73,38 @@ class EmmanuelTodayPendingTab extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       side: const BorderSide(color: LaxmanPalette.black),
                     ),
-                    onSelected: (value) {
-                      if (value == 'logout') {
+                    onSelected: (value) async {
+                      if (value == 'privacy') {
+                        await AppLegal.openPrivacyPolicy();
+                      } else if (value == 'terms') {
+                        await AppLegal.openTermsOfUse();
+                      } else if (value == 'logout') {
                         ref.read(authControllerProvider.notifier).logout();
                       }
                     },
                     itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'privacy',
+                        height: 48,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.privacy_tip_outlined, size: 20, color: LaxmanPalette.black),
+                            const SizedBox(width: 12),
+                            Text('Privacy Policy', style: LaxmanType.body('', size: 14)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'terms',
+                        height: 48,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.description_outlined, size: 20, color: LaxmanPalette.black),
+                            const SizedBox(width: 12),
+                            Text('Terms of Use', style: LaxmanType.body('', size: 14)),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem<String>(
                         value: 'logout',
                         height: 48,
@@ -92,7 +119,7 @@ class EmmanuelTodayPendingTab extends ConsumerWidget {
                     ],
                     child: const Padding(
                       padding: EdgeInsets.all(8),
-                      child: Icon(Icons.logout_rounded, color: LaxmanPalette.black, size: 22),
+                      child: Icon(Icons.more_horiz_rounded, color: LaxmanPalette.black, size: 22),
                     ),
                   ),
                 ],

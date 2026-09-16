@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hsdash_mobile/config/app_legal.dart';
 import 'package:hsdash_mobile/features/auth/auth_controller.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_alerts_tab.dart';
 import 'package:hsdash_mobile/features/editor/laxman/laxman_tasks_tab.dart';
@@ -46,14 +47,49 @@ class _LaxmanEditorShellState extends ConsumerState<LaxmanEditorShell> {
                 ),
                 Positioned(
                   top: 8,
-                  right: 16,
-                  child: TextButton(
-                    onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: LaxmanPalette.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  right: 8,
+                  child: PopupMenuButton<String>(
+                    tooltip: 'Account',
+                    offset: const Offset(0, 40),
+                    color: LaxmanPalette.white,
+                    surfaceTintColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: LaxmanPalette.black),
                     ),
-                    child: Text('EXIT', style: LaxmanType.label('').copyWith(fontSize: 11)),
+                    onSelected: (value) async {
+                      if (value == 'privacy') {
+                        await AppLegal.openPrivacyPolicy();
+                      } else if (value == 'terms') {
+                        await AppLegal.openTermsOfUse();
+                      } else if (value == 'logout') {
+                        ref.read(authControllerProvider.notifier).logout();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'privacy',
+                        height: 44,
+                        child: Text('Privacy Policy', style: LaxmanType.body('', size: 14)),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'terms',
+                        height: 44,
+                        child: Text('Terms of Use', style: LaxmanType.body('', size: 14)),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'logout',
+                        height: 44,
+                        child: Text(
+                          'EXIT',
+                          style: LaxmanType.label('').copyWith(fontSize: 11, color: Colors.red.shade700),
+                        ),
+                      ),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Text('MENU', style: LaxmanType.label('').copyWith(fontSize: 11)),
+                    ),
                   ),
                 ),
               ],

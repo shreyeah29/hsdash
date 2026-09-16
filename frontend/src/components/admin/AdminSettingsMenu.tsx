@@ -36,6 +36,20 @@ export function AdminSettingsMenu() {
         },
       },
       {
+        label: "Privacy Policy",
+        ariaLabel: "Privacy Policy",
+        onClick: () => {
+          window.open("https://hswf.app/privacy", "_blank", "noopener,noreferrer");
+        },
+      },
+      {
+        label: "Terms of Use",
+        ariaLabel: "Terms of Use",
+        onClick: () => {
+          window.open("https://hswf.app/terms", "_blank", "noopener,noreferrer");
+        },
+      },
+      {
         label: "Sign out",
         ariaLabel: "Sign out",
         variant: "danger",

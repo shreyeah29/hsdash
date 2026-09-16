@@ -311,6 +311,7 @@ class _IosCalendarView extends ConsumerWidget {
                         color: _eventBarColors[i % _eventBarColors.length],
                         premiumDark: premiumDark,
                         monochromeEditorial: monochromeEditorial,
+                        shootIndex: dayEntries.length > 1 ? i + 1 : null,
                         onTap: () => _openDetail(context, e),
                       );
                     },
@@ -605,6 +606,7 @@ class _AgendaTile extends StatelessWidget {
     required this.premiumDark,
     required this.monochromeEditorial,
     required this.onTap,
+    this.shootIndex,
   });
 
   final ShootCalendarEntry entry;
@@ -612,6 +614,8 @@ class _AgendaTile extends StatelessWidget {
   final bool premiumDark;
   final bool monochromeEditorial;
   final VoidCallback onTap;
+  /// When multiple shoots share a day, show `1. Client` style labels.
+  final int? shootIndex;
 
   bool get _mono => monochromeEditorial;
 
@@ -665,7 +669,7 @@ class _AgendaTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                entry.clientName,
+                shootIndex != null ? '$shootIndex. ${entry.clientName}' : entry.clientName,
                 style: premiumDark
                     ? AdminHomePalette.editorialTitle.copyWith(fontSize: 17)
                     : TextStyle(
