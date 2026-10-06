@@ -102,6 +102,5 @@ const careerStatusOrder = <String>[
   'ARCHIVED',
 ];
 
-/// Public JOIN US Google Form.
-const careersFormUrl =
-    'https://docs.google.com/forms/d/1PWp3k8Vg5L4YxRkDTW0IO_FWdzY0VVBt9Zf7iSrH2F8/viewform';
+/// Public JOIN US page — submissions land in the Careers inbox.
+const careersFormUrl = 'https://hswf.app/join';

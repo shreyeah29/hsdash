@@ -21,6 +21,8 @@ const publicCareerSchema = z
     notes: z.string().max(5000).optional().default(""),
     externalId: z.string().max(200).optional(),
     submittedAt: z.string().datetime().optional(),
+    /** Public site form sets WEBSITE. Google Form ingest stays GOOGLE_FORM. */
+    source: z.enum(["GOOGLE_FORM", "WEBSITE"]).optional(),
     /** Honeypot — bots fill this; humans leave blank. */
     website: z.string().max(200).optional().default(""),
   })
@@ -53,11 +55,16 @@ careersRouter.post("/", async (req, res, next) => {
       throw new HttpError(429, "Too many submissions. Please try again later.");
     }
 
-    assertIngestAllowed(
-      typeof req.headers["x-careers-secret"] === "string" ? req.headers["x-careers-secret"] : undefined,
-    );
-
     const body = publicCareerSchema.parse(req.body);
+    const fromWebsite = body.source === "WEBSITE";
+
+    // The public /join page is open (rate-limited). Google Form ingest still uses the secret when set.
+    if (!fromWebsite) {
+      assertIngestAllowed(
+        typeof req.headers["x-careers-secret"] === "string" ? req.headers["x-careers-secret"] : undefined,
+      );
+    }
+
     if (body.website.trim()) {
       res.status(201).json({ ok: true, applicationId: "ignored" });
       return;
@@ -73,7 +80,7 @@ careersRouter.post("/", async (req, res, next) => {
       portfolioUrl: body.portfolioUrl,
       instagramLink: body.instagramLink,
       notes: body.notes,
-      source: CareerApplicationSource.GOOGLE_FORM,
+      source: fromWebsite ? CareerApplicationSource.WEBSITE : CareerApplicationSource.GOOGLE_FORM,
       externalId: body.externalId,
       submittedAt: body.submittedAt ? new Date(body.submittedAt) : undefined,
     });

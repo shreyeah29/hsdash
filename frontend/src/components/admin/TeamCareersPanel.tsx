@@ -118,7 +118,7 @@ export function TeamCareersPanel() {
             Careers inbox
           </h2>
           <p className="mt-1 text-sm" style={{ color: palette.textSecondary }}>
-            Applications from the JOIN US Google Form appear here automatically after the form is linked.
+            Applications from the JOIN US page appear here as soon as someone submits.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -169,7 +169,7 @@ export function TeamCareersPanel() {
             No career applications yet
           </p>
           <p className="mt-2 text-sm" style={{ color: palette.textSecondary }}>
-            Share the JOIN US form — new submissions land in this tab.
+            Share https://hswf.app/join — new submissions land in this tab.
           </p>
         </AdminSurface>
       ) : null}
