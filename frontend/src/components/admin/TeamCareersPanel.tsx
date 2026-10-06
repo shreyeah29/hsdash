@@ -133,6 +133,27 @@ export function TeamCareersPanel() {
         </div>
       </div>
 
+      <AdminSurface className="flex flex-wrap items-center justify-between gap-3 py-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+            Share this link
+          </p>
+          <a
+            href={formUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 block break-all text-base font-semibold underline-offset-2 hover:underline"
+            style={{ color: palette.accent }}
+          >
+            {formUrl}
+          </a>
+        </div>
+        <AdminButton variant="outline" onClick={copyFormLink}>
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Copied" : "Copy"}
+        </AdminButton>
+      </AdminSurface>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <AdminStatCard label="Total" value={stats?.total ?? "—"} />
         <AdminStatCard label="Open pipeline" value={openCount || "—"} />

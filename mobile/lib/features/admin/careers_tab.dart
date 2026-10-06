@@ -57,6 +57,39 @@ class _CareersTabState extends ConsumerState<CareersTab> {
             style: AdminHomePalette.editorialMeta,
           ),
           const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AdminHomePalette.card,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AdminHomePalette.cardBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SHARE THIS LINK',
+                  style: AdminHomeTypography.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    color: AdminHomePalette.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  careersFormUrl,
+                  style: AdminHomeTypography.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
