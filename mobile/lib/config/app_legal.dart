@@ -5,7 +5,7 @@ abstract final class AppLegal {
   static const privacyPolicyUrl = 'https://hswf.app/privacy';
   static const termsOfUseUrl = 'https://hswf.app/terms';
   static const supportEmail = 'hello@hswf.in';
-  static const supportUrl = 'mailto:hello@hswf.in';
+  static const supportUrl = 'https://hswf.app/support';
 
   static Future<bool> openPrivacyPolicy() => _open(privacyPolicyUrl);
 

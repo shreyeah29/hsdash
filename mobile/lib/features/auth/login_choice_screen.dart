@@ -263,7 +263,7 @@ class _FooterNote extends StatelessWidget {
             Icon(Icons.lock_outline, size: 13, color: Colors.white.withValues(alpha: 0.55)),
             const SizedBox(width: 6),
             Text(
-              'Secure platform · v1.0.1',
+              'Secure platform · v1.0.2',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withValues(alpha: 0.55),

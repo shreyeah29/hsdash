@@ -253,15 +253,19 @@ Requires **Apple Developer Program** ($99/year).
 
 ### Both stores
 
-- [ ] App name: **HS Dash** (or your brand)
+- [x] App name: **HSWF**
 - [x] Privacy policy URL — https://hswf.app/privacy (also Terms: https://hswf.app/terms)
-- [x] Support contact — hello@hswf.in
+- [x] Support URL — https://hswf.app/support
+- [x] Support email — hello@hswf.in
 - [x] Export compliance — ITSAppUsesNonExemptEncryption = false in Info.plist
 - [x] Privacy manifest — ios/Runner/PrivacyInfo.xcprivacy
-- [ ] App icon 1024×1024
-- [ ] Screenshots (phone + tablet sizes)
-- [ ] Short + long description
-- [ ] Support email
+- [x] App icon 1024×1024
+- [x] Launch screen branding
+- [ ] Screenshots (phone sizes) — capture before submit
+- [x] Short + long description draft — see `mobile/docs/APP_STORE_LISTING.md`
+- [ ] Age rating questionnaire — complete in App Store Connect
+- [ ] App Privacy nutrition labels — complete in App Store Connect
+- [ ] Demo login for App Review — create before submit
 
 ### Google Play
 
@@ -276,10 +280,11 @@ Typical review: hours to a few days.
 ### Apple App Store
 
 1. Enroll: https://developer.apple.com — **$99/year**
-2. App Store Connect → create app, bundle ID `com.hsdash.hsdash_mobile`
-3. Upload build via Xcode or Transporter
-4. TestFlight for beta testers first
-5. Submit for review (privacy, login demo account if needed)
+2. App Store Connect → create / open app, bundle ID **`com.hsdash.hsdashMobile`**
+3. Fill listing using `mobile/docs/APP_STORE_LISTING.md`
+4. Upload build via Transporter or Xcode
+5. TestFlight external testers first (optional but recommended)
+6. Submit for review with privacy URL, support URL, and demo login
 
 Typical review: 1–3 days.
 

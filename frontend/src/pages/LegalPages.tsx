@@ -91,6 +91,50 @@ export function PrivacyPolicyPage() {
   );
 }
 
+export function SupportPage() {
+  return (
+    <LegalDoc
+      title="Support"
+      subtitle="Help for the HSWF web dashboard and mobile app."
+    >
+      <p>
+        HSWF is Harishankar Photography&apos;s wedding production workspace for studio staff and
+        related public forms.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Email support: <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+      </p>
+      <p>We typically respond within 1–2 business days.</p>
+
+      <h2>Common requests</h2>
+      <ul>
+        <li>Login or password help for team accounts</li>
+        <li>Access for a new team member</li>
+        <li>Questions about the Careers / Join Us form</li>
+        <li>App Store or TestFlight install issues</li>
+      </ul>
+
+      <h2>Related links</h2>
+      <ul>
+        <li>
+          <Link to="/privacy">Privacy Policy</Link>
+        </li>
+        <li>
+          <Link to="/terms">Terms of Use</Link>
+        </li>
+        <li>
+          <Link to="/join">Join Us</Link>
+        </li>
+        <li>
+          <a href="https://hswf.app/login">Sign in</a>
+        </li>
+      </ul>
+    </LegalDoc>
+  );
+}
+
 export function TermsOfUsePage() {
   return (
     <LegalDoc
@@ -181,6 +225,9 @@ function LegalDoc({
             </Link>
             <Link to="/terms" className="hover:text-zinc-900">
               Terms
+            </Link>
+            <Link to="/support" className="hover:text-zinc-900">
+              Support
             </Link>
           </nav>
         </div>
