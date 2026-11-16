@@ -46,6 +46,24 @@ function buildEventYearOptions() {
   return [y - 1, y, y + 1, y + 2].map(String);
 }
 
+/** Event dates are stored as UTC calendar days (noon UTC). */
+function eventDayKey(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function eventMonthKey(iso: string) {
+  return eventDayKey(iso).slice(0, 7);
+}
+
+function eventYearKey(iso: string) {
+  return eventDayKey(iso).slice(0, 4);
+}
+
 const STATUS_DOT: Record<LeadStatus, string> = {
   NEW: "#7D8FA8",
   CONTACTED: "#D59B3A",
@@ -77,8 +95,11 @@ async function fetchLeads(params: {
   eventMonth?: string;
   eventYear?: string;
   sort?: "createdAt" | "eventDate";
+  limit?: number;
 }) {
-  const { data } = await api.get<{ leads: LeadSummary[]; total: number }>("/admin/leads", { params });
+  const { data } = await api.get<{ leads: LeadSummary[]; total: number }>("/admin/leads", {
+    params: { limit: 200, ...params },
+  });
   return data;
 }
 
@@ -139,27 +160,16 @@ export function AdminLeadsPage() {
   }
 
   const statsQ = useQuery({ queryKey: ["admin-leads-stats"], queryFn: fetchStats });
+  // Fetch a broad list (status + search). Extra filters are applied client-side so the
+  // UI stays correct even before the API deploy that understands eventMonth/etc.
   const leadsQ = useQuery({
-    queryKey: [
-      "admin-leads",
-      statusFilter,
-      sourceFilter,
-      eventTypeFilter,
-      eventMonthFilter,
-      eventYearFilter,
-      sortBy,
-      search,
-    ],
+    queryKey: ["admin-leads", statusFilter, search],
     queryFn: () =>
       fetchLeads({
         status: statusFilter === "ALL" ? undefined : statusFilter,
-        source: sourceFilter === "ALL" ? undefined : sourceFilter,
-        eventType: eventTypeFilter === "ALL" ? undefined : eventTypeFilter,
-        eventMonth: eventMonthFilter === "ALL" ? undefined : eventMonthFilter,
-        eventYear:
-          eventMonthFilter === "ALL" && eventYearFilter !== "ALL" ? eventYearFilter : undefined,
-        sort: sortBy,
         search: search.trim() || undefined,
+        limit: 200,
+        sort: "createdAt",
       }),
   });
 
@@ -252,7 +262,36 @@ export function AdminLeadsPage() {
   });
 
   const stats = statsQ.data;
-  const leads = leadsQ.data?.leads ?? [];
+  const leads = useMemo(() => {
+    let list = [...(leadsQ.data?.leads ?? [])];
+
+    if (sourceFilter !== "ALL") {
+      list = list.filter((l) => l.source === sourceFilter);
+    }
+    if (eventTypeFilter !== "ALL") {
+      list = list.filter((l) => l.eventType === eventTypeFilter);
+    }
+    if (eventMonthFilter !== "ALL") {
+      list = list.filter((l) => eventMonthKey(l.eventDate) === eventMonthFilter);
+    } else if (eventYearFilter !== "ALL") {
+      list = list.filter((l) => eventYearKey(l.eventDate) === eventYearFilter);
+    }
+
+    if (sortBy === "eventDate") {
+      list.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+    } else {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return list;
+  }, [
+    leadsQ.data?.leads,
+    sourceFilter,
+    eventTypeFilter,
+    eventMonthFilter,
+    eventYearFilter,
+    sortBy,
+  ]);
   const lead = detailQ.data;
 
   const statCards = useMemo(
@@ -423,7 +462,10 @@ export function AdminLeadsPage() {
           ) : null}
           {!leadsQ.isLoading ? (
             <span className="text-xs font-medium" style={{ color: palette.textSecondary }}>
-              {leadsQ.data?.total ?? leads.length} lead{(leadsQ.data?.total ?? leads.length) === 1 ? "" : "s"}
+              {leads.length} lead{leads.length === 1 ? "" : "s"}
+              {hasExtraFilters || statusFilter !== "ALL" || search.trim()
+                ? " matching filters"
+                : ""}
             </span>
           ) : null}
         </div>
