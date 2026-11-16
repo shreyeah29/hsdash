@@ -17,14 +17,34 @@ import {
 } from "@/components/admin/AdminUi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { LeadDetail, LeadStats, LeadStatus, LeadSummary } from "@/types/leads";
+import type { LeadDetail, LeadSource, LeadStats, LeadStatus, LeadSummary } from "@/types/leads";
 import {
   LEAD_SOURCE_LABELS,
   LEAD_STATUS_COLORS,
   LEAD_STATUS_LABELS,
+  LeadEventType,
+  LeadSource as LeadSourceEnum,
   LeadStatus as LeadStatusEnum,
 } from "@/types/leads";
 import type { User } from "@/types/domain";
+
+function buildEventMonthOptions() {
+  const options: { value: string; label: string }[] = [];
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  for (let i = 0; i < 36; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    options.push({ value, label });
+  }
+  return options;
+}
+
+function buildEventYearOptions() {
+  const y = new Date().getFullYear();
+  return [y - 1, y, y + 1, y + 2].map(String);
+}
 
 const STATUS_DOT: Record<LeadStatus, string> = {
   NEW: "#7D8FA8",
@@ -49,7 +69,15 @@ async function fetchStats() {
   return data;
 }
 
-async function fetchLeads(params: { status?: string; search?: string }) {
+async function fetchLeads(params: {
+  status?: string;
+  search?: string;
+  source?: string;
+  eventType?: string;
+  eventMonth?: string;
+  eventYear?: string;
+  sort?: "createdAt" | "eventDate";
+}) {
   const { data } = await api.get<{ leads: LeadSummary[]; total: number }>("/admin/leads", { params });
   return data;
 }
@@ -91,11 +119,18 @@ export function AdminLeadsPage() {
   const palette = useAdminPalette();
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<string>("ALL");
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("ALL");
+  const [eventMonthFilter, setEventMonthFilter] = useState<string>("ALL");
+  const [eventYearFilter, setEventYearFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"createdAt" | "eventDate">("createdAt");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [copied, setCopied] = useState<"link" | "message" | "quote-link" | "quote-message" | null>(null);
   const enquiryUrl = getEnquiryUrl();
+  const eventMonthOptions = useMemo(() => buildEventMonthOptions(), []);
+  const eventYearOptions = useMemo(() => buildEventYearOptions(), []);
 
   async function copyText(text: string, kind: "link" | "message" | "quote-link" | "quote-message") {
     await navigator.clipboard.writeText(text);
@@ -105,13 +140,43 @@ export function AdminLeadsPage() {
 
   const statsQ = useQuery({ queryKey: ["admin-leads-stats"], queryFn: fetchStats });
   const leadsQ = useQuery({
-    queryKey: ["admin-leads", statusFilter, search],
+    queryKey: [
+      "admin-leads",
+      statusFilter,
+      sourceFilter,
+      eventTypeFilter,
+      eventMonthFilter,
+      eventYearFilter,
+      sortBy,
+      search,
+    ],
     queryFn: () =>
       fetchLeads({
         status: statusFilter === "ALL" ? undefined : statusFilter,
+        source: sourceFilter === "ALL" ? undefined : sourceFilter,
+        eventType: eventTypeFilter === "ALL" ? undefined : eventTypeFilter,
+        eventMonth: eventMonthFilter === "ALL" ? undefined : eventMonthFilter,
+        eventYear:
+          eventMonthFilter === "ALL" && eventYearFilter !== "ALL" ? eventYearFilter : undefined,
+        sort: sortBy,
         search: search.trim() || undefined,
       }),
   });
+
+  const hasExtraFilters =
+    sourceFilter !== "ALL" ||
+    eventTypeFilter !== "ALL" ||
+    eventMonthFilter !== "ALL" ||
+    eventYearFilter !== "ALL" ||
+    sortBy !== "createdAt";
+
+  function clearExtraFilters() {
+    setSourceFilter("ALL");
+    setEventTypeFilter("ALL");
+    setEventMonthFilter("ALL");
+    setEventYearFilter("ALL");
+    setSortBy("createdAt");
+  }
   const detailQ = useQuery({
     queryKey: ["admin-lead", selectedId],
     queryFn: () => fetchLead(selectedId!),
@@ -266,12 +331,102 @@ export function AdminLeadsPage() {
           ))}
         </div>
 
-        <AdminInput
-          placeholder="Search name, phone, location…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-4 max-w-md"
-        />
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <label className="block space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+              Event month
+            </span>
+            <AdminSelect
+              value={eventMonthFilter}
+              onChange={(e) => {
+                setEventMonthFilter(e.target.value);
+                if (e.target.value !== "ALL") setEventYearFilter("ALL");
+              }}
+            >
+              <option value="ALL">All months</option>
+              {eventMonthOptions.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+              Event year
+            </span>
+            <AdminSelect
+              value={eventYearFilter}
+              disabled={eventMonthFilter !== "ALL"}
+              onChange={(e) => setEventYearFilter(e.target.value)}
+            >
+              <option value="ALL">All years</option>
+              {eventYearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+              Event type
+            </span>
+            <AdminSelect value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}>
+              <option value="ALL">All events</option>
+              <option value={LeadEventType.WEDDING}>Wedding</option>
+              <option value={LeadEventType.OTHER}>Other</option>
+            </AdminSelect>
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+              Source
+            </span>
+            <AdminSelect value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+              <option value="ALL">All sources</option>
+              {(Object.keys(LeadSourceEnum) as LeadSource[]).map((s) => (
+                <option key={s} value={s}>
+                  {LEAD_SOURCE_LABELS[s]}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: palette.textSecondary }}>
+              Sort by
+            </span>
+            <AdminSelect
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "createdAt" | "eventDate")}
+            >
+              <option value="createdAt">Newest enquiry</option>
+              <option value="eventDate">Event date</option>
+            </AdminSelect>
+          </label>
+        </div>
+
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <AdminInput
+            placeholder="Search name, phone, location…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-md flex-1"
+          />
+          {hasExtraFilters ? (
+            <AdminButton variant="ghost" onClick={clearExtraFilters}>
+              Clear filters
+            </AdminButton>
+          ) : null}
+          {!leadsQ.isLoading ? (
+            <span className="text-xs font-medium" style={{ color: palette.textSecondary }}>
+              {leadsQ.data?.total ?? leads.length} lead{(leadsQ.data?.total ?? leads.length) === 1 ? "" : "s"}
+            </span>
+          ) : null}
+        </div>
 
         {leadsQ.isLoading ? (
           <p className="py-12 text-center text-sm" style={{ color: palette.textSecondary }}>
@@ -279,7 +434,9 @@ export function AdminLeadsPage() {
           </p>
         ) : leads.length === 0 ? (
           <p className="py-12 text-center text-sm" style={{ color: palette.textSecondary }}>
-            No leads yet. Copy the enquiry link above and send it to your next client.
+            {hasExtraFilters || statusFilter !== "ALL" || search.trim()
+              ? "No leads match these filters."
+              : "No leads yet. Copy the enquiry link above and send it to your next client."}
           </p>
         ) : (
           <ul className="divide-y" style={{ borderColor: palette.border }}>
@@ -296,6 +453,12 @@ export function AdminLeadsPage() {
                         {displayName(l)}
                       </span>
                       <StatusBadge status={l.status} />
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase"
+                        style={{ borderColor: palette.border, color: palette.textSecondary }}
+                      >
+                        {l.eventType === "WEDDING" ? "Wedding" : "Other"}
+                      </span>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-3 text-xs" style={{ color: palette.textSecondary }}>
                       <span className="inline-flex items-center gap-1">

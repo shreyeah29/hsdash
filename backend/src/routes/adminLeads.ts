@@ -93,15 +93,35 @@ adminLeadsRouter.get("/", async (req, res, next) => {
       .object({
         status: z.nativeEnum(LeadStatus).optional(),
         source: z.nativeEnum(LeadSource).optional(),
+        eventType: z.nativeEnum(LeadEventType).optional(),
+        /** Event month as YYYY-MM — filters by wedding/event date. */
+        eventMonth: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        /** Event year as YYYY — filters by wedding/event date year. */
+        eventYear: z.string().regex(/^\d{4}$/).optional(),
         search: z.string().max(200).optional(),
+        sort: z.enum(["createdAt", "eventDate"]).optional().default("createdAt"),
         page: z.coerce.number().min(1).optional().default(1),
-        limit: z.coerce.number().min(1).max(100).optional().default(30),
+        limit: z.coerce.number().min(1).max(200).optional().default(50),
       })
       .parse(req.query);
 
     const where: Prisma.LeadWhereInput = {};
     if (q.status) where.status = q.status;
     if (q.source) where.source = q.source;
+    if (q.eventType) where.eventType = q.eventType;
+
+    if (q.eventMonth) {
+      const [y, m] = q.eventMonth.split("-").map(Number);
+      const start = new Date(Date.UTC(y, m - 1, 1));
+      const end = new Date(Date.UTC(y, m, 1));
+      where.eventDate = { gte: start, lt: end };
+    } else if (q.eventYear) {
+      const y = Number(q.eventYear);
+      const start = new Date(Date.UTC(y, 0, 1));
+      const end = new Date(Date.UTC(y + 1, 0, 1));
+      where.eventDate = { gte: start, lt: end };
+    }
+
     if (q.search?.trim()) {
       const needle = q.search.trim();
       where.OR = [
@@ -116,10 +136,13 @@ adminLeadsRouter.get("/", async (req, res, next) => {
     }
 
     const skip = (q.page - 1) * q.limit;
+    const orderBy: Prisma.LeadOrderByWithRelationInput =
+      q.sort === "eventDate" ? { eventDate: "asc" } : { createdAt: "desc" };
+
     const [leads, total] = await Promise.all([
       prisma.lead.findMany({
         where,
-        orderBy: [{ createdAt: "desc" }],
+        orderBy: [orderBy],
         skip,
         take: q.limit,
         include: {
